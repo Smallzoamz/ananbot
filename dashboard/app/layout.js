@@ -18,7 +18,7 @@ import { LanguageProvider } from "./context/LanguageContext";
 import MascotWrapper from "./components/MascotWrapper";
 
 export const metadata = {
-  metadataBase: new URL('https://anan-bot.vercel.app'),
+  metadataBase: new URL('https://ananbot-steel.vercel.app'),
   title: {
     default: "An An Bot | Premium Management Panel",
     template: "%s | An An Bot"
@@ -30,7 +30,7 @@ export const metadata = {
   openGraph: {
     title: "An An Bot | Premium Management Panel",
     description: "Manage your server with heart, precision, and beautiful aesthetic layouts.",
-    url: 'https://anan-bot.vercel.app',
+    url: 'https://ananbot-steel.vercel.app',
     siteName: 'An An Bot',
     locale: 'en_US',
     type: 'website',
