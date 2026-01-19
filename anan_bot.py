@@ -1107,14 +1107,14 @@ async def perform_clear(guild, user_id=None):
     for category in guild.categories:
         cat_data = {
             "name": category.name,
-            "overwrites": {str(target.id): perms.pair() for target, perms in category.overwrites.items()},
+            "overwrites": {str(target.id): [p.value for p in perms.pair()] for target, perms in category.overwrites.items()},
             "channels": []
         }
         for channel in category.channels:
             cat_data["channels"].append({
                 "name": channel.name,
                 "type": "text" if isinstance(channel, disnake.TextChannel) else "voice",
-                "overwrites": {str(target.id): perms.pair() for target, perms in channel.overwrites.items()}
+                "overwrites": {str(target.id): [p.value for p in perms.pair()] for target, perms in channel.overwrites.items()}
             })
         channels_backup.append(cat_data)
         
@@ -1124,7 +1124,7 @@ async def perform_clear(guild, user_id=None):
             globals_backup.append({
                 "name": channel.name,
                 "type": "text" if isinstance(channel, disnake.TextChannel) else "voice",
-                "overwrites": {str(target.id): perms.pair() for target, perms in channel.overwrites.items()}
+                "overwrites": {str(target.id): [p.value for p in perms.pair()] for target, perms in channel.overwrites.items()}
             })
             
     rollback_data = {
