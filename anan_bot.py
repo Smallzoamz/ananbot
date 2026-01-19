@@ -863,6 +863,7 @@ class AnAnBot(commands.Bot):
             body = await request.json()
             action = body.get("action")
             guild_id = body.get("guild_id")
+            user_id = body.get("user_id")
             
             print(f"Web API triggering {action}")
             
