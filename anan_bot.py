@@ -710,57 +710,7 @@ class AnAnBot(commands.Bot):
         print("API Bridge running on http://127.0.0.1:5000 (Local Interface)")
         await site.start()
 
-    async def handle_action(self, request):
-        try:
-            data = await request.json()
-            guild_id = data.get("guild_id")
-            action = data.get("action")
-            user_id = data.get("user_id")
-            extra_data = data.get("extra_data", {}) # e.g. {"games": [...]}
-            
-            print(f"API Action: {action} on Guild {guild_id}")
-            
-            guild = self.get_guild(int(guild_id))
-            if not guild:
-                return web.json_response({"error": "Guild not found"}, status=404)
-                
-            if action == "setup":
-                template_name = data.get("template")
-                # Trigger setup logic
-                asyncio.create_task(perform_guild_setup(guild, template_name, extra_data, user_id))
-                return web.json_response({"status": "success", "message": f"Setup for {template_name} triggered"})
-            
-            elif action == "setup_temproom":
-                result = await self.perform_temproom_setup(guild, user_id)
-                if result["success"]:
-                    return web.json_response({"status": "success", "message": result["message"]})
-                else:
-                    return web.json_response({"error": result["error"]}, status=400)
 
-            elif action == "clear":
-                # Trigger clear logic
-                asyncio.create_task(perform_clear_guild(guild))
-                return web.json_response({"status": "success", "message": "Clear guild triggered"})
-                
-            elif action == "get_missions":
-                missions = await get_user_missions(user_id)
-                plan = await get_user_plan(user_id)
-                return web.json_response({"missions": missions, "plan": plan})
-                
-            elif action == "claim_mission":
-                mission_key = data.get("mission_key")
-                result = await claim_mission_reward(user_id, mission_key)
-                return web.json_response(result)
-                
-            elif action == "delete_selective":
-                ids = data.get("ids", [])
-                asyncio.create_task(perform_selective_delete(guild, ids))
-                return web.json_response({"status": "success", "message": "Selective delete triggered"})
-
-            return web.json_response({"error": "Unknown action"}, status=400)
-        except Exception as e:
-            print(f"API Error: {e}")
-            return web.json_response({"error": str(e)}, status=500)
 
     async def handle_stats(self, request):
         print(f"API Request: GET /api/stats from {request.remote}")
@@ -991,6 +941,13 @@ class AnAnBot(commands.Bot):
             elif action == "rollback":
                 success = await perform_rollback(guild)
                 return web.json_response({"status": "rollback_triggered", "success": success}, headers={"Access-Control-Allow-Origin": "*"})
+                
+            elif action == "setup_temproom":
+                result = await self.perform_temproom_setup(guild, user_id)
+                if result["success"]:
+                    return web.json_response({"status": "success", "message": result["message"]}, headers={"Access-Control-Allow-Origin": "*"})
+                else:
+                    return web.json_response({"error": result["error"]}, status=400, headers={"Access-Control-Allow-Origin": "*"})
                 
             elif action == "setup":
                 template = body.get("template", "Shop")
