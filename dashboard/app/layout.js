@@ -36,7 +36,7 @@ export const metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/og-banner.png?v=2',
+        url: 'https://ananbot-steel.vercel.app/images/og-banner.png?v=3',
         width: 1200,
         height: 630,
         alt: 'An An Bot Hero Banner',
@@ -47,7 +47,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: "An An Bot | Premium Management Panel",
     description: "Manage your server with heart, precision, and beautiful aesthetic layouts.",
-    images: ['/images/og-banner.png?v=2'],
+    images: ['https://ananbot-steel.vercel.app/images/og-banner.png?v=3'],
   },
   icons: {
     icon: '/favicon.ico',
