@@ -351,7 +351,7 @@ export default function GuildDashboard() {
                     </div>
                     {isDropdownOpen && (
                         <div className="guild-dropdown glass animate-pop">
-                            <div className="dropdown-label">YOUR SERVERS</div>
+                            <div className="dropdown-label">{t.sidebar.yourServers}</div>
                             {manageableGuilds.filter(g => g.id !== guildId).map(g => (
                                 <div key={g.id} className="dropdown-item" onClick={() => {
                                     setIsDropdownOpen(false);
@@ -365,32 +365,32 @@ export default function GuildDashboard() {
                                 </div>
                             ))}
                             <div className="dropdown-divider"></div>
-                            <div className="dropdown-item back-item" onClick={() => router.push("/servers")}>
+                            <div className="dropdown-item back-item" onClick={() => router.push("/servers?redirect=false")}>
                                 <span className="icon">←</span>
-                                <span>Go to Selection</span>
+                                <span>{t.sidebar.selection}</span>
                             </div>
                         </div>
                     )}
                 </div>
 
                 <div className="sidebar-list">
-                    <div className="menu-item active">Dashboard</div>
-                    <div className="menu-item" onClick={() => router.push(`/servers/${guildId}/leaderboard`)}>Leaderboard <span className="p-badge-s">PRO</span></div>
-                    <div className="menu-item">Bot Personalizer</div>
+                    <div className="menu-item active">{t.sidebar.dashboard}</div>
+                    <div className="menu-item" onClick={() => router.push(`/servers/${guildId}/leaderboard`)}>{t.sidebar.leaderboard} <span className="p-badge-s">{t.dashboard.pro}</span></div>
+                    <div className="menu-item">{t.sidebar.personalizer}</div>
 
-                    <div className="menu-category">ESSENTIALS</div>
-                    <div className="menu-item">Welcome & Goodbye</div>
-                    <div className="menu-item">Reaction Roles</div>
-                    <div className="menu-item">Moderator</div>
+                    <div className="menu-category">{t.sidebar.catEssentials}</div>
+                    <div className="menu-item">{t.sidebar.welcome}</div>
+                    <div className="menu-item">{t.sidebar.reaction}</div>
+                    <div className="menu-item">{t.sidebar.moderator}</div>
 
-                    <div className="menu-category">SERVER MANAGEMENT</div>
-                    <div className="menu-item">Automations</div>
-                    <div className="menu-item">Custom Commands</div>
-                    <div className="menu-item" onClick={() => handleAction("clear")}>Clear & Reset</div>
+                    <div className="menu-category">{t.sidebar.catManagement}</div>
+                    <div className="menu-item">{t.sidebar.automation}</div>
+                    <div className="menu-item">{t.sidebar.commands}</div>
+                    <div className="menu-item" onClick={() => handleAction("clear")}>{t.sidebar.reset}</div>
                 </div>
 
                 <div className="sidebar-footer">
-                    <button className="invite-btn" onClick={() => router.push("/servers")}>← Switch Server</button>
+                    <button className="invite-btn" onClick={() => router.push("/servers?redirect=false")}>← {t.sidebar.switch}</button>
                 </div>
             </aside>
 
@@ -425,7 +425,7 @@ export default function GuildDashboard() {
                                     <div className="dropdown-divider"></div>
                                     <div className="dropdown-section">
                                         <div className="section-label">SERVERS OWNERS</div>
-                                        <div className="dropdown-link" onClick={() => router.push("/servers")}>{t.dashboard.myServers}</div>
+                                        <div className="dropdown-link" onClick={() => router.push("/servers?redirect=false")}>{t.dashboard.myServers}</div>
                                         <div className="dropdown-link">{t.dashboard.transferPremium}</div>
                                     </div>
                                     <div className="dropdown-divider"></div>

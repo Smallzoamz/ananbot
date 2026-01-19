@@ -43,9 +43,9 @@ export default function Mascot() {
         const descriptions = pageDescriptions[lang] || pageDescriptions.en;
 
         if (pathname === '/') return descriptions['/'];
-        if (pathname === '/selection') return descriptions['/selection'];
-        if (pathname?.includes('/leaderboard')) return descriptions['/leaderboard'];
-        if (pathname?.includes('/servers')) return descriptions['/servers'];
+        if (pathname === '/servers') return descriptions['/selection']; // Specific Selection Page
+        if (pathname?.includes('/leaderboard')) return descriptions['/leaderboard']; // Specific Leaderboard Page
+        if (pathname?.includes('/servers/')) return descriptions['/servers']; // General Dashboard (Fallback for /servers/xyz)
         return descriptions['default'];
     };
 

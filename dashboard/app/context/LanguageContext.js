@@ -82,6 +82,22 @@ const translations = {
             language: "Language",
             changelogs: "Changelogs",
             supportServer: "Support server"
+        },
+        sidebar: {
+            yourServers: "YOUR SERVERS",
+            selection: "Go to Selection",
+            dashboard: "Dashboard",
+            leaderboard: "Leaderboard",
+            personalizer: "Bot Personalizer",
+            catEssentials: "ESSENTIALS",
+            welcome: "Welcome & Goodbye",
+            reaction: "Reaction Roles",
+            moderator: "Moderator",
+            catManagement: "SERVER MANAGEMENT",
+            automation: "Automations",
+            commands: "Custom Commands",
+            reset: "Clear & Reset",
+            switch: "Switch Server"
         }
     },
     th: {
@@ -162,6 +178,22 @@ const translations = {
             language: "เปลี่ยนภาษา",
             changelogs: "บันทึกการเปลี่ยนแปลง",
             supportServer: "เซิร์ฟเวอร์สนับสนุน"
+        },
+        sidebar: {
+            yourServers: "เซิร์ฟเวอร์ของคุณ",
+            selection: "กลับไปหน้าเลือก",
+            dashboard: "แดชบอร์ด",
+            leaderboard: "กระดานผู้นำ",
+            personalizer: "ปรับแต่งบอท",
+            catEssentials: "พื้นฐาน",
+            welcome: "ต้อนรับ & อำลา",
+            reaction: "Reaction Roles",
+            moderator: "ผู้ดูแล (Moderator)",
+            catManagement: "การจัดการเซิร์ฟเวอร์",
+            automation: "ระบบอัตโนมัติ",
+            commands: "คำสั่งกำหนดเอง",
+            reset: "ล้างและรีเซ็ต",
+            switch: "เปลี่ยนเซิร์ฟเวอร์"
         }
     }
 };

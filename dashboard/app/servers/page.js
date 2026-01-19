@@ -40,30 +40,40 @@ export default function ServerSelection() {
 
         const fetchData = async () => {
             try {
-                // Rate Limit Protection - Check Cache
-                const cachedData = sessionStorage.getItem("discord_guilds_cache");
-                const cacheTime = sessionStorage.getItem("discord_guilds_cache_time");
+                // Rate Limit Protection - Check Cache (LocalStorage)
+                const cachedData = localStorage.getItem("discord_guilds_cache");
+                const cacheTime = localStorage.getItem("discord_guilds_cache_time");
                 const now = Date.now();
+                const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes validity
 
                 let userG;
-                if (cachedData && cacheTime && (now - cacheTime < 5 * 60 * 1000)) {
+                // 1. Try to use FRESH cache
+                if (cachedData && cacheTime && (now - parseInt(cacheTime) < CACHE_DURATION)) {
                     console.log("Using cached guild data to avoid Rate Limit");
                     userG = JSON.parse(cachedData);
                 } else {
-                    // Fetch user guilds from Discord
+                    // 2. Fetch from Discord API
                     const userRes = await fetch("https://discord.com/api/users/@me/guilds", {
                         headers: { Authorization: `Bearer ${session.accessToken}` },
                     });
 
                     if (userRes.status === 429) {
-                        throw new Error("Discord is rate limiting us. Please wait a moment and try again.");
-                    }
-
-                    userG = await userRes.json();
-
-                    if (Array.isArray(userG)) {
-                        sessionStorage.setItem("discord_guilds_cache", JSON.stringify(userG));
-                        sessionStorage.setItem("discord_guilds_cache_time", now.toString());
+                        // 3. Rate Limit Hit -> Fallback to STALE cache if possible
+                        console.warn("Discord 429 Rate Limit hit. Attempting fallback to stale cache.");
+                        if (cachedData) {
+                            userG = JSON.parse(cachedData);
+                        } else {
+                            throw new Error("Discord is rate limiting us. Please wait a moment and try again.");
+                        }
+                    } else if (userRes.ok) {
+                        userG = await userRes.json();
+                        // Update Check
+                        if (Array.isArray(userG)) {
+                            localStorage.setItem("discord_guilds_cache", JSON.stringify(userG));
+                            localStorage.setItem("discord_guilds_cache_time", now.toString());
+                        }
+                    } else {
+                        throw new Error(`Failed to fetch guilds: ${userRes.statusText}`);
                     }
                 }
 
@@ -81,9 +91,12 @@ export default function ServerSelection() {
 
                 setBotGuilds(botG);
 
-                // Auto-redirect to last managed server (if exists and bot is present)
+                // Auto-redirect to last managed server (ONLY if not switching)
                 const savedGuildId = localStorage.getItem("anan_last_guild_id");
-                if (savedGuildId && botG.some(bg => bg.id === savedGuildId)) {
+                const isSwitching = window.location.search.includes("redirect=false");
+
+                if (!isSwitching && savedGuildId && botG.some(bg => bg.id === savedGuildId)) {
+                    console.log("Auto-redirecting to last active guild...");
                     router.push(`/servers/${savedGuildId}`);
                     return; // Don't show selection page
                 }
@@ -195,8 +208,8 @@ export default function ServerSelection() {
             <button
                 className="refresh-btn"
                 onClick={() => {
-                    sessionStorage.removeItem("discord_guilds_cache");
-                    sessionStorage.removeItem("discord_guilds_cache_time");
+                    localStorage.removeItem("discord_guilds_cache");
+                    localStorage.removeItem("discord_guilds_cache_time");
                     window.location.reload();
                 }}
             >
