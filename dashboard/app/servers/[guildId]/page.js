@@ -652,6 +652,17 @@ export default function GuildDashboard() {
                                         desc: "Protect your server with instant lockdown and audit log visibility.",
                                         action: () => setActiveTab("Security"),
                                         btnText: "+ Enable"
+                                    },
+                                    {
+                                        id: "temproom",
+                                        name: "Temporary Rooms",
+                                        icon: "🔊",
+                                        badge: "PRO",
+                                        badgeClass: "p-badge pro",
+                                        category: "Utilities",
+                                        desc: "Auto-create voice channels for users. Empty rooms delete automatically.",
+                                        action: () => handleAction("setup_temproom"),
+                                        btnText: "+ Enable"
                                     }
                                 ];
 

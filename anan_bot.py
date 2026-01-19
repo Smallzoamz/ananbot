@@ -620,6 +620,77 @@ class TemplateView(disnake.ui.View):
         elif choice == "Fanclub":
             await interaction.response.send_modal(SetupModal("Fanclub", "ปรับแต่งช่องสตรีม", "ระบุแพลตฟอร์ม (คั่นด้วยเครื่องหมาย ,)", "เช่น Twitch, YouTube, TikTok"))
 
+# --- Temporary Room System (Pro Plan) ---
+async def perform_temproom_setup(guild, user_id=None):
+    # Check for Pro Plan
+    user_plan = await get_user_plan(str(guild.owner_id))
+    if user_plan["plan_type"] == "free":
+        return {"success": False, "error": "This feature is restricted to Pro Plan users."}
+
+    # Check for existing setup
+    existing_cat = disnake.utils.get(guild.categories, name="🔊 ⎯  TEMPORARY ZONES")
+    if existing_cat:
+        return {"success": False, "error": "Temporary Room system is already installed."}
+
+    # Create Category & Hub
+    cat = await guild.create_category(name="🔊 ⎯  TEMPORARY ZONES")
+    
+    # Hub Channel
+    hub = await guild.create_voice_channel(name="｜・➕：CREATE ROOM", category=cat)
+    
+    return {"success": True, "message": f"Temporary Room system installed! Hub: {hub.mention}"}
+
+@bot.command()
+async def setup_temproom(ctx):
+    result = await perform_temproom_setup(ctx.guild, str(ctx.author.id))
+    
+    if not result["success"]:
+        if "restricted" in result["error"] or "Pro Plan" in result["error"]:
+            embed = disnake.Embed(
+                title="💎 Feature Restricted",
+                description="ระบบห้องชั่วคราว (Temporary Room) สงวนสิทธิ์เฉพาะ **Pro Plan** ขึ้นไปเท่านั้นค่ะ! 🥺\n\n(This feature is for Pro Plan users only)",
+                color=disnake.Color.red()
+            )
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send(f"⚠️ {result['error']}", delete_after=5)
+        return
+
+    # Success message
+    hub_mention = result['message'].split("Hub: ")[1]
+    await ctx.send(f"ติดตั้งระบบห้องชั่วคราวเรียบร้อยแล้วค่ะ! ✨\nลองกดเข้าห้อง {hub_mention} เพื่อสร้างห้องส่วนตัวได้เลยนะคะ Classy มากๆ เลยค๊าา 💅")
+
+@bot.event
+async def on_voice_state_update(member, before, after):
+    # 1. Check for Joining Hub
+    if after.channel and after.channel.name == "｜・➕：CREATE ROOM":
+        # Create Temp Room
+        guild = member.guild
+        cat = after.channel.category
+        
+        # Name Format: ｜・🔊：[NAME]
+        room_name = f"｜・🔊：{member.display_name.upper()}"
+        
+        # Permissions: Owner full control, Everyone view/connect/speak
+        overwrites = {
+            guild.default_role: disnake.PermissionOverwrite(view_channel=True, connect=True, speak=True),
+            member: disnake.PermissionOverwrite(manage_channels=True, connect=True, speak=True, mute_members=True, move_members=True)
+        }
+        
+        # Create & Move
+        temp_ch = await guild.create_voice_channel(name=room_name, category=cat, overwrites=overwrites)
+        try:
+            await member.move_to(temp_ch)
+        except:
+            await temp_ch.delete() # Cleanup if move fails
+            
+    # 2. Check for Leaving Temp Room (Cleanup)
+    if before.channel and before.channel.category and before.channel.category.name == "🔊 ⎯  TEMPORARY ZONES":
+        if before.channel.name != "｜・➕：CREATE ROOM":
+            # If empty, delete
+            if len(before.channel.members) == 0:
+                await before.channel.delete()
+
 class AnAnBot(commands.Bot):
     def __init__(self):
         intents = disnake.Intents.default()
@@ -656,6 +727,58 @@ class AnAnBot(commands.Bot):
         site = web.TCPSite(runner, '0.0.0.0', 5000)
         print("API Bridge running on http://127.0.0.1:5000 (Local Interface)")
         await site.start()
+
+    async def handle_action(self, request):
+        try:
+            data = await request.json()
+            guild_id = data.get("guild_id")
+            action = data.get("action")
+            user_id = data.get("user_id")
+            extra_data = data.get("extra_data", {}) # e.g. {"games": [...]}
+            
+            print(f"API Action: {action} on Guild {guild_id}")
+            
+            guild = self.get_guild(int(guild_id))
+            if not guild:
+                return web.json_response({"error": "Guild not found"}, status=404)
+                
+            if action == "setup":
+                template_name = data.get("template")
+                # Trigger setup logic
+                asyncio.create_task(perform_guild_setup(guild, template_name, extra_data, user_id))
+                return web.json_response({"status": "success", "message": f"Setup for {template_name} triggered"})
+            
+            elif action == "setup_temproom":
+                result = await perform_temproom_setup(guild, user_id)
+                if result["success"]:
+                    return web.json_response({"status": "success", "message": result["message"]})
+                else:
+                    return web.json_response({"error": result["error"]}, status=400)
+
+            elif action == "clear":
+                # Trigger clear logic
+                asyncio.create_task(perform_clear_guild(guild))
+                return web.json_response({"status": "success", "message": "Clear guild triggered"})
+                
+            elif action == "get_missions":
+                missions = await get_user_missions(user_id)
+                plan = await get_user_plan(user_id)
+                return web.json_response({"missions": missions, "plan": plan})
+                
+            elif action == "claim_mission":
+                mission_key = data.get("mission_key")
+                result = await claim_mission_reward(user_id, mission_key)
+                return web.json_response(result)
+                
+            elif action == "delete_selective":
+                ids = data.get("ids", [])
+                asyncio.create_task(perform_selective_delete(guild, ids))
+                return web.json_response({"status": "success", "message": "Selective delete triggered"})
+
+            return web.json_response({"error": "Unknown action"}, status=400)
+        except Exception as e:
+            print(f"API Error: {e}")
+            return web.json_response({"error": str(e)}, status=500)
 
     async def handle_stats(self, request):
         print(f"API Request: GET /api/stats from {request.remote}")
