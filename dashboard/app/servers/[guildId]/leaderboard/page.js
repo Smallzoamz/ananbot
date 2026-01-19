@@ -18,7 +18,7 @@ export default function LeaderboardPage() {
     const fetchMissionsData = async () => {
         if (!session?.user?.id) return;
         try {
-            const res = await fetch("http://127.0.0.1:5000/api/action", {
+            const res = await fetch("/api/proxy/action", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -47,7 +47,7 @@ export default function LeaderboardPage() {
     const handleClaimReward = async (missionKey) => {
         if (!session?.user?.id) return;
         try {
-            const res = await fetch("http://127.0.0.1:5000/api/action", {
+            const res = await fetch("/api/proxy/action", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

@@ -8,7 +8,8 @@ async function proxyRequest(request, { params }) {
         return NextResponse.json({ error: "Bot API URL not configured" }, { status: 500 });
     }
 
-    const path = params.path.join('/');
+    const { path: pathArray } = await params;
+    const path = pathArray.join('/');
     const url = `${BOT_API_URL}/api/${path}${request.nextUrl.search}`;
 
     console.log(`[Proxy] Forwarding to: ${url}`);
