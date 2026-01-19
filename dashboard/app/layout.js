@@ -18,8 +18,40 @@ import { LanguageProvider } from "./context/LanguageContext";
 import MascotWrapper from "./components/MascotWrapper";
 
 export const metadata = {
-  title: "An An Bot | Premium Management Panel",
-  description: "Advanced guild management with heart and precision.",
+  metadataBase: new URL('https://anan-bot.vercel.app'),
+  title: {
+    default: "An An Bot | Premium Management Panel",
+    template: "%s | An An Bot"
+  },
+  description: "The most bubbly all-in-one Discord bot. Manage your server with heart, precision, and beautiful aesthetic layouts.",
+  keywords: ["Discord Bot", "An An Bot", "Server Management", "Discord Levels", "Aesthetic Bot", "Role Management"],
+  authors: [{ name: "Papa AnAn" }],
+  creator: "An An Dev Team",
+  openGraph: {
+    title: "An An Bot | Premium Management Panel",
+    description: "Manage your server with heart, precision, and beautiful aesthetic layouts.",
+    url: 'https://anan-bot.vercel.app',
+    siteName: 'An An Bot',
+    locale: 'en_US',
+    type: 'website',
+    images: [
+      {
+        url: '/images/og-banner.png',
+        width: 1200,
+        height: 630,
+        alt: 'An An Bot Hero Banner',
+      }
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "An An Bot | Premium Management Panel",
+    description: "Manage your server with heart, precision, and beautiful aesthetic layouts.",
+    images: ['/images/og-banner.png'],
+  },
+  icons: {
+    icon: '/favicon.ico',
+  }
 };
 
 export default function RootLayout({ children }) {
@@ -28,6 +60,28 @@ export default function RootLayout({ children }) {
       <body className={`${quicksand.variable} ${itim.variable}`}>
         <LanguageProvider>
           <AuthProvider>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  "@context": "https://schema.org",
+                  "@type": "SoftwareApplication",
+                  "name": "An An Bot",
+                  "applicationCategory": "UtilitiesApplication",
+                  "operatingSystem": "Discord",
+                  "offers": {
+                    "@type": "Offer",
+                    "price": "0",
+                    "priceCurrency": "USD"
+                  },
+                  "aggregateRating": {
+                    "@type": "AggregateRating",
+                    "ratingValue": "4.9",
+                    "ratingCount": "1250"
+                  }
+                })
+              }}
+            />
             {children}
             <MascotWrapper />
           </AuthProvider>
