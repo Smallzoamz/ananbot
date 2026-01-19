@@ -82,7 +82,7 @@ export default function GuildDashboard() {
 
         const fetchGuild = async () => {
             try {
-                const res = await fetch("http://127.0.0.1:5000/api/guilds");
+                const res = await fetch("/api/proxy/guilds");
                 const data = await res.json();
                 const current = data.find(g => g.id === guildId);
                 setGuildData(current);
@@ -95,7 +95,7 @@ export default function GuildDashboard() {
 
         const fetchStats = async () => {
             try {
-                const res = await fetch(`http://127.0.0.1:5000/api/guild/${guildId}/stats`);
+                const res = await fetch(`/api/proxy/guild/${guildId}/stats`);
                 const data = await res.json();
                 setStats(data);
             } catch (err) {
@@ -105,7 +105,7 @@ export default function GuildDashboard() {
 
         const fetchPerms = async () => {
             try {
-                const res = await fetch("http://127.0.0.1:5000/api/discord-permissions");
+                const res = await fetch("/api/proxy/discord-permissions");
                 const data = await res.json();
                 setAvailablePermissions(data);
             } catch (err) {
@@ -123,7 +123,7 @@ export default function GuildDashboard() {
     const fetchStructure = async () => {
         if (!guildId) return;
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/guild/${guildId}/structure`);
+            const res = await fetch(`/api/proxy/guild/${guildId}/structure`);
             const data = await res.json();
             setServerStructure(data);
         } catch (err) {
@@ -134,7 +134,7 @@ export default function GuildDashboard() {
     const fetchMissions = async () => {
         if (!session?.user?.id) return;
         try {
-            const res = await fetch("http://127.0.0.1:5000/api/action", {
+            const res = await fetch("/api/proxy/action", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -161,7 +161,7 @@ export default function GuildDashboard() {
         if (selectedIds.length === 0) return;
         setIsDeleting(true);
         try {
-            const res = await fetch("http://127.0.0.1:5000/api/action", {
+            const res = await fetch("/api/proxy/action", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -223,7 +223,7 @@ export default function GuildDashboard() {
                 }
 
                 // Also fetch bot guilds to know which ones we can switch TO
-                const botRes = await fetch("http://127.0.0.1:5000/api/guilds");
+                const botRes = await fetch("/api/proxy/guilds");
                 const botG = await botRes.json();
 
                 if (Array.isArray(guilds)) {
@@ -281,7 +281,7 @@ export default function GuildDashboard() {
                 }
             }
 
-            const res = await fetch("http://127.0.0.1:5000/api/action", {
+            const res = await fetch("/api/proxy/action", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -311,7 +311,7 @@ export default function GuildDashboard() {
     const handleClaimReward = async (missionKey) => {
         if (!session?.user?.id) return;
         try {
-            const res = await fetch("http://127.0.0.1:5000/api/action", {
+            const res = await fetch("/api/proxy/action", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

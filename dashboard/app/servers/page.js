@@ -77,8 +77,8 @@ export default function ServerSelection() {
                     }
                 }
 
-                // Fetch bot guilds from API
-                const botRes = await fetch("http://127.0.0.1:5000/api/guilds");
+                // Fetch bot guilds from API (via Proxy)
+                const botRes = await fetch("/api/proxy/guilds");
                 const botG = await botRes.json();
 
                 if (Array.isArray(userG)) {
