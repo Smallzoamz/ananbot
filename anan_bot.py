@@ -620,77 +620,6 @@ class TemplateView(disnake.ui.View):
         elif choice == "Fanclub":
             await interaction.response.send_modal(SetupModal("Fanclub", "ปรับแต่งช่องสตรีม", "ระบุแพลตฟอร์ม (คั่นด้วยเครื่องหมาย ,)", "เช่น Twitch, YouTube, TikTok"))
 
-# --- Temporary Room System (Pro Plan) ---
-async def perform_temproom_setup(guild, user_id=None):
-    # Check for Pro Plan
-    user_plan = await get_user_plan(str(guild.owner_id))
-    if user_plan["plan_type"] == "free":
-        return {"success": False, "error": "This feature is restricted to Pro Plan users."}
-
-    # Check for existing setup
-    existing_cat = disnake.utils.get(guild.categories, name="🔊 ⎯  TEMPORARY ZONES")
-    if existing_cat:
-        return {"success": False, "error": "Temporary Room system is already installed."}
-
-    # Create Category & Hub
-    cat = await guild.create_category(name="🔊 ⎯  TEMPORARY ZONES")
-    
-    # Hub Channel
-    hub = await guild.create_voice_channel(name="｜・➕：CREATE ROOM", category=cat)
-    
-    return {"success": True, "message": f"Temporary Room system installed! Hub: {hub.mention}"}
-
-@bot.command()
-async def setup_temproom(ctx):
-    result = await perform_temproom_setup(ctx.guild, str(ctx.author.id))
-    
-    if not result["success"]:
-        if "restricted" in result["error"] or "Pro Plan" in result["error"]:
-            embed = disnake.Embed(
-                title="💎 Feature Restricted",
-                description="ระบบห้องชั่วคราว (Temporary Room) สงวนสิทธิ์เฉพาะ **Pro Plan** ขึ้นไปเท่านั้นค่ะ! 🥺\n\n(This feature is for Pro Plan users only)",
-                color=disnake.Color.red()
-            )
-            await ctx.send(embed=embed)
-        else:
-            await ctx.send(f"⚠️ {result['error']}", delete_after=5)
-        return
-
-    # Success message
-    hub_mention = result['message'].split("Hub: ")[1]
-    await ctx.send(f"ติดตั้งระบบห้องชั่วคราวเรียบร้อยแล้วค่ะ! ✨\nลองกดเข้าห้อง {hub_mention} เพื่อสร้างห้องส่วนตัวได้เลยนะคะ Classy มากๆ เลยค๊าา 💅")
-
-@bot.event
-async def on_voice_state_update(member, before, after):
-    # 1. Check for Joining Hub
-    if after.channel and after.channel.name == "｜・➕：CREATE ROOM":
-        # Create Temp Room
-        guild = member.guild
-        cat = after.channel.category
-        
-        # Name Format: ｜・🔊：[NAME]
-        room_name = f"｜・🔊：{member.display_name.upper()}"
-        
-        # Permissions: Owner full control, Everyone view/connect/speak
-        overwrites = {
-            guild.default_role: disnake.PermissionOverwrite(view_channel=True, connect=True, speak=True),
-            member: disnake.PermissionOverwrite(manage_channels=True, connect=True, speak=True, mute_members=True, move_members=True)
-        }
-        
-        # Create & Move
-        temp_ch = await guild.create_voice_channel(name=room_name, category=cat, overwrites=overwrites)
-        try:
-            await member.move_to(temp_ch)
-        except:
-            await temp_ch.delete() # Cleanup if move fails
-            
-    # 2. Check for Leaving Temp Room (Cleanup)
-    if before.channel and before.channel.category and before.channel.category.name == "🔊 ⎯  TEMPORARY ZONES":
-        if before.channel.name != "｜・➕：CREATE ROOM":
-            # If empty, delete
-            if len(before.channel.members) == 0:
-                await before.channel.delete()
-
 class AnAnBot(commands.Bot):
     def __init__(self):
         intents = disnake.Intents.default()
@@ -705,6 +634,59 @@ class AnAnBot(commands.Bot):
         # Start web server as a background task
         self.web_server_task = asyncio.create_task(self.run_web_server())
         return await super().start(*args, **kwargs)
+
+    # --- Temporary Room System (Pro Plan) ---
+    async def perform_temproom_setup(self, guild, user_id=None):
+        # Check for Pro Plan
+        user_plan = await get_user_plan(str(guild.owner_id))
+        if user_plan["plan_type"] == "free":
+            return {"success": False, "error": "This feature is restricted to Pro Plan users."}
+
+        # Check for existing setup
+        existing_cat = disnake.utils.get(guild.categories, name="🔊 ⎯  TEMPORARY ZONES")
+        if existing_cat:
+            return {"success": False, "error": "Temporary Room system is already installed."}
+
+        # Create Category & Hub
+        cat = await guild.create_category(name="🔊 ⎯  TEMPORARY ZONES")
+        
+        # Hub Channel
+        hub = await guild.create_voice_channel(name="｜・➕：CREATE ROOM", category=cat)
+        
+        return {"success": True, "message": f"Temporary Room system installed! Hub: {hub.mention}"}
+
+    # Commands must be registered inside setup or via @bot.command if instance exists, 
+    # BUT since we are inside class, we use @commands.command/listener and self
+
+    async def on_voice_state_update(self, member, before, after):
+        # 1. Check for Joining Hub
+        if after.channel and after.channel.name == "｜・➕：CREATE ROOM":
+            # Create Temp Room
+            guild = member.guild
+            cat = after.channel.category
+            
+            # Name Format: ｜・🔊：[NAME]
+            room_name = f"｜・🔊：{member.display_name.upper()}"
+            
+            # Permissions: Owner full control, Everyone view/connect/speak
+            overwrites = {
+                guild.default_role: disnake.PermissionOverwrite(view_channel=True, connect=True, speak=True),
+                member: disnake.PermissionOverwrite(manage_channels=True, connect=True, speak=True, mute_members=True, move_members=True)
+            }
+            
+            # Create & Move
+            temp_ch = await guild.create_voice_channel(name=room_name, category=cat, overwrites=overwrites)
+            try:
+                await member.move_to(temp_ch)
+            except:
+                await temp_ch.delete() # Cleanup if move fails
+                
+        # 2. Check for Leaving Temp Room (Cleanup)
+        if before.channel and before.channel.category and before.channel.category.name == "🔊 ⎯  TEMPORARY ZONES":
+            if before.channel.name != "｜・➕：CREATE ROOM":
+                # If empty, delete
+                if len(before.channel.members) == 0:
+                    await before.channel.delete()
 
     async def run_web_server(self):
         app = web.Application()
@@ -749,7 +731,7 @@ class AnAnBot(commands.Bot):
                 return web.json_response({"status": "success", "message": f"Setup for {template_name} triggered"})
             
             elif action == "setup_temproom":
-                result = await perform_temproom_setup(guild, user_id)
+                result = await self.perform_temproom_setup(guild, user_id)
                 if result["success"]:
                     return web.json_response({"status": "success", "message": result["message"]})
                 else:

@@ -116,3 +116,5 @@
 [2026-01-20 06:35] | File: anan_bot.py | Line: 622-675 | Keyword: Temporary Room System | Status: Success | Change: เพิ่มระบบ Temporary Room (Pro Feature) พร้อมเช็คสิทธิ์ Pro Plan และดีไซน์แบบ ｜・[Emoji]：[Name] ตามที่คุณต้องการ 🔊✨➕
 
 [2026-01-20 06:40] | File: dashboard/app/servers/[id]/page.js | Line: 656-666 | Keyword: Plugin Card | Status: Success | Change: เพิ่ม Plugin Card "Temporary Rooms" บน Dashboard พร้อม Badge "PRO" และเชื่อมต่อกับ API บอทเรียบร้อยแล้วค่ะ! 🔊💅💎
+
+[2026-01-20 06:45] | File: anan_bot.py | Line: 620-750 | Keyword: Refactor | Status: Fixed | Change: ย้ายฟังก์ชัน setup_temproom และ on_voice_state_update เข้าไปในคลาส AnAnBot เพื่อแก้ไขปัญหา NameError: name 'bot' is not defined และให้ทำงานร่วมกับ API ได้ถูกต้องค่ะ 🔧🐞
