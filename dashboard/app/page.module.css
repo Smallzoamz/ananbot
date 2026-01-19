@@ -233,22 +233,6 @@
 .portalEmoji {
   font-size: 80px;
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
-  display: none;
-  /* Hide emoji if using banner */
-}
-
-.heroBannerImg {
-  width: 100%;
-  max-width: 900px;
-  height: auto;
-  border-radius: 24px;
-  box-shadow: 0 20px 50px rgba(255, 133, 193, 0.3);
-  transition: transform 0.3s;
-  cursor: pointer;
-}
-
-.heroBannerImg:hover {
-  transform: scale(1.02);
 }
 
 @keyframes float {

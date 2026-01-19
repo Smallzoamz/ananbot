@@ -241,14 +241,11 @@ export default function Home() {
         <section className={styles.heroSection}>
           <div className={styles.heroContent}>
             <div className={styles.illustrationWrapper}>
-              {/* <div className={styles.portalEmoji}>🌸✨</div> */}
-              <img src="/images/og-banner.png" alt="An An Bot" className={styles.heroBannerImg} />
+              <div className={styles.portalEmoji}>🌸✨</div>
             </div>
-            {/* 
             <h1 className={styles.heroTitle}>{t.hero.title}</h1>
             <p className={styles.heroText}>{t.hero.desc}</p>
-            */}
-            <div className={styles.heroActions} style={{ marginTop: '20px', justifyContent: 'center', width: '100%' }}>
+            <div className={styles.heroActions}>
               <button className={styles.heroMainBtn} onClick={handleInvite}>{t.hero.cta}</button>
               <button className={styles.heroAltBtn} onClick={scrollToFeatures}>{t.hero.altCta}</button>
             </div>
