@@ -34,11 +34,20 @@ export const metadata = {
     siteName: 'An An Bot',
     locale: 'en_US',
     type: 'website',
+    images: [
+      {
+        url: '/images/og-banner.png?v=2',
+        width: 1200,
+        height: 630,
+        alt: 'An An Bot Hero Banner',
+      }
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: "An An Bot | Premium Management Panel",
     description: "Manage your server with heart, precision, and beautiful aesthetic layouts.",
+    images: ['/images/og-banner.png?v=2'],
   },
   icons: {
     icon: '/favicon.ico',
