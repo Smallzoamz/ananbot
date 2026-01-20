@@ -190,7 +190,7 @@ export default function WelcomeSettings() {
                                 <label>Welcome Channel</label>
                                 <select
                                     className="glass-input"
-                                    value={settings.welcome_channel_id}
+                                    value={settings.welcome_channel_id || ""}
                                     onChange={(e) => setSettings({ ...settings, welcome_channel_id: e.target.value })}
                                 >
                                     <option value="">Search for a channel...</option>
@@ -205,7 +205,7 @@ export default function WelcomeSettings() {
                                     className="glass-input"
                                     rows="4"
                                     placeholder="ทักทายคุณ {user} ที่ได้ก้าวเข้าสู่ครอบครัวของเรานะคะ! 🌸\nAn An ดีใจมากเลยค่ะที่มีสมาชิกเพิ่มขึ้นอีกท่านแล้ว ✨"
-                                    value={settings.welcome_message}
+                                    value={settings.welcome_message || ""}
                                     onChange={(e) => setSettings({ ...settings, welcome_message: e.target.value })}
                                 ></textarea>
                                 <span className="input-hint">Use <b>{"{user}"}</b>, <b>{"{guild}"}</b>, <b>{"{count}"}</b> as placeholders.</span>
@@ -217,7 +217,7 @@ export default function WelcomeSettings() {
                                     type="text"
                                     className="glass-input"
                                     placeholder="https://media.giphy.com/media/.../giphy.gif"
-                                    value={settings.welcome_image_url}
+                                    value={settings.welcome_image_url || ""}
                                     onChange={(e) => setSettings({ ...settings, welcome_image_url: e.target.value })}
                                 />
                                 <span className="input-hint">Leave empty to use the default welcome GIF.</span>
@@ -251,7 +251,7 @@ export default function WelcomeSettings() {
                                 <label>Goodbye Channel</label>
                                 <select
                                     className="glass-input"
-                                    value={settings.goodbye_channel_id}
+                                    value={settings.goodbye_channel_id || ""}
                                     onChange={(e) => setSettings({ ...settings, goodbye_channel_id: e.target.value })}
                                 >
                                     <option value="">Search for a channel...</option>
@@ -266,7 +266,7 @@ export default function WelcomeSettings() {
                                     className="glass-input"
                                     rows="4"
                                     placeholder="ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหมีกครั้งค่ะ 🌸"
-                                    value={settings.goodbye_message}
+                                    value={settings.goodbye_message || ""}
                                     onChange={(e) => setSettings({ ...settings, goodbye_message: e.target.value })}
                                 ></textarea>
                                 <span className="input-hint" style={{ color: 'var(--primary)', fontWeight: '800' }}>✨ Leave empty to use An An's Default Goodbye message!</span>
@@ -277,7 +277,7 @@ export default function WelcomeSettings() {
                                     type="text"
                                     className="glass-input"
                                     placeholder="https://media.giphy.com/media/.../giphy.gif"
-                                    value={settings.goodbye_image_url}
+                                    value={settings.goodbye_image_url || ""}
                                     onChange={(e) => setSettings({ ...settings, goodbye_image_url: e.target.value })}
                                 />
                             </div>

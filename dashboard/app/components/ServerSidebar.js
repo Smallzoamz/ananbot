@@ -70,16 +70,17 @@ export default function ServerSidebar() {
                 </div>
                 <div className={`menu-item ${isActive(`/servers/${guildId}/leaderboard`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/leaderboard`)}>
                     {t.sidebar.leaderboard}
-                    <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}><CrownIcon /></span>
+                    <span className="crown-badge-bubble"><CrownIcon /></span>
                 </div>
                 <div className={`menu-item ${isActive(`/servers/${guildId}/personalizer`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/personalizer`)}>
                     {t.sidebar.personalizer}
+                    <span className="crown-badge-bubble" style={{ marginLeft: 'auto' }}><CrownIcon /></span>
                 </div>
 
                 <div className="menu-category">{t.sidebar.catEssentials}</div>
                 <div className={`menu-item ${isActive(`/servers/${guildId}/welcome`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/welcome`)}>
                     {t.sidebar.welcome}
-                    <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px', marginLeft: 'auto' }}><CrownIcon /></span>
+                    <span className="crown-badge-bubble" style={{ marginLeft: 'auto' }}><CrownIcon /></span>
                 </div>
                 <div className="menu-item">{t.sidebar.reaction}</div>
                 <div className="menu-item">{t.sidebar.moderator}</div>

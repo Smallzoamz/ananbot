@@ -39,7 +39,7 @@ export default function ServerHeader() {
                 <div className="header-icon">🔔</div>
                 <div className="user-profile-wrapper" ref={profileRef}>
                     <div className="user-profile" onClick={() => setIsProfileOpen(!isProfileOpen)}>
-                        <img src={session?.user?.image || "/ANAN1.png"} alt="U" />
+                        <img src={session?.user?.image || "/assets/mascot/ANAN1.png"} alt="U" />
                     </div>
                     {isProfileOpen && (
                         <div className="profile-dropdown glass animate-pop">

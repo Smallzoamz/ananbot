@@ -1,10 +1,11 @@
 "use client";
-import React, { useState } from "react";
-import { signOut } from "next-auth/react";
+import React, { useState, useEffect } from "react";
+import { signOut, useSession } from "next-auth/react";
 import { useLanguage } from "../../../context/LanguageContext";
 import { useServer } from "../../../context/ServerContext";
 
 export default function PersonalizerPage() {
+    const { data: session } = useSession();
     const { t } = useLanguage();
     const { guildId, userPlan, loading: serverLoading } = useServer();
 
@@ -14,9 +15,25 @@ export default function PersonalizerPage() {
         bot_bio: "Cheerfully serving Papa! 🌸✨",
         activity_type: "LISTENING", // PLAYING, LISTENING, WATCHING, COMPETING
         status_text: "/help",
-        avatar_url: "/ANAN1.png",
+        avatar_url: "/assets/mascot/ANAN1.png",
         banner_color: "#ff85c1"
     });
+
+    useEffect(() => {
+        if (!guildId) return;
+        const fetchSettings = async () => {
+            try {
+                const res = await fetch(`/api/proxy/guild/${guildId}/settings`);
+                const data = await res.json();
+                if (data && !data.error) {
+                    setSettings(prev => ({ ...prev, ...data }));
+                }
+            } catch (err) {
+                console.error("Failed to fetch personalizer settings:", err);
+            }
+        };
+        fetchSettings();
+    }, [guildId]);
 
     const handleSave = async () => {
         if (userPlan.plan_type === 'free') return;
@@ -28,6 +45,7 @@ export default function PersonalizerPage() {
                 body: JSON.stringify({
                     action: "save_personalizer_settings",
                     guild_id: guildId,
+                    user_id: session?.user?.id,
                     settings: settings
                 })
             });
@@ -54,23 +72,44 @@ export default function PersonalizerPage() {
         COMPETING: "Competing in"
     };
 
+    const isPro = userPlan.plan_type !== 'free';
+
     return (
         <>
             <div className="personalizer-header-actions">
                 <h2>{t.personalizer.title}</h2>
-                <button
-                    className={`save-btn ${saving ? 'loading' : ''}`}
-                    onClick={handleSave}
-                    disabled={saving || userPlan.plan_type === 'free'}
-                >
-                    {saving ? "Saving..." : "Save Changes ✨"}
-                </button>
+                {isPro ? (
+                    <button
+                        className={`save-btn ${saving ? 'loading' : ''}`}
+                        onClick={handleSave}
+                        disabled={saving}
+                    >
+                        {saving ? "Saving..." : "Save Changes ✨"}
+                    </button>
+                ) : (
+                    <button className="unlock-btn-header" onClick={() => alert("Please upgrade to Pro to unlock this feature! 💎")}>
+                        Unlock Personalizer 🔒
+                    </button>
+                )}
             </div>
 
             <div className="personalizer-layout animate-fade">
                 {/* Forms Column */}
                 <div className="forms-col">
-                    <div className="settings-card glass">
+                    <div className={`settings-card glass ${!isPro ? 'locked' : ''}`}>
+                        {!isPro && (
+                            <div className="pro-lock-overlay">
+                                <div className="lock-content">
+                                    <div className="lock-icon">🔒</div>
+                                    <h3>Pro Feature</h3>
+                                    <p>Unlock custom bot branding, status, and profile customization!</p>
+                                    <button className="unlock-btn" onClick={() => alert("Open Pricing Modal (Simulated)")}>
+                                        Unlock Bot Personalizer
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         <h3>{t.personalizer.nickname}</h3>
                         <p className="sc-desc">{t.personalizer.nicknameDesc}</p>
                         <div className="input-group">
@@ -80,6 +119,7 @@ export default function PersonalizerPage() {
                                 value={settings.bot_nickname}
                                 onChange={(e) => setSettings({ ...settings, bot_nickname: e.target.value })}
                                 placeholder="An An"
+                                disabled={!isPro}
                             />
                         </div>
 
@@ -94,6 +134,7 @@ export default function PersonalizerPage() {
                                     className="glass-input"
                                     value={settings.activity_type}
                                     onChange={(e) => setSettings({ ...settings, activity_type: e.target.value })}
+                                    disabled={!isPro}
                                 >
                                     <option value="PLAYING">Playing</option>
                                     <option value="LISTENING">Listening to</option>
@@ -109,16 +150,24 @@ export default function PersonalizerPage() {
                                     value={settings.status_text}
                                     onChange={(e) => setSettings({ ...settings, status_text: e.target.value })}
                                     placeholder={t.personalizer.statusPlaceholder}
+                                    disabled={!isPro}
                                 />
                             </div>
                         </div>
 
                         <div className="divider"></div>
 
-                        <h3>Appearance (Coming Soon)</h3>
+                        <h3>Appearance (Custom Bot)</h3>
                         <div className="input-group">
                             <label>{t.personalizer.avatarUrl}</label>
-                            <input type="text" className="glass-input" disabled value={settings.avatar_url} />
+                            <input
+                                type="text"
+                                className="glass-input"
+                                value={settings.avatar_url}
+                                onChange={(e) => setSettings({ ...settings, avatar_url: e.target.value })}
+                                placeholder="https://..."
+                                disabled={!isPro}
+                            />
                         </div>
                         <div className="input-group">
                             <label>{t.personalizer.bio}</label>
@@ -128,6 +177,7 @@ export default function PersonalizerPage() {
                                 value={settings.bot_bio}
                                 onChange={(e) => setSettings({ ...settings, bot_bio: e.target.value })}
                                 placeholder={t.personalizer.bioPlaceholder}
+                                disabled={!isPro}
                             />
                         </div>
                     </div>
@@ -142,7 +192,7 @@ export default function PersonalizerPage() {
                             <span className="dp-label">{t.personalizer.memberList}</span>
                             <div className="member-item">
                                 <div className="avatar-wrapper">
-                                    <img src={settings.avatar_url} alt="B" />
+                                    <img src={settings.avatar_url} alt="B" onError={(e) => e.target.src = "/assets/mascot/ANAN1.png"} />
                                     <div className="status-indicator online"></div>
                                 </div>
                                 <div className="member-info">
@@ -163,7 +213,7 @@ export default function PersonalizerPage() {
                                 <div className="profile-banner" style={{ background: settings.banner_color }}></div>
                                 <div className="profile-body">
                                     <div className="profile-avatar-wrapper">
-                                        <img src={settings.avatar_url} alt="B" />
+                                        <img src={settings.avatar_url} alt="B" onError={(e) => e.target.src = "/assets/mascot/ANAN1.png"} />
                                         <div className="status-indicator-large online"></div>
                                     </div>
                                     <div className="profile-content">
@@ -180,10 +230,16 @@ export default function PersonalizerPage() {
                                         <div className="profile-section">
                                             <h5>{activityLabel[settings.activity_type].toUpperCase()}</h5>
                                             <div className="profile-activity">
-                                                <div className="activity-icon">🌸</div>
+                                                <div className="activity-icon">
+                                                    {settings.activity_type === 'PLAYING' ? '🎮' :
+                                                        settings.activity_type === 'LISTENING' ? '🎵' :
+                                                            settings.activity_type === 'WATCHING' ? '📺' : '🏆'}
+                                                </div>
                                                 <div className="activity-details">
                                                     <div className="activity-name">{settings.status_text}</div>
-                                                    <div className="activity-state">Working hard for Papa!</div>
+                                                    <div className="activity-state">
+                                                        {settings.activity_type === 'LISTENING' ? 'Spotify' : 'An An Bot'}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -201,10 +257,66 @@ export default function PersonalizerPage() {
                 .save-btn { background: #ff85c1; color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(255,133,193,0.3); transition: 0.3s; }
                 .save-btn:hover:not(:disabled) { transform: scale(1.05); filter: brightness(1.1); }
                 .save-btn:disabled { background: #cbd5e1; cursor: not-allowed; box-shadow: none; }
+                
+                .unlock-btn-header {
+                    background: linear-gradient(135deg, #FFD700, #FFA500);
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 10px;
+                    font-weight: 900;
+                    cursor: pointer;
+                    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+                    transition: 0.3s;
+                }
+                .unlock-btn-header:hover { transform: scale(1.05); filter: brightness(1.1); }
 
                 .personalizer-layout { display: grid; grid-template-columns: 1fr 400px; gap: 40px; }
                 
-                .settings-card { padding: 40px; border-radius: 24px; }
+                .settings-card { padding: 40px; border-radius: 24px; position: relative; overflow: hidden; }
+                .settings-card.locked { filter: grayscale(0.8); pointer-events: none; user-select: none; }
+                
+                .pro-lock-overlay {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(255, 255, 255, 0.6);
+                    backdrop-filter: blur(4px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10;
+                    pointer-events: auto; /* Enable clicks on button */
+                }
+                
+                .lock-content {
+                    text-align: center;
+                    background: white;
+                    padding: 30px;
+                    border-radius: 20px;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+                    border: 1px solid rgba(255, 215, 0, 0.3);
+                }
+                
+                .lock-icon { font-size: 40px; margin-bottom: 15px; }
+                .lock-content h3 { font-size: 20px; font-weight: 900; color: #4a4a68; margin-bottom: 10px; }
+                .lock-content p { color: #6b7280; margin-bottom: 20px; font-size: 14px; max-width: 250px; margin-left: auto; margin-right: auto; }
+                
+                .unlock-btn {
+                    background: linear-gradient(135deg, #FFD700, #FFA500);
+                    color: white;
+                    border: none;
+                    padding: 12px 30px;
+                    border-radius: 12px;
+                    font-weight: 900;
+                    cursor: pointer;
+                    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+                    transition: 0.3s;
+                }
+                .unlock-btn:hover { transform: scale(1.05); }
+
                 .settings-card h3 { font-size: 18px; font-weight: 850; margin-bottom: 5px; }
                 .sc-desc { color: #6b7280; font-size: 14px; margin-bottom: 20px; }
                 .divider { height: 1px; background: rgba(0,0,0,0.05); margin: 30px 0; }
@@ -214,6 +326,7 @@ export default function PersonalizerPage() {
                 .input-row { display: flex; gap: 20px; }
                 .glass-input { width: 100%; background: white; border: 2px solid #f3f4f6; border-radius: 14px; padding: 12px 16px; font-size: 14px; outline: none; transition: 0.3s; }
                 .glass-input:focus { border-color: var(--primary); }
+                .glass-input:disabled { background: #f9fafb; cursor: not-allowed; }
 
                 /* Discord Preview Styles */
                 .preview-sticky { position: sticky; top: 120px; }
@@ -223,31 +336,32 @@ export default function PersonalizerPage() {
 
                 /* Member List Item */
                 .member-item { display: flex; align-items: center; gap: 12px; }
-                .avatar-wrapper { position: relative; width: 32px; height: 32px; }
+                .avatar-wrapper { position: relative; width: 32px; height: 32px; flex-shrink: 0; }
                 .avatar-wrapper img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
                 .status-indicator { position: absolute; bottom: -2px; right: -2px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #2f3136; }
                 .online { background: #3ba55c; }
                 .member-info { display: flex; flex-direction: column; overflow: hidden; }
-                .member-name { color: #8e9297; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 5px; }
-                .bot-tag { background: #5865f2; color: white; font-size: 9px; padding: 1px 4px; border-radius: 3px; font-weight: 700; }
-                .member-status { color: #b9bbbe; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                .member-name { color: #8e9297; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+                .bot-tag { background: #5865f2; color: white; font-size: 10px; padding: 0px 4px; border-radius: 3px; line-height: 1.5; font-weight: 600; display: inline-flex; align-items: center; height: 15px; margin-top: 2px; }
+                .bot-tag::before { content: "✓"; margin-right: 2px; font-size: 8px; }
+                .member-status { color: #b9bbbe; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; margin-top: 2px; }
 
                 /* Profile Card */
-                .profile-card { background: #18191c; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
-                .profile-banner { height: 60px; }
-                .profile-body { padding: 0 16px 16px; margin-top: -30px; }
-                .profile-avatar-wrapper { position: relative; width: 80px; height: 80px; margin-bottom: 10px; }
-                .profile-avatar-wrapper img { width: 100%; height: 100%; border-radius: 50%; border: 6px solid #18191c; object-fit: cover; }
-                .status-indicator-large { position: absolute; bottom: 5px; right: 5px; width: 16px; height: 16px; border-radius: 50%; border: 4px solid #18191c; }
-                .profile-name { color: white; font-weight: 700; font-size: 18px; display: flex; align-items: center; gap: 8px; }
-                .profile-username { color: #b9bbbe; font-size: 13px; margin-bottom: 12px; }
-                .profile-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 12px 0; }
-                .profile-section h5 { color: white; font-size: 11px; font-weight: 800; margin-bottom: 8px; }
-                .profile-bio { color: #dcddde; font-size: 13px; line-height: 1.4; margin-bottom: 15px; }
+                .profile-card { background: #111214; border-radius: 8px; overflow: hidden; box-shadow: 0 8px 16px rgba(0,0,0,0.3); }
+                .profile-banner { height: 60px; background-color: #ff85c1; }
+                .profile-body { padding: 0 16px 16px; margin-top: -30px; position: relative; }
+                .profile-avatar-wrapper { position: relative; width: 80px; height: 80px; margin-bottom: 12px; border-radius: 50%; background: #111214; padding: 6px; }
+                .profile-avatar-wrapper img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
+                .status-indicator-large { position: absolute; bottom: 5px; right: 5px; width: 22px; height: 22px; border-radius: 50%; border: 4px solid #111214; background: #3ba55c; }
+                .profile-name { color: white; font-weight: 700; font-size: 20px; display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+                .profile-username { color: #b9bbbe; font-size: 14px; margin-bottom: 16px; }
+                .profile-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 12px 0; }
+                .profile-section h5 { color: #b9bbbe; font-size: 12px; font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
+                .profile-bio { color: #dcddde; font-size: 14px; line-height: 1.4; margin-bottom: 16px; }
                 .profile-activity { display: flex; gap: 12px; align-items: center; }
-                .activity-icon { font-size: 24px; width: 40px; height: 40px; background: #2f3136; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-                .activity-name { color: white; font-weight: 700; font-size: 14px; }
-                .activity-state { color: #b9bbbe; font-size: 13px; }
+                .activity-icon { font-size: 24px; width: 44px; height: 44px; background: #2f3136; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+                .activity-name { color: white; font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+                .activity-state { color: #b9bbbe; font-size: 12px; }
 
                 /* Transitions */
                 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }

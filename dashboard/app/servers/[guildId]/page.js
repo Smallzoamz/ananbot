@@ -4,7 +4,15 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useLanguage } from "../../context/LanguageContext";
 import { useServer } from "../../context/ServerContext";
+import { createPortal } from "react-dom";
 import { CrownIcon } from "../../components/Icons";
+
+const Portal = ({ children }) => {
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => setMounted(true), []);
+    if (!mounted) return null;
+    return createPortal(children, document.body);
+};
 
 export default function GuildDashboard() {
     const { data: session, status: authStatus } = useSession();
@@ -240,446 +248,456 @@ export default function GuildDashboard() {
         <>
             {/* Membership Pricing Modal */}
             {showPricingModal && (
-                <div className="modal-overlay blur-in" onClick={() => setShowPricingModal(false)} style={{ zIndex: 3000 }}>
-                    <div className="pricing-modal glass animate-pop" onClick={e => e.stopPropagation()}>
-                        <div className="pricing-header">
-                            <h2>Choose Your <span>Power</span> 👑</h2>
-                            <p>Unlock exclusive features to grow your community 🌸</p>
-                            <button className="close-x" onClick={() => setShowPricingModal(false)}>×</button>
-                        </div>
-                        <div className="pricing-grid">
-                            <div className="pricing-card">
-                                <div className="p-tier">FREE</div>
-                                <div className="p-price">$0 <span>/month</span></div>
-                                <ul className="p-features">
-                                    <li>✅ Basic Template Deploy</li>
-                                    <li>✅ Daily Missions</li>
-                                    <li>✅ General Commands</li>
-                                </ul>
-                                <button className="p-btn disabled">Current Plan</button>
+                <Portal>
+                    <div className="fixed-overlay z-pricing blur-in" onClick={() => setShowPricingModal(false)}>
+                        <div className="pricing-modal glass animate-pop" onClick={e => e.stopPropagation()}>
+                            <div className="pricing-header">
+                                <h2>Choose Your <span>Power</span> 👑</h2>
+                                <p>Unlock exclusive features to grow your community 🌸</p>
+                                <button className="close-x" onClick={() => setShowPricingModal(false)}>×</button>
                             </div>
-                            <div className="pricing-card featured pro">
-                                <div className="p-tier">PRO 💎</div>
-                                <div className="p-price">$4.99 <span>/month</span></div>
-                                <ul className="p-features">
-                                    <li>✅ All Free Features</li>
-                                    <li>✅ Pro Badge on Profile</li>
-                                    <li>✅ anan-terminal Access</li>
-                                    <li>✅ Advanced Management</li>
-                                </ul>
-                                <button className="p-btn pro">Get Pro 🚀</button>
+                            <div className="pricing-grid">
+                                <div className="pricing-card">
+                                    <div className="p-tier">FREE</div>
+                                    <div className="p-price">$0 <span>/month</span></div>
+                                    <ul className="p-features">
+                                        <li>✅ Basic Template Deploy</li>
+                                        <li>✅ Daily Missions</li>
+                                        <li>✅ General Commands</li>
+                                    </ul>
+                                    <button className="p-btn disabled">Current Plan</button>
+                                </div>
+                                <div className="pricing-card featured pro">
+                                    <div className="p-tier">PRO 💎</div>
+                                    <div className="p-price">$4.99 <span>/month</span></div>
+                                    <ul className="p-features">
+                                        <li>✅ All Free Features</li>
+                                        <li>✅ Pro Badge on Profile</li>
+                                        <li>✅ anan-terminal Access</li>
+                                        <li>✅ Advanced Management</li>
+                                    </ul>
+                                    <button className="p-btn pro">Get Pro 🚀</button>
+                                </div>
+                                <div className="pricing-card featured premium">
+                                    <div className="p-badge-promo">BEST VALUE</div>
+                                    <div className="p-tier">PREMIUM ✨</div>
+                                    <div className="p-price">$9.99 <span>/month</span></div>
+                                    <ul className="p-features">
+                                        <li>✅ Everything in Pro</li>
+                                        <li>✅ Lifetime Updates</li>
+                                        <li>✅ Custom Bot Branding</li>
+                                        <li>✅ Priority Support 24/7</li>
+                                    </ul>
+                                    <button className="p-btn premium">Get Premium 👑</button>
+                                </div>
                             </div>
-                            <div className="pricing-card featured premium">
-                                <div className="p-badge-promo">BEST VALUE</div>
-                                <div className="p-tier">PREMIUM ✨</div>
-                                <div className="p-price">$9.99 <span>/month</span></div>
-                                <ul className="p-features">
-                                    <li>✅ Everything in Pro</li>
-                                    <li>✅ Lifetime Updates</li>
-                                    <li>✅ Custom Bot Branding</li>
-                                    <li>✅ Priority Support 24/7</li>
-                                </ul>
-                                <button className="p-btn premium">Get Premium 👑</button>
+                            <div className="pricing-footer">
+                                <p>An An will handle everything for Papa! 🌸💖</p>
                             </div>
-                        </div>
-                        <div className="pricing-footer">
-                            <p>An An will handle everything for Papa! 🌸💖</p>
                         </div>
                     </div>
-                </div>
+                </Portal>
             )}
 
+            {/* Confirmation Modal */}
             {showConfirmModal && (
-                <div className="modal-overlay blur-in" style={{ zIndex: 3500 }}>
-                    <div className="modal-card glass animate-pop">
-                        <div className="modal-icon">⚠️</div>
-                        <h2>{t.dashboard.modal.confirm}</h2>
-                        <p>
-                            This will <strong>wipe all channels and roles</strong> instantly to prepare for a clean deployment.
-                            This action is permanent and cannot be undone!
-                        </p>
-                        <div className="modal-actions">
-                            <button className="modal-btn secondary" onClick={() => setShowConfirmModal(false)}>No, take me back! 🌸</button>
-                            <button className="modal-btn primary-danger" onClick={() => handleAction(pendingAction.action, pendingAction.template)}>Yes, Clean & Reset! 🚀</button>
+                <Portal>
+                    <div className="fixed-overlay z-overlay-base blur-in">
+                        <div className="modal-card glass animate-pop">
+                            <h2 style={{ fontSize: '24px', fontWeight: '900', color: '#4a4a68', marginBottom: '15px' }}>Wait a sec! 🚨</h2>
+                            <p style={{ fontSize: '16px', color: '#6b7280', marginBottom: '30px' }}>
+                                Are you sure you want to <strong>{pendingAction.action}</strong>?
+                                <br />This will wipe existing data!
+                            </p>
+                            <div className="modal-actions">
+                                <button className="modal-btn secondary" onClick={() => setShowConfirmModal(false)}>No, take me back! 🌸</button>
+                                <button className="modal-btn primary-danger" onClick={() => handleAction(pendingAction.action, pendingAction.template)}>Yes, Clean & Reset! 🚀</button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </Portal>
             )}
 
             {/* Advanced Permissions Modal */}
             {showPermsModal && activeRoleIndex !== null && (
-                <div className="modal-overlay blur-in" style={{ zIndex: 4000 }}>
-                    <div className="modal-card perms-modal glass animate-pop">
-                        <div className="modal-header">
-                            <div>
-                                <h2>Advanced Permissions</h2>
-                                <p>Configure granular rights for <strong>{customRoles[activeRoleIndex]?.name || 'Role'}</strong></p>
+                <Portal>
+                    <div className="fixed-overlay z-perms blur-in">
+                        <div className="modal-card perms-modal glass animate-pop">
+                            <div className="modal-header">
+                                <div>
+                                    <h2>Advanced Permissions</h2>
+                                    <p>Configure granular rights for <strong>{customRoles[activeRoleIndex]?.name || 'Role'}</strong></p>
+                                </div>
+                                <button className="modal-close" onClick={() => setShowPermsModal(false)}>×</button>
                             </div>
-                            <button className="modal-close" onClick={() => setShowPermsModal(false)}>×</button>
-                        </div>
-                        <div className="perms-grid">
-                            {availablePermissions.map(p => {
-                                const currentBitmask = BigInt(customRoles[activeRoleIndex]?.permissions_bitmask || 0);
-                                const permValue = BigInt(p.value);
-                                const isSet = (currentBitmask & permValue) === permValue;
+                            <div className="perms-grid">
+                                {availablePermissions.map(p => {
+                                    const currentBitmask = BigInt(customRoles[activeRoleIndex]?.permissions_bitmask || 0);
+                                    const permValue = BigInt(p.value);
+                                    const isSet = (currentBitmask & permValue) === permValue;
 
-                                return (
-                                    <div
-                                        key={p.id}
-                                        className={`perm-toggle-item ${isSet ? 'active' : ''}`}
-                                        onClick={() => {
-                                            const newRoles = [...customRoles];
-                                            let newBitmask;
-                                            if (isSet) {
-                                                newBitmask = currentBitmask & ~permValue;
-                                            } else {
-                                                newBitmask = currentBitmask | permValue;
-                                            }
-                                            newRoles[activeRoleIndex].permissions_bitmask = newBitmask.toString();
-                                            setCustomRoles(newRoles);
-                                        }}
-                                    >
-                                        <div className="perm-info">
-                                            <span className="p-name">{p.name}</span>
-                                            <span className="p-id">{p.id}</span>
+                                    return (
+                                        <div
+                                            key={p.id}
+                                            className={`perm-toggle-item ${isSet ? 'active' : ''}`}
+                                            onClick={() => {
+                                                const newRoles = [...customRoles];
+                                                let newBitmask;
+                                                if (isSet) {
+                                                    newBitmask = currentBitmask & ~permValue;
+                                                } else {
+                                                    newBitmask = currentBitmask | permValue;
+                                                }
+                                                newRoles[activeRoleIndex].permissions_bitmask = newBitmask.toString();
+                                                setCustomRoles(newRoles);
+                                            }}
+                                        >
+                                            <div className="perm-info">
+                                                <span className="p-name">{p.name}</span>
+                                                <span className="p-id">{p.id}</span>
+                                            </div>
+                                            <div className="p-switch">
+                                                <div className="switch-knob"></div>
+                                            </div>
                                         </div>
-                                        <div className="p-switch">
-                                            <div className="switch-knob"></div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <div className="modal-actions">
-                            <button className="modal-btn primary" onClick={() => setShowPermsModal(false)}>Save & Close</button>
-                            <button className="modal-btn ghost" onClick={() => {
-                                const newRoles = [...customRoles];
-                                delete newRoles[activeRoleIndex].permissions_bitmask;
-                                setCustomRoles(newRoles);
-                                setShowPermsModal(false);
-                            }}>Reset to Default</button>
+                                    );
+                                })}
+                            </div>
+                            <div className="modal-actions">
+                                <button className="modal-btn primary" onClick={() => setShowPermsModal(false)}>Save & Close</button>
+                                <button className="modal-btn ghost" onClick={() => {
+                                    const newRoles = [...customRoles];
+                                    delete newRoles[activeRoleIndex].permissions_bitmask;
+                                    setCustomRoles(newRoles);
+                                    setShowPermsModal(false);
+                                }}>Reset to Default</button>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </Portal>
             )}
 
             {/* Setup Selection Modal */}
             {showSetupModal && (
-                <div className="modal-overlay blur-in" style={{ zIndex: 2900 }}>
-                    <div className={`modal-card glass animate-pop-slow ${setupStep === 'custom_roles' || setupStep === 'custom_zones' ? 'setup-modal' : ''}`}>
-                        <div className="modal-header">
-                            <div>
-                                <h2>{t.dashboard.modal.title}</h2>
-                                <p>
-                                    {setupStep === 'custom_roles' ? t.dashboard.modal.stepCustomRoles :
-                                        setupStep === 'custom_zones' ? t.dashboard.modal.stepCustomZones :
-                                            `Phase ${setupStep} of 3 • ${setupStep === 1 ? t.dashboard.modal.step1 : setupStep === 2 ? t.dashboard.modal.step2 : t.dashboard.modal.step3}`}
-                                </p>
+                <Portal>
+                    <div className="fixed-overlay z-setup blur-in">
+                        <div className={`modal-card glass animate-pop-slow ${setupStep === 'custom_roles' || setupStep === 'custom_zones' ? 'setup-modal' : ''}`}>
+                            <div className="modal-header">
+                                <div>
+                                    <h2>{t.dashboard.modal.title}</h2>
+                                    <p>
+                                        {setupStep === 'custom_roles' ? t.dashboard.modal.stepCustomRoles :
+                                            setupStep === 'custom_zones' ? t.dashboard.modal.stepCustomZones :
+                                                `Phase ${setupStep} of 3 • ${setupStep === 1 ? t.dashboard.modal.step1 : setupStep === 2 ? t.dashboard.modal.step2 : t.dashboard.modal.step3}`}
+                                    </p>
+                                </div>
+                                <button className="modal-close" onClick={() => setShowSetupModal(false)}>×</button>
                             </div>
-                            <button className="modal-close" onClick={() => setShowSetupModal(false)}>×</button>
-                        </div>
 
-                        {setupStep === 1 && (
-                            <div className="setup-grid">
-                                <div className="setup-option" onClick={() => { setSelectedTemplate("Shop"); setSetupStep(2); }}>
-                                    <div className="so-icon">🛒</div>
-                                    <div className="so-info">
-                                        <h4>Shop (ร้านค้า)</h4>
-                                        <p>Optimized for selling nitro & services.</p>
+                            {setupStep === 1 && (
+                                <div className="setup-grid">
+                                    <div className="setup-option" onClick={() => { setSelectedTemplate("Shop"); setSetupStep(2); }}>
+                                        <div className="so-icon">🛒</div>
+                                        <div className="so-info">
+                                            <h4>Shop (ร้านค้า)</h4>
+                                            <p>Optimized for selling nitro & services.</p>
+                                        </div>
+                                        <div className="so-arrow">→</div>
                                     </div>
-                                    <div className="so-arrow">→</div>
-                                </div>
-                                <div className="setup-option" onClick={() => { setSelectedTemplate("Community"); setSetupStep(2); }}>
-                                    <div className="so-icon">🎮</div>
-                                    <div className="so-info">
-                                        <h4>Community (คอมมู)</h4>
-                                        <p>Social spaces for friends or gamers.</p>
+                                    <div className="setup-option" onClick={() => { setSelectedTemplate("Community"); setSetupStep(2); }}>
+                                        <div className="so-icon">🎮</div>
+                                        <div className="so-info">
+                                            <h4>Community (คอมมู)</h4>
+                                            <p>Social spaces for friends or gamers.</p>
+                                        </div>
+                                        <div className="so-arrow">→</div>
                                     </div>
-                                    <div className="so-arrow">→</div>
-                                </div>
-                                <div className="setup-option" onClick={() => { setSelectedTemplate("Fanclub"); setSetupStep(3); }}>
-                                    <div className="so-icon">👑</div>
-                                    <div className="so-info">
-                                        <h4>Fanclub (แฟนคลับ)</h4>
-                                        <p>Perfect for streamers & creators.</p>
+                                    <div className="setup-option" onClick={() => { setSelectedTemplate("Fanclub"); setSetupStep(3); }}>
+                                        <div className="so-icon">👑</div>
+                                        <div className="so-info">
+                                            <h4>Fanclub (แฟนคลับ)</h4>
+                                            <p>Perfect for streamers & creators.</p>
+                                        </div>
+                                        <div className="so-arrow">→</div>
                                     </div>
-                                    <div className="so-arrow">→</div>
-                                </div>
-                                <div className="setup-option custom-opt" onClick={() => {
-                                    if (userPlan.plan_type === 'free') {
-                                        setShowSetupModal(false);
-                                        setShowPricingModal(true);
-                                    } else {
-                                        setSelectedTemplate("Custom");
-                                        setSetupStep('custom_roles');
-                                    }
-                                }}>
-                                    <div className="so-icon">🎨</div>
-                                    <div className="so-info">
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <h4>{t.dashboard.custom}</h4>
-                                            <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}><CrownIcon /></span>
+                                    <div className="setup-option custom-opt" onClick={() => {
+                                        if (userPlan.plan_type === 'free') {
+                                            setShowSetupModal(false);
+                                            setShowPricingModal(true);
+                                        } else {
+                                            setSelectedTemplate("Custom");
+                                            setSetupStep('custom_roles');
+                                        }
+                                    }}>
+                                        <div className="so-icon">🎨</div>
+                                        <div className="so-info">
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <h4>{t.dashboard.custom}</h4>
+                                                <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}><CrownIcon /></span>
+                                            </div>
+                                            <p>{t.dashboard.customDesc}</p>
                                         </div>
-                                        <p>{t.dashboard.customDesc}</p>
+                                        <div className="so-arrow">→</div>
                                     </div>
-                                    <div className="so-arrow">→</div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {setupStep === 2 && (
-                            <div className="setup-grid animate-fade">
-                                {selectedTemplate === "Shop" ? (
-                                    <>
-                                        <div className="setup-option" onClick={() => { setSetupFlavor("Full"); handleAction("setup", "Shop"); }}>
-                                            <div className="so-icon">💎</div>
-                                            <div className="so-info">
-                                                <h4>Full Pack (จัดเต็ม)</h4>
-                                                <p>Includes Nitro, Status, and Boost zones.</p>
-                                            </div>
-                                            <div className="so-arrow">✓</div>
-                                        </div>
-                                        <div className="setup-option" onClick={() => { setSetupFlavor("Standard"); handleAction("setup", "Shop"); }}>
-                                            <div className="so-icon">🛒</div>
-                                            <div className="so-info">
-                                                <h4>Standard Pack (มาตรฐาน)</h4>
-                                                <p>Includes Nitro & Status zones only.</p>
-                                            </div>
-                                            <div className="so-arrow">✓</div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="setup-option" onClick={() => { setSetupFlavor("Friend"); handleAction("setup", "Community"); }}>
-                                            <div className="so-icon">👥</div>
-                                            <div className="so-info">
-                                                <h4>สายแชททั่วไป (Friend)</h4>
-                                                <p>Social spaces for general chatting.</p>
-                                            </div>
-                                            <div className="so-arrow">✓</div>
-                                        </div>
-                                        <div className="setup-option" onClick={() => { setSetupFlavor("Game"); setSetupStep(3); }}>
-                                            <div className="so-icon">🎮</div>
-                                            <div className="so-info">
-                                                <h4>สายเกมเมอร์ (Game)</h4>
-                                                <p>Add specific game categories!</p>
-                                            </div>
-                                            <div className="so-arrow">→</div>
-                                        </div>
-                                    </>
-                                )}
-                                <button className="modal-btn ghost" onClick={() => setSetupStep(1)}>← Back to selection</button>
-                            </div>
-                        )}
-
-                        {setupStep === 3 && (
-                            <div className="setup-config-area animate-fade">
-                                <div className="config-group">
-                                    <label>
-                                        {selectedTemplate === "Community" ? "List of Games (comma separated)" : "List of Platforms (comma separated)"}
-                                    </label>
-                                    <input
-                                        className="cute-input"
-                                        placeholder={selectedTemplate === "Community" ? "Valorant, Roblox, Minecraft" : "Twitch, YouTube, TikTok"}
-                                        value={extraData}
-                                        onChange={(e) => setExtraData(e.target.value)}
-                                        autoFocus
-                                    />
-                                    <span className="input-hint">An An will create dedicated zones for each item! 🪄</span>
-                                </div>
-                                <div className="modal-actions-v">
-                                    <button className="modal-btn primary" onClick={() => handleAction("setup", selectedTemplate)}>Create My Server! ✨</button>
-                                    <button className="modal-btn ghost" onClick={() => setSetupStep(selectedTemplate === "Fanclub" ? 1 : 2)}>← Back</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {setupStep === 'custom_roles' && (
-                            <div className="setup-config-area animate-fade">
-                                <div className="custom-list">
-                                    {customRoles.map((role, idx) => (
-                                        <div key={idx} className="custom-item glass">
-                                            <input type="color" className="role-color-picker" value={role.color} onChange={e => {
-                                                const NewR = [...customRoles];
-                                                NewR[idx].color = e.target.value;
-                                                setCustomRoles(NewR);
-                                            }} />
-                                            <input className="mini-input" value={role.name} onChange={e => {
-                                                const NewR = [...customRoles];
-                                                NewR[idx].name = e.target.value;
-                                                setCustomRoles(NewR);
-                                            }} />
-                                            <select className="mini-select" value={role.permissions} onChange={e => {
-                                                const pType = e.target.value;
-                                                const NewR = [...customRoles];
-                                                NewR[idx].permissions = pType;
-                                                NewR[idx].permissions_bitmask = DEFAULT_PERMS[pType];
-                                                setCustomRoles(NewR);
-                                            }}>
-                                                <option value="member">Member</option>
-                                                <option value="staff">Staff</option>
-                                                <option value="admin">Admin</option>
-                                            </select>
-                                            <button className={`mini-perm-btn ${role.permissions_bitmask ? 'active' : ''}`} onClick={() => { setActiveRoleIndex(idx); setShowPermsModal(true); }}>🛡️</button>
-                                            <button className="del-btn" onClick={() => setCustomRoles(customRoles.filter((_, i) => i !== idx))}>×</button>
-                                        </div>
-                                    ))}
-                                    <button className="add-btn" onClick={() => setCustomRoles([...customRoles, { name: "NEW ROLE", permissions: "member", color: "#FFFFFF", permissions_bitmask: DEFAULT_PERMS.member }])}>+ Add Role</button>
-                                </div>
-                                <div className="modal-actions-v" style={{ marginTop: '20px' }}>
-                                    <button className="modal-btn primary" onClick={() => setSetupStep('custom_zones')}>Next Step →</button>
-                                    <button className="modal-btn ghost" onClick={() => setSetupStep(1)}>← Back</button>
-                                </div>
-                            </div>
-                        )}
-
-                        {setupStep === 'custom_zones' && (
-                            <div className="setup-config-area animate-fade">
-                                <div className="custom-split">
-                                    <div className="split-left">
-                                        <label>Categories</label>
-                                        {customZones.map((zone, idx) => (
-                                            <div key={idx} className={`zone-tab ${activeZoneIndex === idx ? 'active' : ''}`} onClick={() => setActiveZoneIndex(idx)}>
-                                                <div className="zone-tab-main">
-                                                    <input value={zone.name} onChange={e => {
-                                                        const NewZ = [...customZones];
-                                                        NewZ[idx].name = e.target.value.toUpperCase();
-                                                        setCustomZones(NewZ);
-                                                    }} />
-                                                    <button className="zone-del" onClick={e => { e.stopPropagation(); setCustomZones(customZones.filter((_, i) => i !== idx)); }}>×</button>
+                            {setupStep === 2 && (
+                                <div className="setup-grid animate-fade">
+                                    {selectedTemplate === "Shop" ? (
+                                        <>
+                                            <div className="setup-option" onClick={() => { setSetupFlavor("Full"); handleAction("setup", "Shop"); }}>
+                                                <div className="so-icon">💎</div>
+                                                <div className="so-info">
+                                                    <h4>Full Pack (จัดเต็ม)</h4>
+                                                    <p>Includes Nitro, Status, and Boost zones.</p>
                                                 </div>
-                                                <div className="zone-access" onClick={e => e.stopPropagation()}>
-                                                    <div className="access-tags">
-                                                        {customRoles.map(role => (
-                                                            <span key={role.name} className={`access-tag mini ${zone.allowedRoles?.includes(role.name) ? 'active' : ''}`} onClick={() => {
-                                                                const NewZ = [...customZones];
-                                                                const current = NewZ[idx].allowedRoles || [];
-                                                                NewZ[idx].allowedRoles = current.includes(role.name) ? current.filter(r => r !== role.name) : [...current, role.name];
-                                                                setCustomZones(NewZ);
-                                                            }}>{role.name[0]}</span>
-                                                        ))}
-                                                    </div>
+                                                <div className="so-arrow">✓</div>
+                                            </div>
+                                            <div className="setup-option" onClick={() => { setSetupFlavor("Standard"); handleAction("setup", "Shop"); }}>
+                                                <div className="so-icon">🛒</div>
+                                                <div className="so-info">
+                                                    <h4>Standard Pack (มาตรฐาน)</h4>
+                                                    <p>Includes Nitro & Status zones only.</p>
                                                 </div>
+                                                <div className="so-arrow">✓</div>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="setup-option" onClick={() => { setSetupFlavor("Friend"); handleAction("setup", "Community"); }}>
+                                                <div className="so-icon">👥</div>
+                                                <div className="so-info">
+                                                    <h4>สายแชททั่วไป (Friend)</h4>
+                                                    <p>Social spaces for general chatting.</p>
+                                                </div>
+                                                <div className="so-arrow">✓</div>
+                                            </div>
+                                            <div className="setup-option" onClick={() => { setSetupFlavor("Game"); setSetupStep(3); }}>
+                                                <div className="so-icon">🎮</div>
+                                                <div className="so-info">
+                                                    <h4>สายเกมเมอร์ (Game)</h4>
+                                                    <p>Add specific game categories!</p>
+                                                </div>
+                                                <div className="so-arrow">→</div>
+                                            </div>
+                                        </>
+                                    )}
+                                    <button className="modal-btn ghost" onClick={() => setSetupStep(1)}>← Back to selection</button>
+                                </div>
+                            )}
+
+                            {setupStep === 3 && (
+                                <div className="setup-config-area animate-fade">
+                                    <div className="config-group">
+                                        <label>
+                                            {selectedTemplate === "Community" ? "List of Games (comma separated)" : "List of Platforms (comma separated)"}
+                                        </label>
+                                        <input
+                                            className="cute-input"
+                                            placeholder={selectedTemplate === "Community" ? "Valorant, Roblox, Minecraft" : "Twitch, YouTube, TikTok"}
+                                            value={extraData}
+                                            onChange={(e) => setExtraData(e.target.value)}
+                                            autoFocus
+                                        />
+                                        <span className="input-hint">An An will create dedicated zones for each item! 🪄</span>
+                                    </div>
+                                    <div className="modal-actions-v">
+                                        <button className="modal-btn primary" onClick={() => handleAction("setup", selectedTemplate)}>Create My Server! ✨</button>
+                                        <button className="modal-btn ghost" onClick={() => setSetupStep(selectedTemplate === "Fanclub" ? 1 : 2)}>← Back</button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {setupStep === 'custom_roles' && (
+                                <div className="setup-config-area animate-fade">
+                                    <div className="custom-list">
+                                        {customRoles.map((role, idx) => (
+                                            <div key={idx} className="custom-item glass">
+                                                <input type="color" className="role-color-picker" value={role.color} onChange={e => {
+                                                    const NewR = [...customRoles];
+                                                    NewR[idx].color = e.target.value;
+                                                    setCustomRoles(NewR);
+                                                }} />
+                                                <input className="mini-input" value={role.name} onChange={e => {
+                                                    const NewR = [...customRoles];
+                                                    NewR[idx].name = e.target.value;
+                                                    setCustomRoles(NewR);
+                                                }} />
+                                                <select className="mini-select" value={role.permissions} onChange={e => {
+                                                    const pType = e.target.value;
+                                                    const NewR = [...customRoles];
+                                                    NewR[idx].permissions = pType;
+                                                    NewR[idx].permissions_bitmask = DEFAULT_PERMS[pType];
+                                                    setCustomRoles(NewR);
+                                                }}>
+                                                    <option value="member">Member</option>
+                                                    <option value="staff">Staff</option>
+                                                    <option value="admin">Admin</option>
+                                                </select>
+                                                <button className={`mini-perm-btn ${role.permissions_bitmask ? 'active' : ''}`} onClick={() => { setActiveRoleIndex(idx); setShowPermsModal(true); }}>🛡️</button>
+                                                <button className="del-btn" onClick={() => setCustomRoles(customRoles.filter((_, i) => i !== idx))}>×</button>
                                             </div>
                                         ))}
-                                        <button className="add-zone" onClick={() => setCustomZones([...customZones, { name: "NEW ZONE", channels: [], allowedRoles: ["SUPER ADMIN"] }])}>+</button>
+                                        <button className="add-btn" onClick={() => setCustomRoles([...customRoles, { name: "NEW ROLE", permissions: "member", color: "#FFFFFF", permissions_bitmask: DEFAULT_PERMS.member }])}>+ Add Role</button>
                                     </div>
-                                    <div className="split-right">
-                                        <label>Channels in {customZones[activeZoneIndex]?.name}</label>
-                                        <div className="chan-list">
-                                            {customZones[activeZoneIndex]?.channels.map((ch, idx) => (
-                                                <div key={idx} className="chan-row">
-                                                    <div className="chan-item-main">
-                                                        <span className="ch-type-icon">{ch.type === 'text' ? '#' : '🔊'}</span>
-                                                        <input value={ch.name} onChange={e => {
+                                    <div className="modal-actions-v" style={{ marginTop: '20px' }}>
+                                        <button className="modal-btn primary" onClick={() => setSetupStep('custom_zones')}>Next Step →</button>
+                                        <button className="modal-btn ghost" onClick={() => setSetupStep(1)}>← Back</button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {setupStep === 'custom_zones' && (
+                                <div className="setup-config-area animate-fade">
+                                    <div className="custom-split">
+                                        <div className="split-left">
+                                            <label>Categories</label>
+                                            {customZones.map((zone, idx) => (
+                                                <div key={idx} className={`zone-tab ${activeZoneIndex === idx ? 'active' : ''}`} onClick={() => setActiveZoneIndex(idx)}>
+                                                    <div className="zone-tab-main">
+                                                        <input value={zone.name} onChange={e => {
                                                             const NewZ = [...customZones];
-                                                            NewZ[activeZoneIndex].channels[idx].name = e.target.value;
+                                                            NewZ[idx].name = e.target.value.toUpperCase();
                                                             setCustomZones(NewZ);
                                                         }} />
-                                                        <div className="chan-access-horizontal">
+                                                        <button className="zone-del" onClick={e => { e.stopPropagation(); setCustomZones(customZones.filter((_, i) => i !== idx)); }}>×</button>
+                                                    </div>
+                                                    <div className="zone-access" onClick={e => e.stopPropagation()}>
+                                                        <div className="access-tags">
                                                             {customRoles.map(role => (
-                                                                <span key={role.name} className={`access-tag mini-dot ${ch.allowedRoles?.includes(role.name) ? 'active' : ''}`} onClick={() => {
+                                                                <span key={role.name} className={`access-tag mini ${zone.allowedRoles?.includes(role.name) ? 'active' : ''}`} onClick={() => {
                                                                     const NewZ = [...customZones];
-                                                                    const current = NewZ[activeZoneIndex].channels[idx].allowedRoles || [];
-                                                                    NewZ[activeZoneIndex].channels[idx].allowedRoles = current.includes(role.name) ? current.filter(r => r !== role.name) : [...current, role.name];
+                                                                    const current = NewZ[idx].allowedRoles || [];
+                                                                    NewZ[idx].allowedRoles = current.includes(role.name) ? current.filter(r => r !== role.name) : [...current, role.name];
                                                                     setCustomZones(NewZ);
                                                                 }}>{role.name[0]}</span>
                                                             ))}
                                                         </div>
-                                                        <button className="ch-del" onClick={() => {
-                                                            const NewZ = [...customZones];
-                                                            NewZ[activeZoneIndex].channels = NewZ[activeZoneIndex].channels.filter((_, i) => i !== idx);
-                                                            setCustomZones(NewZ);
-                                                        }}>×</button>
                                                     </div>
                                                 </div>
                                             ))}
-                                            <div className="chan-adds">
-                                                <button onClick={() => {
-                                                    const NewZ = [...customZones];
-                                                    NewZ[activeZoneIndex].channels.push({ name: "new-text", type: "text", allowedRoles: ["SUPER ADMIN"] });
-                                                    setCustomZones(NewZ);
-                                                }}>+ Text</button>
-                                                <button onClick={() => {
-                                                    const NewZ = [...customZones];
-                                                    NewZ[activeZoneIndex].channels.push({ name: "New Voice", type: "voice", allowedRoles: ["SUPER ADMIN"] });
-                                                    setCustomZones(NewZ);
-                                                }}>+ Voice</button>
+                                            <button className="add-zone" onClick={() => setCustomZones([...customZones, { name: "NEW ZONE", channels: [], allowedRoles: ["SUPER ADMIN"] }])}>+</button>
+                                        </div>
+                                        <div className="split-right">
+                                            <label>Channels in {customZones[activeZoneIndex]?.name}</label>
+                                            <div className="chan-list">
+                                                {customZones[activeZoneIndex]?.channels.map((ch, idx) => (
+                                                    <div key={idx} className="chan-row">
+                                                        <div className="chan-item-main">
+                                                            <span className="ch-type-icon">{ch.type === 'text' ? '#' : '🔊'}</span>
+                                                            <input value={ch.name} onChange={e => {
+                                                                const NewZ = [...customZones];
+                                                                NewZ[activeZoneIndex].channels[idx].name = e.target.value;
+                                                                setCustomZones(NewZ);
+                                                            }} />
+                                                            <div className="chan-access-horizontal">
+                                                                {customRoles.map(role => (
+                                                                    <span key={role.name} className={`mini-dot ${ch.allowedRoles?.includes(role.name) ? 'active' : ''}`} onClick={() => {
+                                                                        const NewZ = [...customZones];
+                                                                        const current = NewZ[activeZoneIndex].channels[idx].allowedRoles || [];
+                                                                        NewZ[activeZoneIndex].channels[idx].allowedRoles = current.includes(role.name) ? current.filter(r => r !== role.name) : [...current, role.name];
+                                                                        setCustomZones(NewZ);
+                                                                    }}>{role.name[0]}</span>
+                                                                ))}
+                                                            </div>
+                                                            <button className="ch-del" onClick={() => {
+                                                                const NewZ = [...customZones];
+                                                                NewZ[activeZoneIndex].channels = NewZ[activeZoneIndex].channels.filter((_, i) => i !== idx);
+                                                                setCustomZones(NewZ);
+                                                            }}>×</button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <div className="chan-adds">
+                                                    <button onClick={() => {
+                                                        const NewZ = [...customZones];
+                                                        NewZ[activeZoneIndex].channels.push({ name: "new-text", type: "text", allowedRoles: ["SUPER ADMIN"] });
+                                                        setCustomZones(NewZ);
+                                                    }}>+ Text</button>
+                                                    <button onClick={() => {
+                                                        const NewZ = [...customZones];
+                                                        NewZ[activeZoneIndex].channels.push({ name: "New Voice", type: "voice", allowedRoles: ["SUPER ADMIN"] });
+                                                        setCustomZones(NewZ);
+                                                    }}>+ Voice</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                                <div className="role-legend glass" style={{ marginTop: '20px', padding: '12px 20px', borderRadius: '15px' }}>
-                                    <div className="legend-title">💡 Role Legend (Tips)</div>
-                                    <div className="legend-items">
-                                        {customRoles.map(role => (
-                                            <div key={role.name} className="legend-item">
-                                                <span className="dot-preview active">{role.name[0]}</span>
-                                                <span className="dot-fullname">: {role.name}</span>
-                                            </div>
-                                        ))}
-                                        <div className="legend-note">Click the dots to toggle access! ✨</div>
+                                    <div className="role-legend glass" style={{ marginTop: '20px', padding: '12px 20px', borderRadius: '15px' }}>
+                                        <div className="legend-title">💡 Role Legend (Tips)</div>
+                                        <div className="legend-items">
+                                            {customRoles.map(role => (
+                                                <div key={role.name} className="legend-item">
+                                                    <span className="dot-preview active">{role.name[0]}</span>
+                                                    <span className="dot-fullname">: {role.name}</span>
+                                                </div>
+                                            ))}
+                                            <div className="legend-note">Click the dots to toggle access! ✨</div>
+                                        </div>
+                                    </div>
+                                    <div className="modal-actions-v" style={{ marginTop: '30px' }}>
+                                        <button className="modal-btn primary" onClick={() => handleAction("setup", "Custom")}>Create My Server! ✨</button>
+                                        <button className="modal-btn ghost" onClick={() => setSetupStep('custom_roles')}>← Back to Roles</button>
                                     </div>
                                 </div>
-                                <div className="modal-actions-v" style={{ marginTop: '30px' }}>
-                                    <button className="modal-btn primary" onClick={() => handleAction("setup", "Custom")}>Create My Server! ✨</button>
-                                    <button className="modal-btn ghost" onClick={() => setSetupStep('custom_roles')}>← Back to Roles</button>
-                                </div>
-                            </div>
-                        )}
-                        {setupStep === 1 && <button className="modal-btn secondary" style={{ marginTop: '20px' }} onClick={() => setShowSetupModal(false)}>Not now, maybe later 🌸</button>}
+                            )}
+                            {setupStep === 1 && <button className="modal-btn secondary" style={{ marginTop: '20px' }} onClick={() => setShowSetupModal(false)}>Not now, maybe later 🌸</button>}
+                        </div>
                     </div>
-                </div>
+                </Portal>
             )}
 
             {/* Selective Management Modal */}
             {showSelectiveModal && (
-                <div className="modal-overlay blur-in" style={{ zIndex: 3200 }}>
-                    <div className="modal-card wide-card glass animate-pop" style={{ textAlign: 'left' }}>
-                        <button className="modal-close" onClick={() => setShowSelectiveModal(false)}>×</button>
-                        <div className="selective-header">
-                            <div className="m-icon">🏗️</div>
-                            <div className="m-title">
-                                <h3>Structure Manager</h3>
-                                <p>จัดการโครงสร้างเซิร์ฟเวอร์แบบเจาะจง</p>
-                            </div>
-                        </div>
-                        <div className="selective-body discord-sidebar custom-list">
-                            {serverStructure.map(cat => (
-                                <div key={cat.id} className="discord-cat-section">
-                                    <div className="discord-cat-header" onClick={() => toggleSelection(cat.id, "category", cat.channels)}>
-                                        <div className="ch-checkbox-wrap">
-                                            <input type="checkbox" checked={selectedIds.includes(cat.id)} onChange={() => { }} className="m-checkbox" />
-                                        </div>
-                                        <span className="cat-arrow">{cat.name === "UNCATEGORIZED" ? "📂" : "⌵"}</span>
-                                        <span className="cat-name">{cat.name.toUpperCase()}</span>
-                                        <span className="cat-count">{cat.channels.length}</span>
-                                    </div>
-                                    <div className="discord-ch-list">
-                                        {cat.channels.map(ch => (
-                                            <div key={ch.id} className={`discord-ch-item ${selectedIds.includes(ch.id) ? 'selected' : ''}`} onClick={(e) => { e.stopPropagation(); toggleSelection(ch.id); }}>
-                                                <div className="ch-checkbox-wrap">
-                                                    <input type="checkbox" checked={selectedIds.includes(ch.id)} onChange={() => { }} className="m-checkbox" />
-                                                </div>
-                                                <span className="ch-icon">{ch.type === "0" || ch.type === "text" ? "#" : (ch.type === "2" || ch.type === "voice" ? "🔊" : "💬")}</span>
-                                                <span className="ch-name">{ch.name}</span>
-                                            </div>
-                                        ))}
-                                    </div>
+                <Portal>
+                    <div className="fixed-overlay z-selective blur-in">
+                        <div className="modal-card wide-card glass animate-pop left-align" style={{ textAlign: 'left' }}>
+                            <button className="modal-close" onClick={() => setShowSelectiveModal(false)}>×</button>
+                            <div className="selective-header">
+                                <div className="m-icon">🏗️</div>
+                                <div className="m-title">
+                                    <h3>Structure Manager</h3>
+                                    <p>จัดการโครงสร้างเซิร์ฟเวอร์แบบเจาะจง</p>
                                 </div>
-                            ))}
-                        </div>
-                        <div className="modal-footer">
-                            <div className="selection-count">Selected: <b>{selectedIds.length}</b> items</div>
-                            <div className="modal-actions-row">
-                                <button className="modal-btn ghost" onClick={() => setShowSelectiveModal(false)}>ยกเลิก</button>
-                                <button className="modal-btn danger" onClick={handleDeleteSelective} disabled={selectedIds.length === 0 || isDeleting}>
-                                    {isDeleting ? "กำลังลบ..." : `ลบรายการที่เลือก (${selectedIds.length})`}
-                                </button>
+                            </div>
+                            <div className="selective-body discord-sidebar custom-list">
+                                {serverStructure.map(cat => (
+                                    <div key={cat.id} className="discord-cat-section">
+                                        <div className="discord-cat-header" onClick={() => toggleSelection(cat.id, "category", cat.channels)}>
+                                            <div className="ch-checkbox-wrap">
+                                                <input type="checkbox" checked={selectedIds.includes(cat.id)} onChange={() => { }} className="m-checkbox" />
+                                            </div>
+                                            <span className="cat-arrow">{cat.name === "UNCATEGORIZED" ? "📂" : "⌵"}</span>
+                                            <span className="cat-name">{cat.name.toUpperCase()}</span>
+                                            <span className="cat-count">{cat.channels.length}</span>
+                                        </div>
+                                        <div className="discord-ch-list">
+                                            {cat.channels.map(ch => (
+                                                <div key={ch.id} className={`discord-ch-item ${selectedIds.includes(ch.id) ? 'selected' : ''}`} onClick={(e) => { e.stopPropagation(); toggleSelection(ch.id); }}>
+                                                    <div className="ch-checkbox-wrap">
+                                                        <input type="checkbox" checked={selectedIds.includes(ch.id)} onChange={() => { }} className="m-checkbox" />
+                                                    </div>
+                                                    <span className="ch-icon">{ch.type === "0" || ch.type === "text" ? "#" : (ch.type === "2" || ch.type === "voice" ? "🔊" : "💬")}</span>
+                                                    <span className="ch-name">{ch.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="modal-footer">
+                                <div className="selection-count">Selected: <b>{selectedIds.length}</b> items</div>
+                                <div className="modal-actions-row">
+                                    <button className="modal-btn ghost" onClick={() => setShowSelectiveModal(false)}>ยกเลิก</button>
+                                    <button className="modal-btn danger" onClick={handleDeleteSelective} disabled={selectedIds.length === 0 || isDeleting}>
+                                        {isDeleting ? "กำลังลบ..." : `ลบรายการที่เลือก (${selectedIds.length})`}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                </Portal>
             )}
 
             {/* Hero Banner (Mission Center) */}
@@ -797,14 +815,14 @@ export default function GuildDashboard() {
                             },
                             {
                                 id: "setup",
-                                name: "Mission Center",
+                                name: "Template Deploy",
                                 icon: "🪄",
                                 badge: "ESSENTIAL",
                                 badgeClass: "p-badge",
                                 category: "Essentials",
                                 desc: "Deploy professional server templates (Shop, Community, etc.) with An An 🌸",
                                 action: () => handleAction("setup"),
-                                btnText: "Do a Mission",
+                                btnText: "Deploy",
                                 isActive: true
                             },
                             {
@@ -1113,7 +1131,7 @@ export default function GuildDashboard() {
                 .loader-mini { font-size: 13px; color: var(--primary); text-align: center; padding: 20px; font-weight: 800; animation: pulse 1.5s infinite; }
                 @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 
-                .hero-stats { display: flex; gap: 20px; text-align: left; margin-top: 15px; }
+                .hero-stats { position: absolute; right: 360px; bottom: 80px; display: flex; gap: 20px; z-index: 50; }
                 .ms-val { font-size: 42px; font-weight: 900; color: #ffb7e2; text-shadow: 0 4px 10px rgba(255,183,226,0.2); }
                 .mini-stat { text-align: center; background: white; padding: 10px 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #fdf2f8; }
                 .ms-lab { font-size: 13px; color: #4a4a68; font-weight: 700; opacity: 0.6; text-transform: uppercase; margin-top: 8px; }
@@ -1176,7 +1194,98 @@ export default function GuildDashboard() {
                 .pc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
                 .pc-icon { font-size: 42px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.05)); }
                 .p-badge { background: #fdf2f8; color: #ff85c1; font-size: 10px; font-weight: 900; padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,183,226,0.2); }
-                .p-badge-s { background: #fffbeb; color: #d97706; font-size: 10px; font-weight: 900; padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(252,211,77,0.3); display: inline-flex; align-items: center; justify-content: center; min-width: 25px; }
+                .p-badge-s { background: #fffbeb; color: #d97706; width: 28px; height: 28px; padding: 0; border-radius: 8px; border: 1px solid rgba(252,211,77,0.4); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+                .p-badge-s svg { width: 14px; height: 14px; filter: none; }
+
+                /* Pricing Modal */
+                .pricing-modal { width: 100%; max-width: 900px; background: white; border-radius: 30px; padding: 50px; position: relative; display: flex; flex-direction: column; align-items: center; border: 4px solid #fff0f5; box-shadow: 0 20px 60px rgba(255,133,193,0.3); }
+                .pricing-header { text-align: center; margin-bottom: 40px; }
+                .pricing-header h2 { font-size: 36px; font-weight: 900; color: #4a4a68; margin-bottom: 10px; }
+                .pricing-header span { color: var(--primary); }
+                .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; width: 100%; align-items: center; }
+                .pricing-card { background: white; border: 1px solid #f3f4f6; border-radius: 24px; padding: 30px; text-align: center; transition: 0.3s; position: relative; }
+                .pricing-card:hover { transform: translateY(-10px); box-shadow: 0 15px 40px rgba(0,0,0,0.05); }
+                .pricing-card.featured { border-color: var(--primary); background: #fff0f6; box-shadow: 0 10px 30px rgba(255,133,193,0.15); transform: scale(1.05); z-index: 10; }
+                .pricing-card.featured:hover { transform: scale(1.08) translateY(-10px); }
+                .p-tier { font-weight: 900; font-size: 14px; color: #9ca3af; letter-spacing: 1px; margin-bottom: 15px; }
+                .featured .p-tier { color: var(--primary); }
+                .p-price { font-size: 32px; font-weight: 900; color: #4a4a68; margin-bottom: 25px; }
+                .p-price span { font-size: 14px; color: #9ca3af; font-weight: 600; }
+                .p-features { list-style: none; padding: 0; margin: 0 0 30px; text-align: left; opacity: 0.8; }
+                .p-features li { margin-bottom: 12px; font-size: 14px; color: #4b5563; display: flex; align-items: center; gap: 8px; }
+                .p-btn { border: none; width: 100%; padding: 12px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; }
+                .p-btn.disabled { background: #f3f4f6; color: #9ca3af; cursor: default; }
+                .p-btn.pro { background: #c084fc; color: white; box-shadow: 0 5px 15px rgba(192,132,252,0.3); }
+                .p-btn.premium { background: var(--primary); color: white; box-shadow: 0 5px 15px rgba(255,133,193,0.3); }
+                .p-badge-promo { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #d97706; color: white; font-size: 10px; font-weight: 900; padding: 4px 12px; border-radius: 20px; box-shadow: 0 4px 10px rgba(217,119,6,0.3); }
+                .close-x { position: absolute; top: 25px; right: 25px; background: #f3f4f6; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 20px; color: #9ca3af; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+                .close-x:hover { background: #fee2e2; color: #ef4444; transform: rotate(90deg); }
+
+                /* Permissions Modal */
+                .perms-modal { max-width: 600px; padding: 0; overflow: hidden; height: 70vh; display: flex; flex-direction: column; }
+                .perms-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 30px; overflow-y: auto; flex: 1; background: #fafafa; }
+                .perm-toggle-item { background: white; padding: 15px; border-radius: 12px; border: 2px solid #f3f4f6; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; }
+                .perm-toggle-item:hover { border-color: #e5e7eb; transform: translateY(-2px); }
+                .perm-toggle-item.active { border-color: #10b981; background: #ecfdf5; }
+                .perm-icon { width: 40px; height: 40px; background: #f3f4f6; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #9ca3af; }
+                .active .perm-icon { background: #d1fae5; color: #10b981; }
+                .p-name { display: block; font-weight: 700; font-size: 13px; color: #4b5563; margin-bottom: 2px; }
+                .p-id { display: block; font-size: 10px; color: #9ca3af; font-family: monospace; }
+                
+                .p-switch { width: 40px; height: 22px; background: #e5e7eb; border-radius: 20px; position: relative; transition: 0.3s; }
+                .switch-knob { width: 16px; height: 16px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                .active .p-switch { background: #10b981; }
+                .active .switch-knob { left: 21px; }
+
+                /* Custom Role/Zone Setup */
+                .custom-list { display: flex; flex-direction: column; gap: 10px; max-height: 350px; overflow-y: auto; padding-right: 5px; }
+                .custom-item { display: flex; align-items: center; gap: 10px; padding: 10px 15px; border-radius: 12px; background: white; border: 1px solid #f3f4f6; }
+                .custom-item:hover { border-color: var(--primary); }
+                .role-color-picker { width: 30px; height: 30px; border: none; background: none; cursor: pointer; padding: 0; border-radius: 50%; overflow: hidden; }
+                .mini-input { border: 1px solid #e5e7eb; padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 600; color: #4a4a68; flex: 1; outline: none; transition: 0.2s; }
+                .mini-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,183,226,0.1); }
+                .mini-select { border: 1px solid #e5e7eb; padding: 6px 10px; border-radius: 8px; font-size: 12px; color: #6b7280; outline: none; background: #f9fafb; cursor: pointer; }
+                .mini-perm-btn { width: 30px; height: 30px; border-radius: 8px; border: 1px solid #e5e7eb; background: white; color: #9ca3af; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+                .mini-perm-btn:hover { border-color: var(--primary); color: var(--primary); }
+                .mini-perm-btn.active { background: #fdf2f8; color: var(--primary); border-color: var(--primary); }
+                .del-btn { width: 25px; height: 25px; border-radius: 6px; background: #fee2e2; color: #ef4444; border: none; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+                .del-btn:hover { background: #ef4444; color: white; }
+                .add-btn { width: 100%; padding: 10px; border: 2px dashed #e5e7eb; border-radius: 12px; color: #9ca3af; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; background: transparent; }
+                .add-btn:hover { border-color: var(--primary); color: var(--primary); background: #fff0f6; }
+
+                .custom-split { display: flex; height: 400px; gap: 20px; text-align: left; }
+                .split-left { width: 35%; display: flex; flex-direction: column; gap: 10px; border-right: 1px solid #f3f4f6; padding-right: 15px; overflow-y: auto; }
+                .split-right { flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; padding-left: 5px; }
+                .zone-tab { padding: 10px; border-radius: 12px; background: #f9fafb; border: 1px solid #e5e7eb; cursor: pointer; transition: 0.2s; }
+                .zone-tab:hover { background: white; border-color: #d1d5db; }
+                .zone-tab.active { background: white; border-color: var(--primary); box-shadow: 0 4px 12px rgba(255,183,226,0.15); transform: translateX(5px); }
+                .zone-tab-main { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+                .zone-tab input { border: none; background: transparent; font-weight: 800; font-size: 12px; color: #4a4a68; width: 100%; outline: none; text-transform: uppercase; }
+                .zone-del { font-size: 14px; color: #d1d5db; background: none; border: none; cursor: pointer; }
+                .zone-del:hover { color: #ef4444; }
+                .access-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+                .access-tag { font-size: 9px; padding: 2px 6px; border-radius: 4px; background: #e5e7eb; color: #9ca3af; font-weight: 700; cursor: pointer; }
+                .access-tag.active { background: #d1fae5; color: #10b981; }
+
+                .chan-list { display: flex; flex-direction: column; gap: 8px; }
+                .chan-row { display: flex; align-items: center; background: white; padding: 8px 12px; border-radius: 10px; border: 1px solid #f3f4f6; }
+                .chan-item-main { display: flex; align-items: center; width: 100%; gap: 10px; }
+                .ch-type-icon { color: #9ca3af; font-size: 14px; width: 20px; text-align: center; }
+                .chan-row input { border: none; background: transparent; font-size: 13px; font-weight: 600; color: #4b5563; flex: 1; outline: none; }
+                .chan-access-horizontal { display: flex; gap: 3px; }
+                .mini-dot { width: 8px; height: 8px; border-radius: 50%; background: #e5e7eb; display: inline-block; cursor: pointer; }
+                .mini-dot.active { background: #10b981; box-shadow: 0 0 5px rgba(16,185,129,0.4); }
+                .ch-del { color: #d1d5db; background: none; border: none; cursor: pointer; font-size: 16px; margin-left: 5px; }
+                .ch-del:hover { color: #ef4444; }
+                .chan-adds { display: flex; gap: 10px; margin-top: 10px; }
+                .chan-adds button { flex: 1; padding: 8px; border-radius: 8px; border: 1px dashed #d1d5db; background: transparent; color: #6b7280; font-size: 12px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+                .chan-adds button:hover { border-color: var(--primary); color: var(--primary); background: #fff0f6; }
+                
+                .dot-preview { width: 12px; height: 12px; border-radius: 50%; background: #e5e7eb; display: inline-block; margin-right: 6px; }
+                .dot-preview.active { background: #10b981; }
+                .legend-items { display: flex; gap: 15px; margin-top: 5px; flex-wrap: wrap; }
+                .legend-item { display: flex; align-items: center; font-size: 11px; color: #6b7280; }
+                .legend-note { font-size: 10px; color: var(--primary); font-style: italic; margin-left: auto; }
                 .pc-body h3 { font-size: 20px; margin-bottom: 12px; font-weight: 800; color: #4a4a68; }
                 .pc-body p { font-size: 14px; color: #6b7280; line-height: 1.7; margin-bottom: 30px; flex: 1; }
                 .pc-btn {
@@ -1199,20 +1308,15 @@ export default function GuildDashboard() {
                 .plugin-card:nth-child(odd) { animation: float-mini 5s ease-in-out infinite; }
 
                 /* Modal Styles */
-                .modal-overlay {
-                    position: fixed;
-                    top: 0; left: 0; width: 100%; height: 100%;
-                    background: rgba(255, 241, 242, 0.4);
-                    backdrop-filter: blur(8px);
-                    display: flex; align-items: center; justify-content: center;
-                    z-index: 2000; padding: 20px;
-                }
+                /* Removed .modal-overlay to use standard .fixed-overlay in globals.css */
+                
                 .modal-card {
                     background: white; max-width: 480px; width: 100%;
                     padding: 40px; text-align: center;
                     border: 2px solid var(--primary); border-radius: 30px;
-                    position: relative;
+                    position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.1);
                 }
+                .modal-card.left-align { text-align: left; }
                 .modal-header h2 { font-size: 28px; margin-bottom: 15px; color: #4a4a68; font-weight: 900; }
                 .modal-header p { font-size: 16px; color: #6b7280; line-height: 1.6; margin-bottom: 35px; }
                 .modal-close {
@@ -1224,7 +1328,8 @@ export default function GuildDashboard() {
                 }
                 .modal-close:hover { color: var(--primary); background: var(--primary-glow); transform: rotate(90deg); }
                 
-                .modal-actions { display: flex; gap: 15px; flex-direction: column; }
+                .modal-actions { display: flex; gap: 15px; justify-content: center; }
+                .modal-actions-v { display: flex; gap: 12px; flex-direction: column; }
                 .modal-btn {
                     padding: 14px; border-radius: 12px;
                     font-weight: 800; font-size: 15px;
@@ -1247,7 +1352,19 @@ export default function GuildDashboard() {
                 .m-title h3 { font-size: 22px; font-weight: 900; color: #4b4b6b; margin: 0; }
                 .m-title p { font-size: 14px; color: #94bcbe; margin: 5px 0 0; font-weight: 700; opacity: 0.8; }
                 
-                .discord-sidebar { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; max-height: 450px; overflow-y: auto; text-align: left; }
+                .discord-sidebar { 
+                    display: flex; 
+                    flex-direction: column; 
+                    gap: 2px; 
+                    padding: 10px 0; 
+                    height: 55vh; /* Fixed height matching standard */
+                    min-height: 400px;
+                    overflow-y: auto; 
+                    text-align: left; 
+                    padding-right: 5px;
+                }
+                .discord-sidebar::-webkit-scrollbar { width: 4px; }
+                .discord-sidebar::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
                 .discord-cat-header { display: flex; align-items: center; padding: 8px 15px; cursor: pointer; border-radius: 8px; transition: 0.2s; }
                 .discord-cat-header:hover { background: rgba(0,0,0,0.03); }
                 .cat-name { font-size: 12px; font-weight: 900; color: #94a3af; flex: 1; letter-spacing: 0.05em; margin-left: 2px; }
@@ -1258,7 +1375,26 @@ export default function GuildDashboard() {
                 .ch-name { font-size: 15px; font-weight: 700; flex: 1; }
                 
                 .modal-footer { display: flex; align-items: center; justify-content: space-between; padding-top: 25px; border-top: 1px solid #f1f5f9; margin-top: 25px; width: 100%; }
+                .modal-actions-row { display: flex; gap: 10px; align-items: center; }
+                .selection-count { font-size: 14px; color: #6b7280; font-weight: 600; }
+                .selection-count b { color: var(--primary); font-weight: 800; font-size: 16px; }
                 .m-checkbox { width: 18px; height: 18px; accent-color: var(--primary); }
+
+                /* Setup Option Grid */
+                .setup-grid { display: flex; flex-direction: column; gap: 15px; margin-top: 30px; }
+                .setup-option {
+                    display: flex; align-items: center; gap: 20px; padding: 20px;
+                    background: #fdf2f8; border-radius: 18px; cursor: pointer;
+                    transition: 0.3s; border: 1px solid rgba(255,183,226,0.2);
+                    text-align: left; position: relative;
+                }
+                .setup-option:hover { background: white; border-color: var(--primary); transform: translateX(10px); box-shadow: 0 10px 20px rgba(255,183,226,0.1); }
+                .so-icon { font-size: 24px; min-width: 50px; height: 50px; background: white; display: flex; align-items: center; justify-content: center; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+                .so-info { flex: 1; }
+                .so-info h4 { font-size: 16px; font-weight: 800; color: #4a4a68; margin-bottom: 4px; }
+                .so-info p { font-size: 13px; color: #6b7280; margin: 0; line-height: 1.4; }
+                .so-arrow { color: #d1d5db; font-weight: 900; }
+                .setup-option:hover .so-arrow { color: var(--primary); transform: translateX(5px); }
             `}</style>
         </>
     );
