@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useLanguage } from "../../../context/LanguageContext";
+import ProWallModal from "../components/ProWallModal";
+import PricingModal from "../components/PricingModal";
 
 export default function LeaderboardPage() {
     const { guildId } = useParams();
@@ -10,10 +12,13 @@ export default function LeaderboardPage() {
     const { t, language } = useLanguage();
     const [missions, setMissions] = useState([]);
     const [userStats, setUserStats] = useState({ xp_balance: 0, total_missions_completed: 0 });
-    const [userPlan, setUserPlan] = useState({ plan_type: "free" });
+    const [userPlan, setUserPlan] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const router = useRouter();
+
+    const [showPricing, setShowPricing] = useState(false);
+    const [proWallState, setProWallState] = useState({ show: false, featureName: '' });
 
     const fetchMissionsData = async () => {
         if (!session?.user?.id) return;
@@ -43,6 +48,17 @@ export default function LeaderboardPage() {
     useEffect(() => {
         fetchMissionsData();
     }, [session]);
+
+    // Pro Lock Check
+    useEffect(() => {
+        if (!loading && userPlan) {
+            if (userPlan.plan_type === 'free') {
+                setProWallState({ show: true, featureName: 'Mission Hub & Leaderboard' });
+            } else {
+                setProWallState(prev => ({ ...prev, show: false }));
+            }
+        }
+    }, [userPlan, loading]);
 
     const handleClaimReward = async (missionKey) => {
         if (!session?.user?.id) return;
@@ -74,6 +90,27 @@ export default function LeaderboardPage() {
 
     return (
         <div className="lb-wrapper animate-fade">
+            <PricingModal
+                show={showPricing}
+                userPlan={userPlan}
+                onClose={() => setShowPricing(false)}
+            />
+
+            <ProWallModal
+                show={proWallState.show}
+                featureName={proWallState.featureName}
+                onClose={() => {
+                    setProWallState({ ...proWallState, show: false });
+                    if (userPlan?.plan_type === 'free') {
+                        router.push(`/servers/${guildId}`);
+                    }
+                }}
+                onProceed={() => {
+                    setProWallState({ ...proWallState, show: false });
+                    setShowPricing(true);
+                }}
+            />
+
             <header className="lb-header">
                 <h1>An An <span>Mission Hub</span> 🏆</h1>
             </header>
@@ -81,7 +118,7 @@ export default function LeaderboardPage() {
             <div className="lb-grid">
                 {/* Left Side: Profile & Stats */}
                 <aside className="lb-profile glass animate-pop">
-                    <div className={`profile-hero ${userPlan.plan_type}`}>
+                    <div className={`profile-hero ${userPlan?.plan_type || 'free'}`}>
                         <div className="profile-img-container">
                             <img src={session?.user?.image} alt="Avatar" className="profile-img" />
 
@@ -110,7 +147,7 @@ export default function LeaderboardPage() {
                                 </defs>
                             </svg>
 
-                            {(userPlan.plan_type === 'premium' || userPlan.plan_type === 'pro') && (
+                            {(userPlan?.plan_type === 'premium' || userPlan?.plan_type === 'pro') && (
                                 <div className="crown-wrapper">
                                     <svg className="crown-svg" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
                                         {/* Background Glow */}
@@ -118,7 +155,7 @@ export default function LeaderboardPage() {
 
                                         {/* Main Crown Body */}
                                         <path
-                                            className={userPlan.plan_type === 'premium' ? 'crown-gold-path' : 'crown-silver-path'}
+                                            className={userPlan?.plan_type === 'premium' ? 'crown-gold-path' : 'crown-silver-path'}
                                             d="M10 70 L5 20 L30 45 L50 5 L70 45 L95 20 L90 70 H10 Z"
                                             stroke="rgba(0,0,0,0.1)" strokeWidth="1"
                                         />

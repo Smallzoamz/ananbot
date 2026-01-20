@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Portal from "../../../components/Portal";
-import { ArrowIcon } from "../../../components/Icons";
+import { ArrowIcon, ProBadge } from "../../../components/Icons";
 
 const SetupModal = ({
     show,
@@ -21,7 +21,9 @@ const SetupModal = ({
     isDeploying,
     onDeploy,
     onClose,
-    onShowPermissions
+    onShowPermissions,
+    userPlan,
+    onShowProWall
 }) => {
     const [activeZoneIndex, setActiveZoneIndex] = React.useState(0);
 
@@ -34,6 +36,11 @@ const SetupModal = ({
     };
 
     const handleTemplateClick = (key) => {
+        // Allow Pro and Premium plans
+        if (key === 'Custom' && userPlan?.plan_type === 'free') {
+            onShowProWall("Custom-Designed Template");
+            return;
+        }
         setSelectedTemplate(key);
         if (key === 'Custom') {
             setSetupStep('custom_role');
@@ -68,7 +75,12 @@ const SetupModal = ({
                                 <div key={key} className="setup-option" onClick={() => handleTemplateClick(key)}>
                                     <div className="so-icon">{t.icon}</div>
                                     <div className="so-info">
-                                        <h4>{t.name}</h4>
+                                        <h4>
+                                            {t.name}
+                                            {key === 'Custom' && (
+                                                <ProBadge />
+                                            )}
+                                        </h4>
                                         <p>{t.desc}</p>
                                     </div>
                                     <div className="so-arrow">→</div>
@@ -137,7 +149,7 @@ const SetupModal = ({
                                 <textarea
                                     className="m-textarea"
                                     placeholder={selectedTemplate === "Community" ? "เช่น Valorant, Roblox, Minecraft" : "เช่น Facebook, TikTok, YouTube"}
-                                    value={extraDataInput}
+                                    value={extraDataInput || ""}
                                     onChange={(e) => setExtraDataInput(e.target.value)}
                                 />
                             </div>
@@ -157,7 +169,7 @@ const SetupModal = ({
                                     <div key={idx} className="role-edit-item">
                                         <input
                                             type="color"
-                                            value={role.color}
+                                            value={role.color || "#000000"}
                                             onChange={(e) => {
                                                 const newRoles = [...customRoles];
                                                 newRoles[idx].color = e.target.value;
@@ -167,7 +179,7 @@ const SetupModal = ({
                                         />
                                         <input
                                             type="text"
-                                            value={role.name}
+                                            value={role.name || ""}
                                             onChange={(e) => {
                                                 const newRoles = [...customRoles];
                                                 newRoles[idx].name = e.target.value;
@@ -203,7 +215,7 @@ const SetupModal = ({
                                                 <input
                                                     type="text"
                                                     className="bare-input"
-                                                    value={zone.name}
+                                                    value={zone.name || ""}
                                                     placeholder="UNTITLED ZONE"
                                                     onChange={(e) => {
                                                         const newZones = [...customZones];
@@ -276,7 +288,7 @@ const SetupModal = ({
                                                         <span style={{ fontSize: '18px', width: '25px', textAlign: 'center' }}>{ch.type === 'text' ? '#' : '🔊'}</span>
                                                         <input
                                                             type="text"
-                                                            value={ch.name}
+                                                            value={ch.name || ""}
                                                             onChange={(e) => {
                                                                 const newZones = [...customZones];
                                                                 newZones[activeZoneIndex].channels[cidx].name = e.target.value;

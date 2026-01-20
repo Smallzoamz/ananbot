@@ -11,3 +11,23 @@ export const ArrowIcon = () => (
         <path d="M9 18l6-6-6-6" />
     </svg>
 );
+
+export const ProBadge = () => (
+    <div style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '24px',
+        height: '24px',
+        background: '#FFF8E1',
+        borderRadius: '6px',
+        color: '#FF9800',
+        marginLeft: '8px',
+        boxShadow: '0 2px 4px rgba(255, 152, 0, 0.15)',
+        verticalAlign: 'middle'
+    }}>
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+            <path d="M5 16L19 16V18H5V16ZM19 8L15.5 11L12 5L8.5 11L5 8V14H19V8Z" />
+        </svg>
+    </div>
+);

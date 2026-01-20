@@ -4509,3 +4509,97 @@ h3 {
     transform: scale(1.2) translateY(-10px) rotate(-5deg);
   }
 }
+
+/* Custom Template Pro Badge */
+.sc-badge-pro {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #FFC107, #FF9800);
+  color: white;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-left: 10px;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.4);
+  vertical-align: middle;
+  transform: translateY(-2px);
+}
+
+/* Pro Wall Modal Styles */
+.z-prowall {
+  z-index: 3400 !important;
+  /* Below Pricing (3500) but above Setup (2900) */
+}
+
+.pro-wall-card {
+  max-width: 400px;
+  padding: 50px 40px;
+  border: none;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+  background: white;
+}
+
+.pw-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  animation: float 3s ease-in-out infinite;
+  background: #fdf2f8;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  box-shadow: 0 10px 20px rgba(255, 183, 226, 0.2);
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.pw-title {
+  font-size: 24px;
+  font-weight: 900;
+  color: #4a4a68;
+  margin-bottom: 10px;
+}
+
+.pw-desc {
+  font-size: 15px;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+.pw-sub {
+  font-size: 13px;
+  opacity: 0.8;
+  color: #94a3b8;
+}
+
+.gold-btn {
+  background: linear-gradient(135deg, #d4af37, #c5a028);
+  color: white;
+  border: none;
+  font-size: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 20px rgba(212, 175, 55, 0.3);
+}
+
+.gold-btn:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.1);
+  box-shadow: 0 12px 25px rgba(212, 175, 55, 0.4);
+}

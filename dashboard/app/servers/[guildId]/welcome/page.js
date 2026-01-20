@@ -7,6 +7,8 @@ import { useServer } from "../../../context/ServerContext";
 import { createPortal } from "react-dom";
 
 import ResultModal from "../../../components/ResultModal";
+import ProWallModal from "../components/ProWallModal";
+import PricingModal from "../components/PricingModal";
 
 export default function WelcomeSettings() {
     const { data: session } = useSession();
@@ -28,6 +30,8 @@ export default function WelcomeSettings() {
     });
 
     const [modalState, setModalState] = useState({ show: false, type: 'success', message: '' });
+    const [showPricing, setShowPricing] = useState(false);
+    const [proWallState, setProWallState] = useState({ show: false, featureName: '' });
 
     useEffect(() => {
         if (!guildId) return;
@@ -66,6 +70,18 @@ export default function WelcomeSettings() {
 
         fetchData();
     }, [guildId]);
+
+    // Pro Lock Check
+    // Pro Lock Check
+    useEffect(() => {
+        if (!serverLoading && userPlan) {
+            if (userPlan.plan_type === 'free') {
+                setProWallState({ show: true, featureName: 'Welcome & Goodbye' });
+            } else {
+                setProWallState(prev => ({ ...prev, show: false }));
+            }
+        }
+    }, [userPlan, serverLoading]);
 
     const handleTestWelcome = async () => {
         const res = await fetch("/api/proxy/action", {
@@ -143,6 +159,28 @@ export default function WelcomeSettings() {
                 message={modalState.message}
                 onClose={() => setModalState({ ...modalState, show: false })}
             />
+
+            <PricingModal
+                show={showPricing}
+                userPlan={userPlan}
+                onClose={() => setShowPricing(false)}
+            />
+
+            <ProWallModal
+                show={proWallState.show}
+                featureName={proWallState.featureName}
+                onClose={() => {
+                    // If user closes lock screen without upgrading, redirect back to dashboard
+                    setProWallState({ ...proWallState, show: false });
+                    if (userPlan.plan_type === 'free') {
+                        router.push(`/servers/${guildId}`);
+                    }
+                }}
+                onProceed={() => {
+                    setProWallState({ ...proWallState, show: false });
+                    setShowPricing(true);
+                }}
+            />
             <div className="welcome-header-actions">
                 <div className="title-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <h2>WELCOME & GOODBYE</h2>
@@ -163,22 +201,7 @@ export default function WelcomeSettings() {
             </div>
 
             <div className="settings-container animate-fade" style={{ position: 'relative' }}>
-                {userPlan.plan_type === 'free' && (
-                    <div className="pro-lock-overlay glass blur-in">
-                        <div className="lock-content animate-pop">
-                            <div className="crown-icon">
-                                <svg viewBox="0 0 24 24" width="80" height="80">
-                                    <path fill="currentColor" d="M5,16 L19,16 L19,18 L5,18 L5,16 Z M19,8 L15.5,11 L12,5 L8.5,11 L5,8 L5,14 L19,14 L19,8 Z" />
-                                </svg>
-                            </div>
-                            <h2>Pro Plan Required 👑</h2>
-                            <p>This feature is exclusive for Papa's <strong>Pro</strong> and <strong>Premium</strong> plans. Upgrade now to unlock customized welcome & goodbye messages!</p>
-                            <button className="pricing-upgrade-btn" onClick={() => router.push(`/servers/${guildId}?showPricing=true`)}>
-                                Upgrade to Pro 🚀
-                            </button>
-                        </div>
-                    </div>
-                )}
+                {/* Pro Lock Overlay Removed in favor of ProWallModal */}
 
                 <div className={`settings-grid ${userPlan.plan_type === 'free' ? 'content-locked' : ''}`}>
                     {/* Welcome Card */}

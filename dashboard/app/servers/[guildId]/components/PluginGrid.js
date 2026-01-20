@@ -1,12 +1,20 @@
 "use client";
 import React from "react";
 import { useRouter } from "next/navigation";
-import { CrownIcon } from "../../../components/Icons";
+import { CrownIcon, ProBadge } from "../../../components/Icons";
 
-const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructure, onShowSelectiveModal }) => {
+const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructure, onShowSelectiveModal, userPlan, onShowProWall }) => {
     const router = useRouter();
 
     const tabs = ["All Plugins", "Essentials", "Server Management", "Security", "Utilities"];
+
+    const checkPro = (featureName, callback) => {
+        if (userPlan?.plan_type === 'free') {
+            onShowProWall(featureName);
+        } else {
+            callback();
+        }
+    };
 
     const plugins = [
         {
@@ -24,11 +32,11 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
             id: "welcome",
             name: "Welcome & Goodbye",
             icon: "👋",
-            badge: <CrownIcon />,
-            badgeClass: "p-badge-s",
+            badge: <ProBadge />,
+            badgeClass: "",
             category: "Essentials",
             desc: "Greet new members and say goodbye with style. Fully customizable messages and images.",
-            action: () => router.push(`/servers/${guildId}/welcome`),
+            action: () => checkPro("Welcome & Goodbye", () => router.push(`/servers/${guildId}/welcome`)),
             btnText: "Configure",
             isActive: true
         },
@@ -48,22 +56,22 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
             id: "structure",
             name: "Structure Manager",
             icon: "🏗️",
-            badge: <CrownIcon />,
-            badgeClass: "p-badge-s",
+            badge: <ProBadge />,
+            badgeClass: "",
             category: "Server Management",
             desc: "Selectively delete categories or specific channels from your server.",
-            action: () => { onFetchStructure(); onShowSelectiveModal(true); },
+            action: () => checkPro("Structure Manager", () => { onFetchStructure(); onShowSelectiveModal(true); }),
             btnText: "+ Configure"
         },
         {
             id: "terminal",
             name: "anan-terminal",
             icon: "💻",
-            badge: <CrownIcon />,
-            badgeClass: "p-badge-s",
+            badge: <ProBadge />,
+            badgeClass: "",
             category: "Utilities",
             desc: "Exclusive command center for Papa and Server Owners only.",
-            action: null,
+            action: () => checkPro("Bot Terminal", () => alert("Terminal Settings")),
             btnText: "Settings",
             isActive: true
         },
@@ -71,33 +79,33 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
             id: "security",
             name: "Security Center",
             icon: "🛡️",
-            badge: <CrownIcon />,
-            badgeClass: "p-badge-s",
+            badge: <ProBadge />,
+            badgeClass: "",
             category: "Security",
             desc: "Protect your server with instant lockdown and audit log visibility.",
-            action: () => onTabChange("Security"),
+            action: () => checkPro("Security Center", () => onTabChange("Security")),
             btnText: "+ Enable"
         },
         {
             id: "temproom",
             name: "Temporary Rooms",
             icon: "🔊",
-            badge: <CrownIcon />,
-            badgeClass: "p-badge-s",
+            badge: <ProBadge />,
+            badgeClass: "",
             category: "Utilities",
             desc: "Auto-create voice channels for users. Empty rooms delete automatically.",
-            action: () => onAction("setup_temproom"),
+            action: () => checkPro("Temporary Rooms", () => onAction("setup_temproom")),
             btnText: "+ Enable"
         },
         {
             id: "personalizer",
             name: "Bot Personalizer",
             icon: "🎭",
-            badge: <CrownIcon />,
-            badgeClass: "p-badge-s",
+            badge: <ProBadge />,
+            badgeClass: "",
             category: "Essentials",
             desc: "Customize your bot's name, profile, and status for this server.",
-            action: () => router.push(`/servers/${guildId}/personalizer`),
+            action: () => checkPro("Bot Personalizer", () => router.push(`/servers/${guildId}/personalizer`)),
             btnText: "Configure",
             isActive: true
         }

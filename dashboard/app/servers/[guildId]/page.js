@@ -15,6 +15,7 @@ import ConfirmModal from "./components/ConfirmModal";
 import PricingModal from "./components/PricingModal";
 import SelectiveModal from "./components/SelectiveModal";
 import PermissionsModal from "./components/PermissionsModal";
+import ProWallModal from "./components/ProWallModal";
 
 export default function Dashboard({ params }) {
     const { guildId } = React.use(params);
@@ -57,6 +58,7 @@ export default function Dashboard({ params }) {
     // Pricing State
     const [showPricing, setShowPricing] = useState(false);
     const [userPlan, setUserPlan] = useState(null);
+    const [proWallState, setProWallState] = useState({ show: false, featureName: '' });
 
     // Selective Deletion State
     const [showSelective, setShowSelective] = useState(false);
@@ -282,12 +284,21 @@ export default function Dashboard({ params }) {
                 onAction={handleAction}
                 onFetchStructure={fetchStructure}
                 onShowSelectiveModal={setShowSelective}
+                userPlan={userPlan}
+                onShowProWall={(feature) => setProWallState({ show: true, featureName: feature })}
             />
 
             <PricingModal
                 show={showPricing}
                 userPlan={userPlan}
                 onClose={() => setShowPricing(false)}
+            />
+
+            <ProWallModal
+                show={proWallState.show}
+                featureName={proWallState.featureName}
+                onClose={() => setProWallState({ ...proWallState, show: false })}
+                onProceed={() => setShowPricing(true)}
             />
 
             <SetupModal
@@ -309,6 +320,8 @@ export default function Dashboard({ params }) {
                 onDeploy={handleDeploy}
                 onClose={() => setShowSetup(false)}
                 onShowPermissions={(idx) => { setActiveRoleIndex(idx); setShowPermissions(true); }}
+                userPlan={userPlan}
+                onShowProWall={(feature) => setProWallState({ show: true, featureName: feature })}
             />
 
             <ConfirmModal
