@@ -33,11 +33,13 @@ export default function ServerSidebar() {
                 <div className={`guild-selector glass ${isDropdownOpen ? 'active' : ''}`} onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
                     <div className="guild-current">
                         {guildData.icon ?
-                            <img src={guildData.icon.startsWith('http') ? guildData.icon : `https://cdn.discordapp.com/icons/${guildId}/${guildData.icon}.png`} alt="G" />
-                            : <div className="guild-init">{guildData.name[0]}</div>
+                            <img className="guild-icon-large" src={guildData.icon.startsWith('http') ? guildData.icon : `https://cdn.discordapp.com/icons/${guildId}/${guildData.icon}.png`} alt="G" />
+                            : <div className="guild-init-large">{guildData.name[0]}</div>
                         }
-                        <span>{guildData.name}</span>
-                        <div className="chevron">{isDropdownOpen ? "⌃" : "⌄"}</div>
+                        <div className="guild-info">
+                            <span>{guildData.name}</span>
+                            <div className="chevron">{isDropdownOpen ? "⌃" : "⌄"}</div>
+                        </div>
                     </div>
                 </div>
                 {isDropdownOpen && (
@@ -97,41 +99,47 @@ export default function ServerSidebar() {
             <style jsx>{`
                 .mee6-sidebar {
                     width: 280px;
-                    background: white;
-                    border-right: 1px solid rgba(214, 207, 255, 0.3);
+                    background: rgba(255, 255, 255, 0.45);
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
+                    border-right: 1px solid rgba(255, 183, 226, 0.2);
                     display: flex;
                     flex-direction: column;
-                    padding: 30px 15px;
+                    padding: 20px 15px;
                     position: sticky;
                     top: 0;
                     height: 100vh;
                     z-index: 200;
                     box-shadow: 10px 0 30px rgba(0,0,0,0.02);
                 }
-                .guild-switcher-wrapper { position: relative; margin-bottom: 35px; z-index: 300; }
+                .guild-switcher-wrapper { position: relative; margin-bottom: 30px; z-index: 300; }
                 .guild-selector {
-                    padding: 15px;
-                    border-radius: var(--radius-soft);
+                    padding: 8px;
+                    border-radius: 24px;
                     cursor: pointer;
-                    background: #fdf2f8;
-                    border: 1px solid rgba(255,183,226,0.2);
-                    transition: 0.3s;
+                    background: white;
+                    border: 1px solid rgba(255, 183, 226, 0.2);
+                    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    box-shadow: 0 4px 15px rgba(255, 183, 226, 0.1);
                 }
-                .guild-selector:hover, .guild-selector.active { transform: scale(1.02); background: #fce7f3; border-color: var(--primary); }
-                .guild-current { display: flex; align-items: center; gap: 12px; }
-                .guild-current img { width: 36px; height: 36px; border-radius: 10px; border: 2px solid white; }
-                .guild-init { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; font-weight: 800; color: white; }
-                .guild-current span { flex: 1; font-weight: 800; font-size: 15px; color: #4a4a68; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-                .chevron { opacity: 0.4; font-size: 18px; }
+                .guild-selector:hover, .guild-selector.active { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(255, 183, 226, 0.25); border-color: var(--primary); }
+                
+                .guild-current { display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 10px 0; }
+                .guild-icon-large { width: 100%; aspect-ratio: 1/1; border-radius: 18px; object-fit: cover; border: 4px solid #fdf2f8; }
+                .guild-init-large { width: 100%; aspect-ratio: 1/1; border-radius: 18px; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; align-items: center; justify-content: center; font-weight: 800; color: white; font-size: 60px; }
+                
+                .guild-info { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 10px; }
+                .guild-info span { font-weight: 800; font-size: 15px; color: #4a4a68; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .chevron { opacity: 0.4; font-size: 16px; }
 
                 .guild-dropdown {
                     position: absolute;
-                    top: calc(100% + 10px);
+                    top: calc(100% + 15px);
                     left: 0;
                     width: 100%;
                     background: white;
-                    border-radius: var(--radius-soft);
-                    border: 1px solid rgba(139, 92, 246, 0.1);
+                    border-radius: 20px;
+                    border: 1px solid rgba(255, 183, 226, 0.2);
                     box-shadow: 0 15px 40px rgba(0,0,0,0.1);
                     padding: 10px;
                     z-index: 1000;
@@ -149,19 +157,19 @@ export default function ServerSidebar() {
                     font-weight: 700;
                     font-size: 14px;
                 }
-                .dropdown-item:hover { background: #f5f3ff; color: #8b5cf6; }
+                .dropdown-item:hover { background: #fdf2f8; color: var(--primary); }
                 .guild-icon-mini { width: 24px; height: 24px; border-radius: 6px; }
-                .guild-init-mini { width: 24px; height: 24px; border-radius: 6px; background: #f3f4f6; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
-                .dropdown-divider { height: 1px; background: #f3f4f6; margin: 8px 0; }
-                .back-item { color: #8b5cf6; background: #f5f3ff; margin-top: 5px; }
+                .guild-init-mini { width: 24px; height: 24px; border-radius: 6px; background: #fdf2f8; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; }
+                .dropdown-divider { height: 1px; background: #fdf2f8; margin: 8px 0; }
+                .back-item { color: var(--primary); background: #fdf2f8; margin-top: 5px; }
 
-                .sidebar-list { flex: 1; overflow-y: auto; }
+                .sidebar-list { flex: 1; overflow-y: auto; padding-right: 5px; }
                 .sidebar-list::-webkit-scrollbar { width: 4px; }
-                .sidebar-list::-webkit-scrollbar-thumb { background: #f1f5f9; border-radius: 10px; }
+                .sidebar-list::-webkit-scrollbar-thumb { background: rgba(255, 183, 226, 0.2); border-radius: 10px; }
 
                 .menu-item {
                     padding: 12px 18px;
-                    margin-bottom: 8px;
+                    margin-bottom: 4px;
                     border-radius: 12px;
                     font-size: 14px;
                     font-weight: 700;
@@ -172,19 +180,20 @@ export default function ServerSidebar() {
                     justify-content: space-between;
                     align-items: center;
                 }
-                .menu-item:hover { background: #f5f3ff; color: #8b5cf6; transform: translateX(5px); }
-                .menu-item.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(255,183,226,0.4); }
+                .menu-item:hover { background: #fdf2f8; color: var(--primary); transform: translateX(5px); }
+                .menu-item.active { background: var(--primary); color: white; box-shadow: 0 8px 20px rgba(255,183,226,0.35); }
                 .menu-category {
                     font-size: 11px;
-                    font-weight: 900;
-                    color: #9ca3af;
-                    margin: 30px 0 12px 18px;
-                    letter-spacing: 0.1em;
+                    font-weight: 950;
+                    color: #cbd5e1;
+                    margin: 25px 0 10px 18px;
+                    letter-spacing: 0.05em;
+                    text-transform: uppercase;
                 }
 
-                .sidebar-footer { padding-top: 20px; border-top: 1px solid #f3f4f6; }
-                .invite-btn { width: 100%; padding: 14px; background: #f5f3ff; color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; }
-                .invite-btn:hover { background: #8b5cf6; color: white; }
+                .sidebar-footer { padding-top: 20px; border-top: 1px solid rgba(255, 183, 226, 0.2); }
+                .invite-btn { width: 100%; padding: 14px; background: white; color: #6b7280; border: 1px solid rgba(255, 183, 226, 0.2); border-radius: 14px; font-weight: 800; cursor: pointer; transition: 0.3s; }
+                .invite-btn:hover { border-color: var(--primary); color: var(--primary); background: #fdf2f8; transform: translateY(-2px); }
 
                 .p-badge-s { background: rgba(255,255,255,0.2); border-radius: 6px; }
                 .menu-item:not(.active) .p-badge-s { background: #fffbeb; color: #d97706; border: 1px solid rgba(252,211,77,0.3); }

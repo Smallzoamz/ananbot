@@ -72,22 +72,29 @@ export default function ServerHeader() {
             <style jsx>{`
                 .mee6-header {
                     height: 80px;
-                    border-bottom: 1px solid rgba(214, 207, 255, 0.2);
-                    background: rgba(255, 255, 255, 0.6);
-                    backdrop-filter: blur(12px);
+                    border-bottom: 1px solid rgba(255, 183, 226, 0.15);
+                    background: rgba(255, 255, 255, 0.4);
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    padding: 0 50px;
+                    padding: 0 40px;
                     position: sticky;
                     top: 0;
                     z-index: 100;
                 }
-                .logo-text { font-size: 24px; font-weight: 900; color: #ff85c1; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(255,133,193,0.1); }
-                .header-right { display: flex; align-items: center; gap: 25px; }
+                .logo-text { 
+                    font-size: 26px; 
+                    font-weight: 900; 
+                    color: #ff85c1; 
+                    letter-spacing: 1.5px; 
+                    text-shadow: 0 2px 10px rgba(255,133,193,0.25); 
+                }
+                .header-right { display: flex; align-items: center; gap: 20px; }
                 
                 .plan-badge-top {
-                    padding: 10px 20px;
+                    padding: 10px 22px;
                     border-radius: 20px;
                     font-size: 11px;
                     font-weight: 900;
@@ -99,7 +106,7 @@ export default function ServerHeader() {
                     box-shadow: 0 4px 15px rgba(255,133,193,0.3);
                 }
                 .plan-badge-top.pro {
-                    background: #f5f3ff;
+                    background: white;
                     color: #8b5cf6;
                     border: 1px solid rgba(139, 92, 246, 0.2);
                 }
@@ -108,46 +115,48 @@ export default function ServerHeader() {
                     background: linear-gradient(135deg, #ffc107, #ff9800);
                     color: white;
                     border: none;
-                    padding: 10px 22px;
+                    padding: 11px 24px;
                     border-radius: 20px;
-                    font-weight: 800;
+                    font-weight: 900;
                     font-size: 13px;
                     cursor: pointer;
-                    box-shadow: 0 4px 12px rgba(255,193,7,0.3);
-                    transition: 0.3s;
+                    box-shadow: 0 4px 15px rgba(255,193,7,0.35);
+                    transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 }
-                .premium-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
-                .header-icon { font-size: 22px; color: #4a4a68; opacity: 0.6; cursor: pointer; transition: 0.3s; }
-                .header-icon:hover { opacity: 1; transform: rotate(15deg); }
+                .premium-btn:hover { transform: translateY(-2px) scale(1.02); filter: brightness(1.1); box-shadow: 0 8px 25px rgba(255,193,7,0.45); }
+                
+                .header-icon { font-size: 22px; color: #4a4a68; opacity: 0.5; cursor: pointer; transition: 0.3s; }
+                .header-icon:hover { opacity: 1; transform: rotate(15deg); color: var(--primary); }
+                
                 .user-profile-wrapper { position: relative; z-index: 1000; }
-                .user-profile img { width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.3s; }
-                .user-profile img:hover { border-color: var(--primary); transform: scale(1.1); }
+                .user-profile img { width: 40px; height: 40px; border-radius: 50%; cursor: pointer; border: 3px solid white; box-shadow: 0 4px 15px rgba(0,0,0,0.08); transition: 0.3s; }
+                .user-profile img:hover { border-color: var(--primary); transform: scale(1.1); box-shadow: 0 8px 25px rgba(255,183,226,0.3); }
 
                 .profile-dropdown {
                     position: absolute;
                     top: calc(100% + 15px);
                     right: 0;
-                    width: 220px;
+                    width: 230px;
                     background: white;
-                    border-radius: var(--radius-soft);
+                    border-radius: 24px;
                     border: 1px solid rgba(255, 183, 226, 0.2);
-                    box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+                    box-shadow: 0 15px 50px rgba(0,0,0,0.12);
                     padding: 15px;
                     z-index: 2000;
                 }
-                .section-label { font-size: 10px; font-weight: 900; color: #9ca3af; padding: 5px 10px 10px; letter-spacing: 0.1em; }
+                .section-label { font-size: 10px; font-weight: 950; color: #cbd5e1; padding: 5px 10px 10px; letter-spacing: 0.1em; text-transform: uppercase; }
                 .dropdown-link {
                     padding: 12px 14px;
-                    border-radius: 10px;
+                    border-radius: 12px;
                     font-size: 14px;
                     font-weight: 800;
-                    color: #2d2d3f;
+                    color: #4a4a68;
                     cursor: pointer;
                     transition: 0.2s;
                 }
-                .dropdown-link:hover { background: #fdf2f8; color: var(--primary); }
-                .dropdown-divider { height: 1px; background: #f3f4f6; margin: 10px 0; }
-                .logout-item { color: #ff4757; margin-top: 5px; }
+                .dropdown-link:hover { background: #fdf2f8; color: var(--primary); transform: translateX(5px); }
+                .dropdown-divider { height: 1px; background: #fdf2f8; margin: 10px 0; }
+                .logout-item { color: #ff4757; margin-top: 5px; font-weight: 900; }
                 .logout-item:hover { background: #fff1f2; color: #ff4757; }
 
                 @keyframes glow { 0%, 100% { box-shadow: 0 0 15px rgba(255,133,193,0.3); } 50% { box-shadow: 0 0 25px rgba(255,133,193,0.6); } }
