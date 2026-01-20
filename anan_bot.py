@@ -968,18 +968,29 @@ class AnAnBot(commands.Bot):
                         print(f"Clear Error: {e}")
                         import traceback; traceback.print_exc()
                 asyncio.create_task(safe_clear())
-                return web.json_response({"status": "clearing"}, headers={"Access-Control-Allow-Origin": "*"})
+                return web.json_response({"success": True, "message": "Cleaning up the guild... 🧹"}, headers={"Access-Control-Allow-Origin": "*"})
                 
             elif action == "rollback":
                 success = await perform_rollback(guild)
-                return web.json_response({"status": "rollback_triggered", "success": success}, headers={"Access-Control-Allow-Origin": "*"})
-                
+                return web.json_response({"success": success, "message": "Rollback triggered!"}, headers={"Access-Control-Allow-Origin": "*"})
+            
+            elif action == "delete_selective":
+                ids = body.get("ids", [])
+                user_id = body.get("user_id")
+                print(f"Selective deleting {len(ids)} items...")
+                async def safe_delete():
+                    try: await perform_selective_delete(guild, ids)
+                    except Exception as e:
+                        print(f"Delete Error: {e}")
+                asyncio.create_task(safe_delete())
+                return web.json_response({"success": True, "message": f"Deleting {len(ids)} items..."}, headers={"Access-Control-Allow-Origin": "*"})
+
             elif action == "setup_temproom":
                 result = await self.perform_temproom_setup(guild, user_id)
                 if result["success"]:
-                    return web.json_response({"status": "success", "message": result["message"]}, headers={"Access-Control-Allow-Origin": "*"})
+                    return web.json_response({"success": True, "message": result["message"]}, headers={"Access-Control-Allow-Origin": "*"})
                 else:
-                    return web.json_response({"error": result["error"]}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                    return web.json_response({"success": False, "message": result["error"]}, status=400, headers={"Access-Control-Allow-Origin": "*"})
                 
             elif action == "setup":
                 template = body.get("template", "Shop")
@@ -1000,7 +1011,7 @@ class AnAnBot(commands.Bot):
                         print(f"Setup Error: {e}")
                         import traceback; traceback.print_exc()
                 asyncio.create_task(safe_setup())
-                return web.json_response({"status": "setup_started"}, headers={"Access-Control-Allow-Origin": "*"})
+                return web.json_response({"success": True, "message": "Setup started! 🚀"}, headers={"Access-Control-Allow-Origin": "*"})
                 
             elif action == "test_welcome_web":
                 user_id = body.get("user_id")

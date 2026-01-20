@@ -9,12 +9,13 @@ const PermissionsModal = ({ show, activeRoleIndex, customRoles, availablePermiss
         <Portal>
             <div className="fixed-overlay z-perms blur-in">
                 <div className="modal-card perms-modal glass animate-pop">
-                    <div className="modal-header">
-                        <div>
-                            <h2>Advanced Permissions</h2>
-                            <p>Configure granular rights for <strong>{customRoles[activeRoleIndex]?.name || 'Role'}</strong></p>
+                    <div className="setup-header">
+                        <div className="so-icon" style={{ background: '#f5f3ff', color: '#8b5cf6' }}>🔐</div>
+                        <div className="m-title">
+                            <h3>Advanced Permissions</h3>
+                            <p>Configure rights for <span style={{ color: 'var(--primary)', fontWeight: '800' }}>{customRoles[activeRoleIndex]?.name || 'Role'}</span></p>
                         </div>
-                        <button className="modal-close" onClick={onClose}>×</button>
+                        <button className="modal-close" onClick={onClose} style={{ position: 'absolute', top: '25px', right: '25px' }}>×</button>
                     </div>
                     <div className="perms-grid">
                         {availablePermissions.map(p => {

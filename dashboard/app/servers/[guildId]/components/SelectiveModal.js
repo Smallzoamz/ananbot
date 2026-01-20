@@ -10,8 +10,8 @@ const SelectiveModal = ({ show, serverStructure, selectedIds, isDeleting, onTogg
             <div className="fixed-overlay z-selective blur-in">
                 <div className="modal-card wide-card glass animate-pop left-align" style={{ textAlign: 'left' }}>
                     <button className="modal-close" onClick={onClose}>×</button>
-                    <div className="selective-header">
-                        <div className="m-icon">🏗️</div>
+                    <div className="setup-header">
+                        <div className="so-icon" style={{ background: '#ecfdf5', color: '#10b981' }}>🏗️</div>
                         <div className="m-title">
                             <h3>Structure Manager</h3>
                             <p>จัดการโครงสร้างเซิร์ฟเวอร์แบบเจาะจง</p>

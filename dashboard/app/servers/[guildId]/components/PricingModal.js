@@ -9,10 +9,15 @@ const PricingModal = ({ show, userPlan, onClose }) => {
         <Portal>
             <div className="fixed-overlay z-pricing blur-in" onClick={onClose}>
                 <div className="pricing-modal glass animate-pop" onClick={e => e.stopPropagation()}>
-                    <div className="pricing-header">
-                        <h2>Choose Your <span>Power</span> 👑</h2>
-                        <p>Unlock exclusive features to grow your community 🌸</p>
-                        <button className="close-x" onClick={onClose}>×</button>
+                    <div className="setup-header" style={{ width: '100%', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                            <div className="so-icon" style={{ background: '#fff0f5', color: '#ec4899' }}>👑</div>
+                            <div className="m-title">
+                                <h3>Choose Your Power</h3>
+                                <p>Unlock exclusive features to grow your community 🌸</p>
+                            </div>
+                        </div>
+                        <button className="modal-close" onClick={onClose} style={{ position: 'relative', top: '0', right: '0' }}>×</button>
                     </div>
                     <div className="pricing-grid">
                         <div className="pricing-card">
