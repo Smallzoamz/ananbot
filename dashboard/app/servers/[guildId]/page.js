@@ -379,7 +379,7 @@ export default function GuildDashboard() {
                     <div className="menu-item">{t.sidebar.personalizer}</div>
 
                     <div className="menu-category">{t.sidebar.catEssentials}</div>
-                    <div className="menu-item">{t.sidebar.welcome}</div>
+                    <div className="menu-item" onClick={() => router.push(`/servers/${guildId}/welcome`)}>{t.sidebar.welcome}</div>
                     <div className="menu-item">{t.sidebar.reaction}</div>
                     <div className="menu-item">{t.sidebar.moderator}</div>
 
@@ -606,6 +606,18 @@ export default function GuildDashboard() {
                                         desc: "Wipe all channels and roles instantly to prepare for clean deployment.",
                                         action: () => handleAction("clear"),
                                         btnText: "+ Enable"
+                                    },
+                                    {
+                                        id: "welcome",
+                                        name: "Welcome & Goodbye",
+                                        icon: "👋",
+                                        badge: "ESSENTIAL",
+                                        badgeClass: "p-badge",
+                                        category: "Essentials",
+                                        desc: "Greet new members and say goodbye with style. Fully customizable messages and images.",
+                                        action: () => router.push(`/servers/${guildId}/welcome`),
+                                        btnText: "Configure",
+                                        isActive: true
                                     },
                                     {
                                         id: "setup",

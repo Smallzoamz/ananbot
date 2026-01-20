@@ -167,3 +167,14 @@ async def get_rollback_data(guild_id: str):
     if not supabase: return None
     res = supabase.table("rollback_memory").select("*").eq("guild_id", str(guild_id)).execute()
     return res.data[0] if res.data else None
+
+async def get_guild_settings(guild_id: str):
+    if not supabase: return None
+    res = supabase.table("guild_settings").select("*").eq("guild_id", str(guild_id)).execute()
+    return res.data[0] if res.data else None
+
+async def save_guild_settings(guild_id: str, settings: dict):
+    if not supabase: return {"success": False, "error": "Database not connected"}
+    data = {"guild_id": str(guild_id), **settings}
+    res = supabase.table("guild_settings").upsert(data).execute()
+    return {"success": True}

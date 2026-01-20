@@ -13,7 +13,9 @@ from utils.supabase_client import (
     get_user_plan,
     claim_mission_reward,
     save_rollback_data,
-    get_rollback_data
+    get_rollback_data,
+    get_guild_settings,
+    save_guild_settings
 )
 
 load_dotenv() # Load variables from .env
@@ -695,6 +697,7 @@ class AnAnBot(commands.Bot):
         app.router.add_get('/api/guild/{guild_id}/stats', self.handle_guild_stats)
         app.router.add_get('/api/discord-permissions', self.handle_discord_permissions)
         app.router.add_get('/api/guild/{guild_id}/structure', self.handle_guild_structure)
+        app.router.add_get('/api/guild/{guild_id}/settings', self.handle_guild_settings)
         app.router.add_get('/api/ping', lambda r: web.Response(text="pong"))
         app.router.add_post('/api/action', self.handle_action)
         app.router.add_options('/api/action', self.handle_options)
@@ -703,6 +706,7 @@ class AnAnBot(commands.Bot):
         app.router.add_options('/api/guild/{guild_id}/stats', self.handle_options)
         app.router.add_options('/api/guild/{guild_id}/structure', self.handle_options)
         app.router.add_options('/api/discord-permissions', self.handle_options)
+        app.router.add_options('/api/guild/{guild_id}/settings', self.handle_options)
         
         runner = web.AppRunner(app)
         await runner.setup()
@@ -921,8 +925,18 @@ class AnAnBot(commands.Bot):
                 result = await claim_mission_reward(user_id, mission_key)
                 return web.json_response(result, headers={"Access-Control-Allow-Origin": "*"})
 
+            if action == "save_welcome_settings":
+                settings = body.get("settings", {})
+                print(f"Saving welcome settings for guild {guild_id}")
+                result = await save_guild_settings(guild_id, settings)
+                return web.json_response(result, headers={"Access-Control-Allow-Origin": "*"})
+
             # For other actions, guild is required
-            guild = self.get_guild(int(guild_id)) if guild_id else (self.guilds[0] if self.guilds else None)
+            try:
+                guild = self.get_guild(int(guild_id)) if guild_id else (self.guilds[0] if self.guilds else None)
+            except:
+                guild = None
+                
             if not guild:
                 return web.json_response({"error": "Guild not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
             
@@ -973,10 +987,35 @@ class AnAnBot(commands.Bot):
                 asyncio.create_task(safe_delete())
                 return web.json_response({"status": "deletion_started"}, headers={"Access-Control-Allow-Origin": "*"})
             
+            
             return web.json_response({"error": "Unknown action"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
             
         except Exception as e:
             print(f"API Action Error: {e}")
+            return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
+
+    async def handle_guild_settings(self, request):
+        guild_id = request.match_info.get('guild_id') or request.query.get('guild_id')
+        if not guild_id:
+            return web.json_response({"error": "Missing guild_id"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+        
+        try:
+            settings = await get_guild_settings(guild_id)
+            if not settings:
+                # Provide default structure if not found
+                return web.json_response({
+                    "welcome_enabled": True,
+                    "welcome_channel_id": None,
+                    "welcome_message": None,
+                    "welcome_image_url": None,
+                    "goodbye_enabled": False,
+                    "goodbye_channel_id": None,
+                    "goodbye_message": None,
+                    "goodbye_image_url": None
+                }, headers={"Access-Control-Allow-Origin": "*"})
+            return web.json_response(settings, headers={"Access-Control-Allow-Origin": "*"})
+        except Exception as e:
+            print(f"API Guild Settings Error: {e}")
             return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
 
     @tasks.loop(minutes=10)
@@ -1015,17 +1054,40 @@ class AnAnBot(commands.Bot):
         # 1. Update Stats & Latest Member
         await self.ensure_management_system(member.guild)
         
-        # 2. Original Welcome Logic
-        success = await send_welcome_message(member)
+        # 2. Original Welcome Logic (with Database Settings Override)
+        settings = await get_guild_settings(str(member.guild.id))
+        success = await send_welcome_message(member, settings=settings)
         if success:
             print(f"Sent welcome to {member.name}")
             # Mission: Invite Friends (Attribute to the owner or recruiter)
-            # Simplest for now: attribute to guild owner if they invited
             await update_mission_progress(str(member.guild.owner_id), "invite_friends", 1)
 
     async def on_member_remove(self, member):
-        # Update Stats when member leaves
+        # 1. Update Stats
         await self.ensure_management_system(member.guild)
+        
+        # 2. Goodbye Logic
+        settings = await get_guild_settings(str(member.guild.id))
+        if settings and settings.get("goodbye_enabled"):
+            ch_id = settings.get("goodbye_channel_id")
+            if ch_id:
+                channel = member.guild.get_channel(int(ch_id))
+                if channel:
+                    msg = settings.get("goodbye_message", "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸")
+                    img_url = settings.get("goodbye_image_url")
+                    
+                    formatted_msg = msg.replace("{user}", member.display_name).replace("{guild}", member.guild.name).replace("{count}", str(member.guild.member_count))
+                    
+                    embed = disnake.Embed(
+                        description=formatted_msg,
+                        color=disnake.Color.from_rgb(255, 182, 193),
+                        timestamp=datetime.datetime.now()
+                    )
+                    if img_url:
+                        embed.set_image(url=img_url)
+                    
+                    embed.set_footer(text=f"Goodbye from {member.guild.name} | An An v4.1 ✨")
+                    await channel.send(embed=embed)
 
     # Security: Superuser Check (Only Papa and Guild Owner)
     def is_superuser(self, user, guild):
@@ -1368,7 +1430,8 @@ async def prefix_rollback(ctx):
 async def prefix_test_welcome(ctx):
     if not bot.is_superuser(ctx.author, ctx.guild): return
     await ctx.send(f"กำลังจำลองข้อความต้อนรับให้ {ctx.author.mention} ดูนะคะ... ✨🌸")
-    success = await send_welcome_message(ctx.author)
+    settings = await get_guild_settings(str(ctx.guild.id))
+    success = await send_welcome_message(ctx.author, settings=settings)
     if not success:
         await ctx.send(f"อุ๊ย! {ctx.author.mention} An An หาห้องที่มีชื่อ **'welcome'** ไม่เจอเลยค่ะ รบกวนสร้างห้องก่อนนะคะ! 🥺")
 
@@ -1420,34 +1483,58 @@ async def post_guild_rules(guild, template_name):
     
     await rules_ch.send(embed=embed)
 
-async def send_welcome_message(member):
-    welcome_ch = next((c for c in member.guild.text_channels if "welcome" in c.name.lower()), None)
+async def send_welcome_message(member, settings=None):
+    if settings and not settings.get("welcome_enabled", True):
+        return False
+        
+    welcome_ch = None
+    if settings and settings.get("welcome_channel_id"):
+        try: welcome_ch = member.guild.get_channel(int(settings["welcome_channel_id"]))
+        except: pass
+        
+    if not welcome_ch:
+        welcome_ch = next((c for c in member.guild.text_channels if "welcome" in c.name.lower()), None)
+        
     if not welcome_ch: return False
     
-    embed = disnake.Embed(
-        title="✨ ยินดีต้อนรับสมาชิกใหม่! ✨",
-        description=f"ทักทายคุณ {member.mention} ที่ได้ก้าวเข้าสู่ครอบครัวของเรานะคะ! 🌸\nAn An ดีใจมากเลยค่ะที่มีสมาชิกเพิ่มขึ้นอีกท่านแล้ว ✨",
-        color=disnake.Color.from_rgb(255, 182, 193),
-        timestamp=datetime.datetime.now()
-    )
-    
-    embed.add_field(name="🏠 ข้อมูลกิลด์", value=f"ตอนนี้เรามีเพื่อนพ้องทั้งหมด **{member.guild.member_count}** ท่านแล้วค่ะ!", inline=False)
-    embed.add_field(name="📌 เริ่มต้นที่นี่", value=f"อย่าลืมไปรายงานตัวที่ห้อง <#ช่องVerify> และอ่านกติกาที่ห้อง <#ช่องกติกา> นะคะ {member.mention}! 💖", inline=False)
-    
+    # Check for custom message in settings
+    custom_msg = settings.get("welcome_message") if settings else None
+    custom_img = settings.get("welcome_image_url") if settings else None
+
+    if custom_msg:
+        description = custom_msg.replace("{user}", member.mention).replace("{guild}", member.guild.name).replace("{count}", str(member.guild.member_count))
+        embed = disnake.Embed(
+            description=description,
+            color=disnake.Color.from_rgb(255, 182, 193),
+            timestamp=datetime.datetime.now()
+        )
+    else:
+        # Default Content
+        embed = disnake.Embed(
+            title="✨ ยินดีต้อนรับสมาชิกใหม่! ✨",
+            description=f"ทักทายคุณ {member.mention} ที่ได้ก้าวเข้าสู่ครอบครัวของเรานะคะ! 🌸\nAn An ดีใจมากเลยค่ะที่มีสมาชิกเพิ่มขึ้นอีกท่านแล้ว ✨",
+            color=disnake.Color.from_rgb(255, 182, 193),
+            timestamp=datetime.datetime.now()
+        )
+        embed.add_field(name="🏠 ข้อมูลกิลด์", value=f"ตอนนี้เรามีเพื่อนพ้องทั้งหมด **{member.guild.member_count}** ท่านแล้วค่ะ!", inline=False)
+        embed.add_field(name="📌 เริ่มต้นที่นี่", value=f"อย่าลืมไปรายงานตัวที่ห้อง <#ช่องVerify> และอ่านกติกาที่ห้อง <#ช่องกติกา> นะคะ {member.mention}! 💖", inline=False)
+        
+        # Try to find verify and rules channels to replace placeholders
+        v_ch = next((c for c in member.guild.text_channels if "verify" in c.name), None)
+        r_ch = next((c for c in member.guild.text_channels if "กฎกติกา" in c.name), None)
+        
+        desc = embed.fields[1].value
+        if v_ch: desc = desc.replace("<#ช่องVerify>", v_ch.mention)
+        if r_ch: desc = desc.replace("<#ช่องกติกา>", r_ch.mention)
+        embed.set_field_at(1, name="📌 เริ่มต้นที่นี่", value=desc, inline=False)
+
     if member.avatar:
         embed.set_thumbnail(url=member.avatar.url)
     
-    embed.set_image(url="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMHEybXgxZ3B6Z3B6Z3B6Z3B6Z3B6Z3B6Z3B6Z3B6Z3B6Z3B6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKVUn7iM8FMEU24/giphy.gif") # Sweet welcome gif
+    img_url = custom_img or "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMHEybXgxZ3B6Z3B6Z3B6Z3B6Z3B6Z3B6Z3B6Z3B6Z3B6Z3B6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKVUn7iM8FMEU24/giphy.gif"
+    embed.set_image(url=img_url)
+    
     embed.set_footer(text=f"Welcome to {member.guild.name} | An An v4.1 ✨", icon_url=member.guild.me.display_avatar.url if member.guild.me.display_avatar else None)
-    
-    # Try to find verify and rules channels to replace placeholders
-    v_ch = next((c for c in member.guild.text_channels if "verify" in c.name), None)
-    r_ch = next((c for c in member.guild.text_channels if "กฎกติกา" in c.name), None)
-    
-    desc = embed.fields[1].value
-    if v_ch: desc = desc.replace("<#ช่องVerify>", v_ch.mention)
-    if r_ch: desc = desc.replace("<#ช่องกติกา>", r_ch.mention)
-    embed.set_field_at(1, name="📌 เริ่มต้นที่นี่", value=desc, inline=False)
     
     await welcome_ch.send(content=f"Welcome to the family, {member.mention}! 🎊", embed=embed)
     return True
@@ -1458,7 +1545,8 @@ async def send_welcome_message(member):
 async def test_welcome(inter: disnake.ApplicationCommandInteraction):
     # (Global interaction_check ensures safety)
     await inter.response.send_message(f"กำลังจำลองข้อความต้อนรับให้ {inter.author.mention} ดูนะคะ... ✨🌸", ephemeral=True)
-    success = await send_welcome_message(inter.author)
+    settings = await get_guild_settings(str(inter.guild.id))
+    success = await send_welcome_message(inter.author, settings=settings)
     if not success:
         await inter.edit_original_response(content=f"อุ๊ย! {inter.author.mention} An An หาห้องที่มีชื่อ **'welcome'** ไม่เจอเลยค่ะ รบกวนสร้างห้องก่อนนะคะ! 🥺")
 
