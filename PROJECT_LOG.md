@@ -129,3 +129,4 @@
 [2026-01-20 08:00] | File: anan_bot.py | Line: 1561+ | Keyword: PremiumGoodbye | Status: Success | Change: อัปเกรดข้อความอำลา (Goodbye Embed) ให้พรีเมียมเหมือน Welcome: เพิ่ม Title, Thumbnail, Stats, และ GIF บ๊ายบายสุดน่ารักค่ะ 🌸👋💖✨
 [2026-01-20 08:10] | File: page.js & welcome/page.js | Line: N/A | Keyword: CrownStandard | Status: Completed | Change: เปลี่ยนป้าย PRO/PREMIUM ทั้งหมดให้เป็นมงกุฎ SVG 👑 ให้ดูหรูหราและแยกฟีเจอร์แผน Pro ได้ชัดเจนทั่วทั้งระบบแล้วค่ะ! ✨🏆👑
 [2026-01-20 08:15] | File: page.js | Line: 382, 620 | Keyword: WelcomeCrown | Status: Completed | Change: เพิ่มมงกุฎให้เมนู "ต้อนรับ & อำลา" ใน Sidebar และ Plugin Card เพื่อให้เข้าเซ็ตกับความพรีเมียมใหม่ค่ะ 👑👋✨
+[2026-01-20 08:20] | File: page.js & anan_bot.py | Line: 849, 975 | Keyword: CustomLock | Status: Secured | Change: ล็อคระบบ Custom Template ให้ใช้ได้เฉพาะแผน Pro ขึ้นไปแล้วค่ะ (หน้าบ้านจะเด้ง Pricing หน้าหลังบ้านจะบล็อก API) 👑🔒🛡️

@@ -846,7 +846,15 @@ export default function GuildDashboard() {
                                         <div className="so-arrow">→</div>
                                     </div>
 
-                                    <div className="setup-option custom-opt" onClick={() => { setSelectedTemplate("Custom"); setSetupStep('custom_roles'); }}>
+                                    <div className="setup-option custom-opt" onClick={() => {
+                                        if (userPlan.plan_type === 'free') {
+                                            setShowSetupModal(false);
+                                            setShowPricingModal(true);
+                                        } else {
+                                            setSelectedTemplate("Custom");
+                                            setSetupStep('custom_roles');
+                                        }
+                                    }}>
                                         <div className="so-icon">🎨</div>
                                         <div className="so-info">
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

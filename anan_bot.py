@@ -974,8 +974,16 @@ class AnAnBot(commands.Bot):
                 
             elif action == "setup":
                 template = body.get("template", "Shop")
-                extra_data = body.get("extra_data", {})
                 user_id = body.get("user_id")
+                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                # Pro Plan Check for Custom Template
+                if template == "Custom":
+                    plan = await get_user_plan(user_id)
+                    if plan.get("plan_type") == "free":
+                        return web.json_response({"error": "Pro Plan required for Custom Template"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
+                extra_data = body.get("extra_data", {})
                 # Perform setup in background
                 async def safe_setup():
                     try: await perform_guild_setup(guild, template, extra_data, user_id=user_id)
