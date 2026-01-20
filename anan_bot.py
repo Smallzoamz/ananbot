@@ -700,6 +700,7 @@ class AnAnBot(commands.Bot):
         app.router.add_get('/api/guild/{guild_id}/settings', self.handle_guild_settings)
         app.router.add_get('/api/ping', lambda r: web.Response(text="pong"))
         app.router.add_post('/api/action', self.handle_action)
+        app.router.add_post('/api/guild/{guild_id}/action', self.handle_action)
         app.router.add_options('/api/action', self.handle_options)
         app.router.add_options('/api/stats', self.handle_options)
         app.router.add_options('/api/guilds', self.handle_options)
@@ -866,7 +867,7 @@ class AnAnBot(commands.Bot):
         try:
             body = await request.json()
             action = body.get("action")
-            guild_id = body.get("guild_id")
+            guild_id = body.get("guild_id") or request.match_info.get('guild_id')
             user_id = body.get("user_id")
             
             print(f"Web API triggering {action}")
