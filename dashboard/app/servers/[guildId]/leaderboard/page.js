@@ -75,7 +75,6 @@ export default function LeaderboardPage() {
     return (
         <div className="lb-wrapper animate-fade">
             <header className="lb-header">
-                <button className="back-btn" onClick={() => router.push(`/servers/${guildId}`)}>← Dashboard</button>
                 <h1>An An <span>Mission Hub</span> 🏆</h1>
             </header>
 

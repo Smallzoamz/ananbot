@@ -2,7 +2,8 @@
 import React from "react";
 import Portal from "./Portal";
 
-const ResultModal = ({ type, message, onClose }) => {
+const ResultModal = ({ show, type, message, onClose }) => {
+    if (!show) return null;
     return (
         <Portal>
             <div className={`fixed-overlay z-alert blur-in`} onClick={onClose}>
