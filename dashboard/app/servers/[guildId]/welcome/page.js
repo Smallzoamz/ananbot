@@ -137,7 +137,12 @@ export default function WelcomeSettings() {
     return (
         <>
 
-            {modalState.show && <ResultModal type={modalState.type} message={modalState.message} onClose={() => setModalState({ ...modalState, show: false })} />}
+            <ResultModal
+                show={modalState.show}
+                type={modalState.type}
+                message={modalState.message}
+                onClose={() => setModalState({ ...modalState, show: false })}
+            />
             <div className="welcome-header-actions">
                 <div className="title-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <h2>WELCOME & GOODBYE</h2>
