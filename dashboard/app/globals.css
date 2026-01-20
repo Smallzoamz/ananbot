@@ -517,6 +517,109 @@ h3 {
   /* Removed max-height to let overlay scroll handle tall modals safely */
 }
 
+/* Standard Modal Theme (Centralized) */
+.modal-card {
+  background: white;
+  max-width: 480px;
+  width: 100%;
+  padding: 40px;
+  text-align: center;
+  border: 2px solid var(--primary);
+  border-radius: 30px;
+  position: relative;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-header {
+  margin-bottom: 25px;
+}
+
+.modal-header h2 {
+  font-size: 28px;
+  margin-bottom: 10px;
+  color: #4a4a68;
+  font-weight: 900;
+}
+
+.modal-header p {
+  font-size: 16px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.modal-body {
+  margin-bottom: 30px;
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.modal-btn {
+  padding: 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+  border: none;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.modal-btn:hover {
+  transform: translateY(-3px);
+  filter: brightness(1.1);
+}
+
+.modal-btn.primary {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 5px 15px rgba(255, 183, 226, 0.4);
+}
+
+.modal-btn.secondary {
+  background: #f3f4f6;
+  color: #4a4a68;
+}
+
+.modal-btn.danger {
+  background: #ff4757;
+  color: white;
+  box-shadow: 0 8px 20px rgba(255, 71, 87, 0.3);
+}
+
+.modal-close {
+  position: absolute;
+  top: 25px;
+  right: 25px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: 0.3s;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  color: var(--primary);
+  background: var(--primary-glow);
+  transform: rotate(90deg);
+}
+
 
 
 /* Z-Index Helpers */
