@@ -98,6 +98,25 @@ const translations = {
             commands: "Custom Commands",
             reset: "Clear & Reset",
             switch: "Switch Server"
+        },
+        personalizer: {
+            title: "Bot Personalizer",
+            desc: "Customize your bot's identity and status to match your server's vibe. 🌸✨",
+            nickname: "Bot Nickname",
+            nicknameDesc: "Sets the bot's name in this server.",
+            bio: "Bot Bio",
+            bioPlaceholder: "Tell the world about An An!",
+            activity: "Activity Status",
+            activityType: "Activity Type",
+            statusText: "Status Text",
+            statusPlaceholder: "e.g. /help or with Papa 🌸",
+            avatarUrl: "Avatar URL",
+            bannerUrl: "Banner URL",
+            preview: "Discord Preview",
+            memberList: "Member list preview",
+            profilePreview: "Profile preview",
+            saveSuccess: "Personalizer settings saved! ✨🌸",
+            globalWarning: "Note: Activity Status is global across all servers."
         }
     },
     th: {
@@ -194,6 +213,25 @@ const translations = {
             commands: "คำสั่งกำหนดเอง",
             reset: "ล้างและรีเซ็ต",
             switch: "เปลี่ยนเซิร์ฟเวอร์"
+        },
+        personalizer: {
+            title: "ปรับแต่งบอท",
+            desc: "ปรับแต่งตัวตนและสถานะของบอทให้เข้ากับบรรยากาศเซิร์ฟเวอร์ของคุณ 🌸✨",
+            nickname: "ชื่อเล่นบอท",
+            nicknameDesc: "ตั้งชื่อบอทสำหรับเซิร์ฟเวอร์นี้โดยเฉพาะ",
+            bio: "Bio บอท",
+            bioPlaceholder: "บอกให้ทุกคนรู้ว่า An An คือใคร!",
+            activity: "สถานะกิจกรรม",
+            activityType: "ประเภทกิจกรรม",
+            statusText: "ข้อความสถานะ",
+            statusPlaceholder: "เช่น /help หรือ อยู่กับ Papa 🌸",
+            avatarUrl: "URL รูปโปรไฟล์",
+            bannerUrl: "URL รูปแบนเนอร์",
+            preview: "ตัวอย่างใน Discord",
+            memberList: "ตัวอย่างในรายชื่อสมาชิก",
+            profilePreview: "ตัวอย่างหน้าโปรไฟล์",
+            saveSuccess: "บันทึกการปรับแต่งบอทเรียบร้อยแล้วค่ะ! ✨🌸",
+            globalWarning: "หมายเหตุ: สถานะกิจกรรมจะมีผลเหมือนกันในทุกเซิร์ฟเวอร์ค่ะ"
         }
     }
 };

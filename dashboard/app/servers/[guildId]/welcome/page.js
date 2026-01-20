@@ -225,7 +225,7 @@ export default function WelcomeSettings() {
                 <div className="sidebar-list">
                     <div className="menu-item" onClick={() => router.push(`/servers/${guildId}`)}>{t.sidebar.dashboard}</div>
                     <div className="menu-item" onClick={() => router.push(`/servers/${guildId}/leaderboard`)}>{t.sidebar.leaderboard}</div>
-                    <div className="menu-item">{t.sidebar.personalizer}</div>
+                    <div className="menu-item" onClick={() => router.push(`/servers/${guildId}/personalizer`)}>{t.sidebar.personalizer}</div>
 
                     <div className="menu-category">{t.sidebar.catEssentials}</div>
                     <div className="menu-item active">{t.sidebar.welcome}</div>

@@ -382,7 +382,7 @@ export default function GuildDashboard() {
                 <div className="sidebar-list">
                     <div className="menu-item active">{t.sidebar.dashboard}</div>
                     <div className="menu-item" onClick={() => router.push(`/servers/${guildId}/leaderboard`)}>{t.sidebar.leaderboard} <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}><CrownIcon /></span></div>
-                    <div className="menu-item">{t.sidebar.personalizer}</div>
+                    <div className="menu-item" onClick={() => router.push(`/servers/${guildId}/personalizer`)}>{t.sidebar.personalizer}</div>
 
                     <div className="menu-category">{t.sidebar.catEssentials}</div>
                     <div className="menu-item" onClick={() => router.push(`/servers/${guildId}/welcome`)}>{t.sidebar.welcome} <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px', marginLeft: 'auto' }}><CrownIcon /></span></div>
@@ -681,6 +681,18 @@ export default function GuildDashboard() {
                                         desc: "Auto-create voice channels for users. Empty rooms delete automatically.",
                                         action: () => handleAction("setup_temproom"),
                                         btnText: "+ Enable"
+                                    },
+                                    {
+                                        id: "personalizer",
+                                        name: "Bot Personalizer",
+                                        icon: "🎭",
+                                        badge: <CrownIcon />,
+                                        badgeClass: "p-badge-s",
+                                        category: "Essentials",
+                                        desc: "Customize your bot's name, profile, and status for this server.",
+                                        action: () => router.push(`/servers/${guildId}/personalizer`),
+                                        btnText: "Configure",
+                                        isActive: true
                                     }
                                 ];
 

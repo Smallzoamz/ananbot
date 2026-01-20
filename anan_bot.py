@@ -1027,6 +1027,41 @@ class AnAnBot(commands.Bot):
                 success = await send_goodbye_message(user_obj, settings=settings)
                 return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
 
+            elif action == "save_personalizer_settings":
+                user_id = body.get("user_id")
+                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                # Pro Plan Check
+                plan = await get_user_plan(user_id)
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required for this feature"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
+                settings = body.get("settings", {})
+                print(f"Saving personalizer settings for guild {guild_id}")
+                
+                # 1. Update DB
+                await save_guild_settings(guild_id, settings)
+                
+                # 2. Apply Nickname (Local)
+                try:
+                    nickname = settings.get("bot_nickname")
+                    if nickname:
+                        await guild.me.edit(nick=nickname)
+                except Exception as e:
+                    print(f"Error changing nickname: {e}")
+                
+                # 3. Apply Presence (Global)
+                try:
+                    act_type_str = settings.get("activity_type", "LISTENING")
+                    status_text = settings.get("status_text", "/help")
+                    
+                    act_type = getattr(disnake.ActivityType, act_type_str.lower(), disnake.ActivityType.listening)
+                    await self.change_presence(activity=disnake.Activity(type=act_type, name=status_text))
+                except Exception as e:
+                    print(f"Error changing presence: {e}")
+                
+                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+
             return web.json_response({"error": "Unknown action"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
             
         except Exception as e:
@@ -1050,7 +1085,13 @@ class AnAnBot(commands.Bot):
                     "goodbye_enabled": False,
                     "goodbye_channel_id": None,
                     "goodbye_message": None,
-                    "goodbye_image_url": None
+                    "goodbye_image_url": None,
+                    "bot_nickname": "An An",
+                    "bot_bio": "Cheerfully serving Papa! 🌸✨",
+                    "activity_type": "LISTENING",
+                    "status_text": "/help",
+                    "avatar_url": "/ANAN1.png",
+                    "banner_color": "#ff85c1"
                 }, headers={"Access-Control-Allow-Origin": "*"})
             return web.json_response(settings, headers={"Access-Control-Allow-Origin": "*"})
         except Exception as e:
@@ -1073,6 +1114,26 @@ class AnAnBot(commands.Bot):
         # Auto-ensure management system in all guilds on startup
         for guild in self.guilds:
             await self.ensure_management_system(guild)
+            await self.apply_personalizer_settings(guild)
+
+    async def apply_personalizer_settings(self, guild):
+        try:
+            settings = await get_guild_settings(str(guild.id))
+            if not settings: return
+
+            # Apply Nickname
+            nickname = settings.get("bot_nickname")
+            if nickname:
+                await guild.me.edit(nick=nickname)
+            
+            # Apply Presence (Global - last one wins, but usually it's consistent)
+            act_type_str = settings.get("activity_type")
+            status_text = settings.get("status_text")
+            if act_type_str and status_text:
+                act_type = getattr(disnake.ActivityType, act_type_str.lower(), disnake.ActivityType.listening)
+                await self.change_presence(activity=disnake.Activity(type=act_type, name=status_text))
+        except Exception as e:
+            print(f"Error applying personalizer for {guild.name}: {e}")
 
     async def on_guild_join(self, guild):
         print(f"Joined a new guild: {guild.name} (ID: {guild.id})")
@@ -1082,6 +1143,7 @@ class AnAnBot(commands.Bot):
             
         # Ensure management system exists immediately
         terminal_ch = await self.ensure_management_system(guild)
+        await self.apply_personalizer_settings(guild)
         
         # Send greeting in the first available channel
         for channel in guild.text_channels:
