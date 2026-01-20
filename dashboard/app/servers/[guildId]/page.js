@@ -78,14 +78,14 @@ export default function Dashboard({ params }) {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/guild/${guildId}/stats`);
+                const res = await fetch(`/api/proxy/guild/${guildId}/stats`);
                 if (res.ok) setStats(await res.json());
             } catch (e) { console.error("Failed to fetch stats", e); }
         };
 
         const fetchMissions = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/api/guild/${guildId}/missions`);
+                const res = await fetch(`/api/proxy/guild/${guildId}/missions`);
                 if (res.ok) setMissions(await res.json());
             } catch (e) { console.error("Failed to fetch missions", e); }
         };
@@ -93,7 +93,7 @@ export default function Dashboard({ params }) {
         const fetchUserPlan = async () => {
             if (!user) return;
             try {
-                const res = await fetch(`http://localhost:5000/api/user/${user.uid}/plan`);
+                const res = await fetch(`/api/proxy/user/${user.id || user.uid}/plan`);
                 if (res.ok) setUserPlan(await res.json());
             } catch (e) { console.error("Failed to fetch plan", e); }
         };
@@ -121,10 +121,10 @@ export default function Dashboard({ params }) {
             return;
         }
 
-        const res = await fetch(`http://localhost:5000/api/guild/${guildId}/action`, {
+        const res = await fetch(`/api/proxy/guild/${guildId}/action`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action, template, user_id: user?.uid })
+            body: JSON.stringify({ action, template, user_id: user?.id || user?.uid })
         });
         const data = await res.json();
         setModalState({ show: true, type: data.success ? 'success' : 'error', message: data.message });
@@ -133,13 +133,13 @@ export default function Dashboard({ params }) {
 
     const handleDeploy = async () => {
         setIsDeploying(true);
-        const res = await fetch(`http://localhost:5000/api/guild/${guildId}/action`, {
+        const res = await fetch(`/api/proxy/guild/${guildId}/action`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 action: 'setup',
                 template: selectedTemplate,
-                user_id: user?.uid,
+                user_id: user?.id || user?.uid,
                 roles: customRoles,
                 zones: customZones
             })
@@ -151,10 +151,10 @@ export default function Dashboard({ params }) {
     };
 
     const handleClaimReward = async (missionKey) => {
-        const res = await fetch(`http://localhost:5000/api/guild/${guildId}/claim-reward`, {
+        const res = await fetch(`/api/proxy/guild/${guildId}/claim-reward`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mission_key: missionKey, user_id: user?.uid })
+            body: JSON.stringify({ user_id: user?.id || user?.uid, mission_key: missionKey })
         });
         const data = await res.json();
         setModalState({ show: true, type: data.success ? 'success' : 'error', message: data.message });
@@ -165,7 +165,7 @@ export default function Dashboard({ params }) {
 
     const fetchStructure = async () => {
         try {
-            const res = await fetch(`http://localhost:5000/api/guild/${guildId}/structure`);
+            const res = await fetch(`/api/proxy/guild/${guildId}/structure`);
             if (res.ok) setServerStructure(await res.json());
         } catch (e) { console.error("Failed to fetch structure", e); }
     };
@@ -185,10 +185,10 @@ export default function Dashboard({ params }) {
 
     const handleDeleteSelective = async () => {
         setIsDeleting(true);
-        const res = await fetch(`http://localhost:5000/api/guild/${guildId}/action`, {
+        const res = await fetch(`/api/proxy/guild/${guildId}/action`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'delete_selective', target_ids: selectedIds, user_id: user?.uid })
+            body: JSON.stringify({ action: 'delete_selective', ids: selectedIds, user_id: user?.id || user?.uid })
         });
         const data = await res.json();
         setIsDeleting(false);
@@ -276,9 +276,6 @@ export default function Dashboard({ params }) {
                 onClose={() => setModalState({ ...modalState, show: false })}
             />
 
-            <style jsx>{`
-                .dashboard-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
-            `}</style>
         </div>
     );
 }

@@ -936,7 +936,16 @@ class AnAnBot(commands.Bot):
 
                 settings = body.get("settings", {})
                 print(f"Saving welcome settings for guild {guild_id}")
-                result = await save_guild_settings(guild_id, settings)
+                
+                # Whitelist filtering for welcome/goodbye settings 🛡️
+                welcome_keys = [
+                    "welcome_enabled", "welcome_channel_id", "welcome_message", 
+                    "welcome_image_url", "goodbye_enabled", "goodbye_channel_id", 
+                    "goodbye_message", "goodbye_image_url"
+                ]
+                filtered_settings = {k: v for k, v in settings.items() if k in welcome_keys}
+                
+                result = await save_guild_settings(guild_id, filtered_settings)
                 return web.json_response(result, headers={"Access-Control-Allow-Origin": "*"})
 
             # For other actions, guild is required
@@ -1039,8 +1048,13 @@ class AnAnBot(commands.Bot):
                 settings = body.get("settings", {})
                 print(f"Saving personalizer settings for guild {guild_id}")
                 
-                # 1. Update DB
-                await save_guild_settings(guild_id, settings)
+                # 1. Update DB (Filter out columns that don't exist in guild_settings yet)
+                # This prevents "Could not find column" errors if the table schema isn't updated
+                db_settings = {
+                    k: v for k, v in settings.items()
+                    if k not in ["bot_nickname", "status_text", "activity_type", "banner_color", "avatar_url", "bot_bio"]
+                }
+                await save_guild_settings(guild_id, db_settings)
                 
                 # 2. Apply Nickname (Local)
                 try:
@@ -1494,103 +1508,9 @@ async def rollback(inter: disnake.ApplicationCommandInteraction):
     else:
         await inter.edit_original_response(content=f"An An หาข้อมูลไม่เจอเลยค่ะ {inter.author.mention} ")
 
-# Fallback Prefix Commands (Working instantly)
-@bot.command(name="clear")
-async def prefix_clear(ctx):
-    if ctx.author.id != ctx.guild.owner_id: return
-    await ctx.send(f"กำลังล้างกิลด์ให้นะคะ {ctx.author.mention}... 🧹")
-    await perform_clear(ctx.guild)
+# Helper functions and Slash Commands below...
 
-@bot.command(name="rollback")
-async def prefix_rollback(ctx):
-    if ctx.author.id != ctx.guild.owner_id: return
-    await ctx.send("กำลังกู้คืนข้อมูลให้นะคะ... 🪄")
-    if await perform_rollback(ctx.guild):
-        await ctx.send(f"เย้! กู้คืนสำเร็จแล้วค่ะ {ctx.author.mention}! 💖")
-    else:
-        await ctx.send(f"An An หาข้อมูลไม่เจอเลยค่ะ {ctx.author.mention} ")
-
-@bot.command(name="testw")
-async def prefix_test_welcome(ctx):
-    if not bot.is_superuser(ctx.author, ctx.guild): return
-    await ctx.send(f"กำลังจำลองข้อความต้อนรับให้ {ctx.author.mention} ดูนะคะ... ✨🌸")
-    settings = await get_guild_settings(str(ctx.guild.id))
-    success = await send_welcome_message(ctx.author, settings=settings)
-    if not success:
-        await ctx.send(f"อุ๊ย! {ctx.author.mention} An An หาห้องที่มีชื่อ **'welcome'** ไม่เจอเลยค่ะ รบกวนสร้างห้องก่อนนะคะ! 🥺")
-
-@bot.command(name="testg")
-async def prefix_test_goodbye(ctx):
-    if not bot.is_superuser(ctx.author, ctx.guild): return
-    await ctx.send(f"กำลังจำลองข้อความอำลาให้ {ctx.author.mention} ดูนะคะ... 🌸")
-    # Simulate on_member_remove logic
-    settings = await get_guild_settings(str(ctx.guild.id))
-    if settings and settings.get("goodbye_enabled"):
-        ch_id = settings.get("goodbye_channel_id")
-        channel = ctx.guild.get_channel(int(ch_id)) if ch_id else None
-        if not channel:
-            channel = next((c for c in ctx.guild.text_channels if "welcome" in c.name.lower() or "goodbye" in c.name.lower()), None)
-        
-        if channel:
-            msg = settings.get("goodbye_message") or "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸"
-            img_url = settings.get("goodbye_image_url")
-            formatted_msg = msg.replace("{user}", ctx.author.display_name).replace("{guild}", ctx.guild.name).replace("{count}", str(ctx.guild.member_count))
-            embed = disnake.Embed(description=formatted_msg, color=disnake.Color.from_rgb(255, 182, 193), timestamp=datetime.datetime.now())
-            if img_url: embed.set_image(url=img_url)
-            embed.set_footer(text=f"Goodbye from {ctx.guild.name} | An An v4.1 ✨")
-            await channel.send(embed=embed)
-        else:
-            await ctx.send("An An หาห้องสำหรับอำลาไม่เจอเลยค่ะ")
-    else:
-        await ctx.send("ระบบ Goodbye ยังไม่ได้เปิดใช้งานค่ะ Papa")
-
-@bot.check
-async def globally_restrict_prefix_commands(ctx):
-    if not bot.is_superuser(ctx.author, ctx.guild):
-        # We don't necessarily want to spam a message for every random message that might be a wrong command
-        # but for prefix commands, we can silence or notify.
-        return False
-    return True
-
-# Helpers for Rules and Welcome
-async def post_guild_rules(guild, template_name):
-    rules_ch = next((c for c in guild.text_channels if "กฎกติกา" in c.name), None)
-    if not rules_ch: return
-    
-    rules_data = {
-        "Shop": [
-            "🛒 สั่งซื้อผ่านช่องทางที่กำหนดและระบุรายละเอียดให้ครบถ้วน",
-            "⏳ พนักงานจะเริ่มคิวตามลำดับการแจ้งชำระเงินค่ะ",
-            "🚫 ห้ามสแปมข้อความหรือส่งเนื้อหาที่ไม่เกี่ยวข้องในห้อง Support",
-            "💖 สุภาพกับทีมงาน เพื่อการบริการที่รวดเร็วนะคะ"
-        ],
-        "Community": [
-            "🤝 ให้เกียรติและเคารพซึ่งกันและกันเสมอ",
-            "🚫 งดใช้ถ้อยคำหยาบคาย รุนแรง หรือสร้างบรรยากาศ Toxic",
-            "👾 หาเพื่อนเล่นเกมในห้องที่จัดไว้ให้ เพื่อความเป็นระเบียบค่ะ",
-            "📢 ห้ามโฆษณา ขายของ หรือส่งลิงก์แปลกปลอมเด็ดขาด"
-        ],
-        "Fanclub": [
-            "✨ มาร่วมสร้างพลังบวกและซัพพอร์ตครีเอเตอร์ที่พวกเรารักกันค่ะ",
-            "🤫 ห้ามเผยแพร่ข้อมูลลับ (Leak) หรือสปอยล์เนื้อหาก่อนได้รับอนุญาต",
-            "🚫 งดดราม่าหรือพาดพิงถึงบุคคลอื่นในเชิงลบนะคะ",
-            "📸 แชร์ผลงานแฟนอาร์ตและโมเมนต์สวยๆ ได้เต็มที่เลยค่ะ"
-        ]
-    }
-    
-    rules_list = rules_data.get(template_name, ["รักษาความสงบเรียบร้อยในกิลด์นะคะ 🌸"])
-    
-    embed = disnake.Embed(
-        title=f"📋 กฎกติกาของ {guild.name}",
-        description=f"ยินดีต้อนรับสมาชิกทุกท่านนะคะ! เพื่อความสงบสุขของพวกเรา An An ขอความร่วมมือปฏิบัติตามกฎนี้ด้วยนะคะ ✨",
-        color=disnake.Color.purple()
-    )
-    
-    content = "\n\n".join([f"**{i+1}.** {rule}" for i, rule in enumerate(rules_list)])
-    embed.add_field(name="ข้อปฏิบัติส่วนรวม", value=content, inline=False)
-    embed.set_footer(text="ความไว้วางใจของ Papa คือสิ่งสำคัญที่สุดของ An An 💖")
-    
-    await rules_ch.send(embed=embed)
+# Helpers for Welcome/Goodbye
 
 async def send_welcome_message(member, settings=None):
     if settings and not settings.get("welcome_enabled", True):
@@ -1709,28 +1629,9 @@ async def test_welcome(inter: disnake.ApplicationCommandInteraction):
 async def test_goodbye(inter: disnake.ApplicationCommandInteraction):
     await inter.response.send_message(f"กำลังจำลองข้อความอำลาให้ {inter.author.mention} ดูนะคะ... 🌸", ephemeral=True)
     settings = await get_guild_settings(str(inter.guild.id))
-    
-    # Reuse on_member_remove logic for testing
-    enabled = settings.get("goodbye_enabled") if settings else False
-    if not enabled:
-        return await inter.edit_original_response(content="ระบบ Goodbye ยังปิดอยู่ค่ะ Papa รบกวนเปิดใน Dashboard ก่อนนะคะ! ✨")
-
-    ch_id = settings.get("goodbye_channel_id")
-    channel = inter.guild.get_channel(int(ch_id)) if ch_id else None
-    if not channel:
-        channel = next((c for c in inter.guild.text_channels if "welcome" in c.name.lower() or "goodbye" in c.name.lower()), None)
-    
-    if not channel:
-        return await inter.edit_original_response(content="หาห้องส่งข้อความไม่เจอค่ะ")
-
-    msg = settings.get("goodbye_message") or "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸"
-    img_url = settings.get("goodbye_image_url")
-    formatted_msg = msg.replace("{user}", inter.author.display_name).replace("{guild}", inter.guild.name).replace("{count}", str(inter.guild.member_count))
-    
-    embed = disnake.Embed(description=formatted_msg, color=disnake.Color.from_rgb(255, 182, 193), timestamp=datetime.datetime.now())
-    if img_url: embed.set_image(url=img_url)
-    embed.set_footer(text=f"Goodbye Testing | An An v4.1 ✨")
-    await channel.send(embed=embed)
+    success = await send_goodbye_message(inter.author, settings=settings)
+    if not success:
+        await inter.edit_original_response(content=f"อุ๊ย! {inter.author.mention} An An หาห้องสำหรับอำลาไม่เจอเลยค่ะ รบกวนตั้งค่าใน Dashboard ก่อนนะคะ! 🥺")
 
 @bot.slash_command(description="ดูสถิติของกิลด์นี้")
 async def guild_stats(inter: disnake.ApplicationCommandInteraction):

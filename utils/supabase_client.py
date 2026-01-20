@@ -177,11 +177,12 @@ async def save_guild_settings(guild_id: str, settings: dict):
     if not supabase: return {"success": False, "error": "Database not connected"}
     
     # Whitelist valid columns to prevent "missing column" errors from PostgREST
+    # NOTE: Personalizer columns (bot_nickname, activity_type, etc.) are removed
+    # until the user runs the SQL to add them to the table.
     VALID_COLUMNS = [
         "guild_id", "welcome_enabled", "welcome_channel_id", "welcome_message", 
         "welcome_image_url", "goodbye_enabled", "goodbye_channel_id", 
-        "goodbye_message", "goodbye_image_url", "bot_nickname", "bot_bio",
-        "activity_type", "status_text", "avatar_url", "banner_color"
+        "goodbye_message", "goodbye_image_url"
     ]
     
     # Create sanitized data dict
