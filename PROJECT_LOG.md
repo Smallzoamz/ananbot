@@ -128,3 +128,4 @@
 [2026-01-20 07:55] | File: welcome/page.js | Line: 251 | Keyword: LayoutFix | Status: Fixed | Change: แก้ไขบั๊ก className ใน Header ที่ทำให้ปุ่มและไอคอนซ้อนทับกันแนวตั้ง ให้กลับมาเรียงแนวนอนสวยเป๊ะแล้วค่ะ! 🛠️🎨✨
 [2026-01-20 08:00] | File: anan_bot.py | Line: 1561+ | Keyword: PremiumGoodbye | Status: Success | Change: อัปเกรดข้อความอำลา (Goodbye Embed) ให้พรีเมียมเหมือน Welcome: เพิ่ม Title, Thumbnail, Stats, และ GIF บ๊ายบายสุดน่ารักค่ะ 🌸👋💖✨
 [2026-01-20 08:10] | File: page.js & welcome/page.js | Line: N/A | Keyword: CrownStandard | Status: Completed | Change: เปลี่ยนป้าย PRO/PREMIUM ทั้งหมดให้เป็นมงกุฎ SVG 👑 ให้ดูหรูหราและแยกฟีเจอร์แผน Pro ได้ชัดเจนทั่วทั้งระบบแล้วค่ะ! ✨🏆👑
+[2026-01-20 08:15] | File: page.js | Line: 382, 620 | Keyword: WelcomeCrown | Status: Completed | Change: เพิ่มมงกุฎให้เมนู "ต้อนรับ & อำลา" ใน Sidebar และ Plugin Card เพื่อให้เข้าเซ็ตกับความพรีเมียมใหม่ค่ะ 👑👋✨

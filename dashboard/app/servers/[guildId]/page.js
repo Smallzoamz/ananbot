@@ -385,7 +385,7 @@ export default function GuildDashboard() {
                     <div className="menu-item">{t.sidebar.personalizer}</div>
 
                     <div className="menu-category">{t.sidebar.catEssentials}</div>
-                    <div className="menu-item" onClick={() => router.push(`/servers/${guildId}/welcome`)}>{t.sidebar.welcome}</div>
+                    <div className="menu-item" onClick={() => router.push(`/servers/${guildId}/welcome`)}>{t.sidebar.welcome} <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px', marginLeft: 'auto' }}><CrownIcon /></span></div>
                     <div className="menu-item">{t.sidebar.reaction}</div>
                     <div className="menu-item">{t.sidebar.moderator}</div>
 
@@ -617,8 +617,8 @@ export default function GuildDashboard() {
                                         id: "welcome",
                                         name: "Welcome & Goodbye",
                                         icon: "👋",
-                                        badge: "ESSENTIAL",
-                                        badgeClass: "p-badge",
+                                        badge: <CrownIcon />,
+                                        badgeClass: "p-badge-s",
                                         category: "Essentials",
                                         desc: "Greet new members and say goodbye with style. Fully customizable messages and images.",
                                         action: () => router.push(`/servers/${guildId}/welcome`),
