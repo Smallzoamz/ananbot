@@ -84,23 +84,32 @@ export default function Dashboard({ params }) {
         };
 
         const fetchMissions = async () => {
-            try {
-                const res = await fetch(`/api/proxy/guild/${guildId}/missions`);
-                if (res.ok) setMissions(await res.json());
-            } catch (e) { console.error("Failed to fetch missions", e); }
-        };
-
-        const fetchUserPlan = async () => {
             if (!user) return;
             try {
-                const res = await fetch(`/api/proxy/user/${user.id || user.uid}/plan`);
-                if (res.ok) setUserPlan(await res.json());
-            } catch (e) { console.error("Failed to fetch plan", e); }
+                const res = await fetch(`/api/proxy/action`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'get_missions',
+                        user_id: user.id || user.uid,
+                        guild_id: guildId
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.missions) setMissions(data.missions);
+                    if (data.plan) setUserPlan(data.plan);
+                    if (data.stats && !stats.total_members) {
+                        // Blend in stats if returned from here to reduce requests
+                        setStats(prev => ({ ...prev, ...data.stats }));
+                    }
+                }
+            } catch (e) { console.error("Failed to fetch missions/plan", e); }
         };
 
+        // fetchUserPlan is now integrated into fetchMissions
         fetchStats();
         fetchMissions();
-        fetchUserPlan();
     }, [guildId, user]);
 
     // Actions

@@ -21,17 +21,26 @@ async function proxyRequest(request, { params }) {
             method: request.method,
             headers: {
                 'Content-Type': 'application/json',
-                // Forward other necessary headers if needed
             },
             body: body,
         });
 
-        const data = await response.json();
-        return NextResponse.json(data, { status: response.status });
+        const text = await response.text();
+        try {
+            const data = JSON.parse(text);
+            return NextResponse.json(data, { status: response.status });
+        } catch (e) {
+            console.error(`[Proxy JSON Error] Failed to parse: ${text.substring(0, 100)}...`);
+            return NextResponse.json({
+                error: "Invalid JSON from Bot API",
+                details: text.substring(0, 200),
+                status: response.status
+            }, { status: response.status || 502 });
+        }
 
     } catch (error) {
         console.error(`[Proxy Error] ${error.message}`);
-        return NextResponse.json({ error: "Failed to connect to Bot API" }, { status: 502 });
+        return NextResponse.json({ error: "Failed to connect to Bot API", message: error.message }, { status: 502 });
     }
 }
 
