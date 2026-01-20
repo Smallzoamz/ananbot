@@ -4,6 +4,12 @@ import { useParams, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useLanguage } from "../../context/LanguageContext";
 
+const CrownIcon = () => (
+    <svg viewBox="0 0 24 24" style={{ width: '12px', height: '12px' }}>
+        <path fill="currentColor" d="M5,16 L19,16 L19,18 L5,18 L5,16 Z M19,8 L15.5,11 L12,5 L8.5,11 L5,8 L5,14 L19,14 L19,8 Z" />
+    </svg>
+);
+
 export default function GuildDashboard() {
     const { guildId } = useParams();
     const { data: session, status: authStatus } = useSession();
@@ -375,7 +381,7 @@ export default function GuildDashboard() {
 
                 <div className="sidebar-list">
                     <div className="menu-item active">{t.sidebar.dashboard}</div>
-                    <div className="menu-item" onClick={() => router.push(`/servers/${guildId}/leaderboard`)}>{t.sidebar.leaderboard} <span className="p-badge-s">{t.dashboard.pro}</span></div>
+                    <div className="menu-item" onClick={() => router.push(`/servers/${guildId}/leaderboard`)}>{t.sidebar.leaderboard} <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}><CrownIcon /></span></div>
                     <div className="menu-item">{t.sidebar.personalizer}</div>
 
                     <div className="menu-category">{t.sidebar.catEssentials}</div>
@@ -635,7 +641,7 @@ export default function GuildDashboard() {
                                         id: "structure",
                                         name: "Structure Manager",
                                         icon: "🏗️",
-                                        badge: "PRO",
+                                        badge: <CrownIcon />,
                                         badgeClass: "p-badge-s",
                                         category: "Server Management",
                                         desc: "Selectively delete categories or specific channels from your server.",
@@ -646,7 +652,7 @@ export default function GuildDashboard() {
                                         id: "terminal",
                                         name: "anan-terminal",
                                         icon: "💻",
-                                        badge: "PREMIUM",
+                                        badge: <CrownIcon />,
                                         badgeClass: "p-badge-s",
                                         category: "Utilities",
                                         desc: "Exclusive command center for Papa and Server Owners only.",
@@ -658,7 +664,7 @@ export default function GuildDashboard() {
                                         id: "security",
                                         name: "Security Center",
                                         icon: "🛡️",
-                                        badge: "PREMIUM",
+                                        badge: <CrownIcon />,
                                         badgeClass: "p-badge-s",
                                         category: "Security",
                                         desc: "Protect your server with instant lockdown and audit log visibility.",
@@ -669,8 +675,8 @@ export default function GuildDashboard() {
                                         id: "temproom",
                                         name: "Temporary Rooms",
                                         icon: "🔊",
-                                        badge: "PRO",
-                                        badgeClass: "p-badge pro",
+                                        badge: <CrownIcon />,
+                                        badgeClass: "p-badge-s",
                                         category: "Utilities",
                                         desc: "Auto-create voice channels for users. Empty rooms delete automatically.",
                                         action: () => handleAction("setup_temproom"),
@@ -845,7 +851,7 @@ export default function GuildDashboard() {
                                         <div className="so-info">
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <h4>{t.dashboard.custom}</h4>
-                                                <span className="p-badge-s">PRO</span>
+                                                <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}><CrownIcon /></span>
                                             </div>
                                             <p>{t.dashboard.customDesc}</p>
                                         </div>
@@ -1645,7 +1651,7 @@ export default function GuildDashboard() {
                 .pc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; }
                 .pc-icon { font-size: 42px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.05)); }
                 .p-badge { background: #fdf2f8; color: #ff85c1; font-size: 10px; font-weight: 900; padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(255,183,226,0.2); }
-                .p-badge-s { background: #fffbeb; color: #d97706; font-size: 10px; font-weight: 900; padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(252,211,77,0.3); }
+                .p-badge-s { background: #fffbeb; color: #d97706; font-size: 10px; font-weight: 900; padding: 5px 10px; border-radius: 8px; border: 1px solid rgba(252,211,77,0.3); display: inline-flex; align-items: center; justify-content: center; min-width: 25px; }
                 
                 .pc-body h3 { font-size: 20px; margin-bottom: 12px; font-weight: 800; color: #4a4a68; }
                 .pc-body p { font-size: 14px; color: #6b7280; line-height: 1.7; margin-bottom: 30px; flex: 1; }

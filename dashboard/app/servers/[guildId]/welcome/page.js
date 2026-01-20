@@ -246,7 +246,14 @@ export default function WelcomeSettings() {
             <div className="mee6-main-wrapper">
                 <header className="mee6-header">
                     <div className="header-left">
-                        <div className="logo-text">WELCOME & GOODBYE</div>
+                        <div className="logo-text" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            WELCOME & GOODBYE
+                            <span style={{ color: '#d97706', display: 'flex', alignItems: 'center' }}>
+                                <svg viewBox="0 0 24 24" width="18" height="18">
+                                    <path fill="currentColor" d="M5,16 L19,16 L19,18 L5,18 L5,16 Z M19,8 L15.5,11 L12,5 L8.5,11 L5,8 L5,14 L19,14 L19,8 Z" />
+                                </svg>
+                            </span>
+                        </div>
                     </div>
                     <div className="header-right">
                         <button className={`pc-btn primary ${saving ? 'loading' : ''}`} onClick={handleSave} disabled={saving || userPlan.plan_type === 'free'} style={{ background: userPlan.plan_type === 'free' ? '#cbd5e1' : '#ff85c1', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '12px', fontWeight: '800', cursor: userPlan.plan_type === 'free' ? 'not-allowed' : 'pointer', boxShadow: userPlan.plan_type === 'free' ? 'none' : '0 4px 12px rgba(255,133,193,0.3)' }}>
