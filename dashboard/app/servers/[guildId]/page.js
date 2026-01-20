@@ -1009,7 +1009,7 @@ export default function GuildDashboard() {
                 /* Mission Card Styling */
                 .mission-card-wrapper {
                     position: absolute;
-                    right: -40px;
+                    right: -100px;
                     top: -50px;
                     perspective: 1000px;
                     transition: 0.5s;
@@ -1113,7 +1113,7 @@ export default function GuildDashboard() {
                 .loader-mini { font-size: 13px; color: var(--primary); text-align: center; padding: 20px; font-weight: 800; animation: pulse 1.5s infinite; }
                 @keyframes pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
 
-                .hero-stats { display: flex; gap: 40px; text-align: right; }
+                .hero-stats { display: flex; gap: 20px; text-align: left; margin-top: 15px; }
                 .ms-val { font-size: 42px; font-weight: 900; color: #ffb7e2; text-shadow: 0 4px 10px rgba(255,183,226,0.2); }
                 .mini-stat { text-align: center; background: white; padding: 10px 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); border: 1px solid #fdf2f8; }
                 .ms-lab { font-size: 13px; color: #4a4a68; font-weight: 700; opacity: 0.6; text-transform: uppercase; margin-top: 8px; }

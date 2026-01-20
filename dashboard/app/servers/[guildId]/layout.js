@@ -209,7 +209,21 @@ export default function ServerLayout({ children }) {
                     .logout-item:hover { background: #fff1f2; }
 
                     /* Shared Styles */
-                    .p-badge-s { background: rgba(255,255,255,0.2); border-radius: 6px; }
+                    .p-badge-s { 
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: #fdf2f8; 
+                        border-radius: 8px; 
+                        width: 24px;
+                        height: 24px;
+                        color: #ff85c1;
+                        transition: 0.2s;
+                    }
+                    .menu-item.active .p-badge-s {
+                        background: rgba(255, 255, 255, 0.2);
+                        color: white;
+                    }
 
                     /* Animations */
                     @keyframes fadeIn { 

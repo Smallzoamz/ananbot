@@ -175,6 +175,24 @@ async def get_guild_settings(guild_id: str):
 
 async def save_guild_settings(guild_id: str, settings: dict):
     if not supabase: return {"success": False, "error": "Database not connected"}
-    data = {"guild_id": str(guild_id), **settings}
-    res = supabase.table("guild_settings").upsert(data).execute()
-    return {"success": True}
+    
+    # Whitelist valid columns to prevent "missing column" errors from PostgREST
+    VALID_COLUMNS = [
+        "guild_id", "welcome_enabled", "welcome_channel_id", "welcome_message", 
+        "welcome_image_url", "goodbye_enabled", "goodbye_channel_id", 
+        "goodbye_message", "goodbye_image_url", "bot_nickname", "bot_bio",
+        "activity_type", "status_text", "avatar_url", "banner_color"
+    ]
+    
+    # Create sanitized data dict
+    sanitized_data = {"guild_id": str(guild_id)}
+    for key, value in settings.items():
+        if key in VALID_COLUMNS:
+            sanitized_data[key] = value
+            
+    try:
+        res = supabase.table("guild_settings").upsert(sanitized_data).execute()
+        return {"success": True}
+    except Exception as e:
+        print(f"Database Upsert Error: {e}")
+        return {"success": False, "error": str(e)}
