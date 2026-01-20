@@ -1016,25 +1016,8 @@ class AnAnBot(commands.Bot):
                 if not user_obj: return web.json_response({"error": "Member not found in guild"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
                 
                 print(f"Web API triggering Test Goodbye for {user_obj.name}")
-                ch_id = settings.get("goodbye_channel_id")
-                try: channel = guild.get_channel(int(ch_id)) if ch_id else None
-                except: channel = None
-
-                if not channel:
-                    channel = next((c for c in guild.text_channels if "welcome" in c.name.lower() or "goodbye" in c.name.lower()), None)
-                
-                if channel:
-                    msg = settings.get("goodbye_message") or "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸"
-                    img_url = settings.get("goodbye_image_url")
-                    formatted_msg = msg.replace("{user}", user_obj.display_name).replace("{guild}", guild.name).replace("{count}", str(guild.member_count))
-                    
-                    embed = disnake.Embed(description=formatted_msg, color=disnake.Color.from_rgb(255, 182, 193), timestamp=datetime.datetime.now())
-                    if img_url: embed.set_image(url=img_url)
-                    embed.set_footer(text=f"Web Testing | An An v4.1 ✨")
-                    await channel.send(embed=embed)
-                    return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
-                else:
-                    return web.json_response({"error": "Goodbye channel not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+                success = await send_goodbye_message(user_obj, settings=settings)
+                return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
 
             return web.json_response({"error": "Unknown action"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
             
@@ -1116,28 +1099,9 @@ class AnAnBot(commands.Bot):
         
         # 2. Goodbye Logic
         settings = await get_guild_settings(str(member.guild.id))
-        if settings and settings.get("goodbye_enabled"):
-            ch_id = settings.get("goodbye_channel_id")
-            if ch_id:
-                try: channel = member.guild.get_channel(int(ch_id))
-                except: channel = None
-                
-                if channel:
-                    msg = settings.get("goodbye_message") or "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸"
-                    img_url = settings.get("goodbye_image_url")
-                    
-                    formatted_msg = msg.replace("{user}", member.display_name).replace("{guild}", member.guild.name).replace("{count}", str(member.guild.member_count))
-                    
-                    embed = disnake.Embed(
-                        description=formatted_msg,
-                        color=disnake.Color.from_rgb(255, 182, 193),
-                        timestamp=datetime.datetime.now()
-                    )
-                    if img_url:
-                        embed.set_image(url=img_url)
-                    
-                    embed.set_footer(text=f"Goodbye from {member.guild.name} | An An v4.1 ✨")
-                    await channel.send(embed=embed)
+        success = await send_goodbye_message(member, settings=settings)
+        if success:
+            print(f"Sent goodbye for {member.name}")
 
     # Security: Superuser Check (Only Papa and Guild Owner)
     def is_superuser(self, user, guild):
@@ -1612,6 +1576,53 @@ async def send_welcome_message(member, settings=None):
     embed.set_footer(text=f"Welcome to {member.guild.name} | An An v4.1 ✨", icon_url=member.guild.me.display_avatar.url if member.guild.me.display_avatar else None)
     
     await welcome_ch.send(content=f"Welcome to the family, {member.mention}! 🎊", embed=embed)
+    return True
+
+async def send_goodbye_message(member, settings=None):
+    if settings and not settings.get("goodbye_enabled", True):
+        return False
+        
+    goodbye_ch = None
+    if settings and settings.get("goodbye_channel_id"):
+        try: goodbye_ch = member.guild.get_channel(int(settings["goodbye_channel_id"]))
+        except: pass
+        
+    if not goodbye_ch:
+        goodbye_ch = next((c for c in member.guild.text_channels if "goodbye" in c.name.lower() or "welcome" in c.name.lower()), None)
+        
+    if not goodbye_ch: return False
+    
+    # Check for custom message in settings
+    custom_msg = settings.get("goodbye_message") if settings else None
+    custom_img = settings.get("goodbye_image_url") if settings else None
+
+    if custom_msg:
+        description = custom_msg.replace("{user}", member.display_name).replace("{guild}", member.guild.name).replace("{count}", str(member.guild.member_count))
+        embed = disnake.Embed(
+            description=description,
+            color=disnake.Color.from_rgb(255, 182, 193),
+            timestamp=datetime.datetime.now()
+        )
+    else:
+        # Default Content
+        embed = disnake.Embed(
+            title="🌸 ลาก่อนนะค๊าาา...แล้วเจอกันใหม่นะคะ! 🌸",
+            description=f"ลาก่อนนะคะคุณ {member.display_name} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸\nAn An จะรอการกลับมาของทุกท่านเสมอนะค๊าาา ✨",
+            color=disnake.Color.from_rgb(255, 182, 193),
+            timestamp=datetime.datetime.now()
+        )
+        embed.add_field(name="🏠 ข้อมูลสมาชิก", value=f"ตอนนี้กิลด์ของเราเหลือเพื่อนพ้องอยู่ **{member.guild.member_count}** ท่านค่ะ", inline=False)
+        embed.add_field(name="🎀 ความทรงจำดีๆ", value=f"ขอบคุณที่เป็นส่วนหนึ่งของ {member.guild.name} ค๊าาา! 💖", inline=False)
+
+    if member.avatar:
+        embed.set_thumbnail(url=member.avatar.url)
+    
+    img_url = custom_img or "https://media.giphy.com/media/M90mJvCqxJvUs/giphy.gif"
+    embed.set_image(url=img_url)
+    
+    embed.set_footer(text=f"Goodbye from {member.guild.name} | An An v4.1 ✨", icon_url=member.guild.me.display_avatar.url if member.guild.me.display_avatar else None)
+    
+    await goodbye_ch.send(embed=embed)
     return True
 
 
