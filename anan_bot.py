@@ -926,6 +926,14 @@ class AnAnBot(commands.Bot):
                 return web.json_response(result, headers={"Access-Control-Allow-Origin": "*"})
 
             if action == "save_welcome_settings":
+                user_id = body.get("user_id")
+                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                # Pro Plan Check
+                plan = await get_user_plan(user_id)
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required for this feature"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
                 settings = body.get("settings", {})
                 print(f"Saving welcome settings for guild {guild_id}")
                 result = await save_guild_settings(guild_id, settings)
@@ -978,6 +986,14 @@ class AnAnBot(commands.Bot):
                 return web.json_response({"status": "setup_started"}, headers={"Access-Control-Allow-Origin": "*"})
                 
             elif action == "test_welcome_web":
+                user_id = body.get("user_id")
+                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                # Pro Plan Check
+                plan = await get_user_plan(user_id)
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required for this feature"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
                 settings = body.get("settings", {})
                 user_obj = guild.get_member(int(user_id)) if user_id else None
                 if not user_obj: return web.json_response({"error": "Member not found in guild"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
@@ -987,18 +1003,28 @@ class AnAnBot(commands.Bot):
                 return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
 
             elif action == "test_goodbye_web":
+                user_id = body.get("user_id")
+                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                # Pro Plan Check
+                plan = await get_user_plan(user_id)
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required for this feature"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
                 settings = body.get("settings", {})
                 user_obj = guild.get_member(int(user_id)) if user_id else None
                 if not user_obj: return web.json_response({"error": "Member not found in guild"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
                 
                 print(f"Web API triggering Test Goodbye for {user_obj.name}")
                 ch_id = settings.get("goodbye_channel_id")
-                channel = guild.get_channel(int(ch_id)) if ch_id else None
+                try: channel = guild.get_channel(int(ch_id)) if ch_id else None
+                except: channel = None
+
                 if not channel:
                     channel = next((c for c in guild.text_channels if "welcome" in c.name.lower() or "goodbye" in c.name.lower()), None)
                 
                 if channel:
-                    msg = settings.get("goodbye_message", "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸")
+                    msg = settings.get("goodbye_message") or "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸"
                     img_url = settings.get("goodbye_image_url")
                     formatted_msg = msg.replace("{user}", user_obj.display_name).replace("{guild}", guild.name).replace("{count}", str(guild.member_count))
                     
@@ -1093,9 +1119,11 @@ class AnAnBot(commands.Bot):
         if settings and settings.get("goodbye_enabled"):
             ch_id = settings.get("goodbye_channel_id")
             if ch_id:
-                channel = member.guild.get_channel(int(ch_id))
+                try: channel = member.guild.get_channel(int(ch_id))
+                except: channel = None
+                
                 if channel:
-                    msg = settings.get("goodbye_message", "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸")
+                    msg = settings.get("goodbye_message") or "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸"
                     img_url = settings.get("goodbye_image_url")
                     
                     formatted_msg = msg.replace("{user}", member.display_name).replace("{guild}", member.guild.name).replace("{count}", str(member.guild.member_count))
@@ -1470,7 +1498,7 @@ async def prefix_test_goodbye(ctx):
             channel = next((c for c in ctx.guild.text_channels if "welcome" in c.name.lower() or "goodbye" in c.name.lower()), None)
         
         if channel:
-            msg = settings.get("goodbye_message", "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸")
+            msg = settings.get("goodbye_message") or "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸"
             img_url = settings.get("goodbye_image_url")
             formatted_msg = msg.replace("{user}", ctx.author.display_name).replace("{guild}", ctx.guild.name).replace("{count}", str(ctx.guild.member_count))
             embed = disnake.Embed(description=formatted_msg, color=disnake.Color.from_rgb(255, 182, 193), timestamp=datetime.datetime.now())
@@ -1614,7 +1642,7 @@ async def test_goodbye(inter: disnake.ApplicationCommandInteraction):
     if not channel:
         return await inter.edit_original_response(content="หาห้องส่งข้อความไม่เจอค่ะ")
 
-    msg = settings.get("goodbye_message", "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸")
+    msg = settings.get("goodbye_message") or "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸"
     img_url = settings.get("goodbye_image_url")
     formatted_msg = msg.replace("{user}", inter.author.display_name).replace("{guild}", inter.guild.name).replace("{count}", str(inter.guild.member_count))
     

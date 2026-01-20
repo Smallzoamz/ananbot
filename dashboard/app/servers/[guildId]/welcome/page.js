@@ -18,6 +18,7 @@ export default function WelcomeSettings() {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [manageableGuilds, setManageableGuilds] = useState([]);
     const [guildData, setGuildData] = useState(null);
+    const [userPlan, setUserPlan] = useState({ plan_type: "free" });
 
     const [settings, setSettings] = useState({
         welcome_enabled: false,
@@ -88,6 +89,23 @@ export default function WelcomeSettings() {
                         ...settingsData
                     });
                 }
+
+                // Fetch Plan (via get_missions as it returns plan info)
+                if (session?.user?.id) {
+                    const planRes = await fetch("/api/proxy/action", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            action: "get_missions",
+                            user_id: session.user.id,
+                            guild_id: guildId
+                        })
+                    });
+                    const planData = await planRes.json();
+                    if (planData.plan) {
+                        setUserPlan(planData.plan);
+                    }
+                }
             } catch (err) {
                 console.error("Failed to fetch data:", err);
             } finally {
@@ -145,6 +163,7 @@ export default function WelcomeSettings() {
                 body: JSON.stringify({
                     action: "save_welcome_settings",
                     guild_id: guildId,
+                    user_id: session?.user?.id,
                     settings: settings
                 })
             });
@@ -229,8 +248,8 @@ export default function WelcomeSettings() {
                     <div className="header-left">
                         <div className="logo-text">WELCOME & GOODBYE</div>
                     </div>
-                    <div className="header-right">
-                        <button className={`pc-btn primary ${saving ? 'loading' : ''}`} onClick={handleSave} disabled={saving} style={{ background: '#ff85c1', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '12px', fontWeight: '800', cursor: 'pointer', boxShadow: '0 4px 12px rgba(255,133,193,0.3)' }}>
+                    <div class="header-right">
+                        <button className={`pc-btn primary ${saving ? 'loading' : ''}`} onClick={handleSave} disabled={saving || userPlan.plan_type === 'free'} style={{ background: userPlan.plan_type === 'free' ? '#cbd5e1' : '#ff85c1', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '12px', fontWeight: '800', cursor: userPlan.plan_type === 'free' ? 'not-allowed' : 'pointer', boxShadow: userPlan.plan_type === 'free' ? 'none' : '0 4px 12px rgba(255,133,193,0.3)' }}>
                             {saving ? "Saving..." : "Save Changes ✨"}
                         </button>
                         <div className="header-icon">🔔</div>
@@ -242,8 +261,26 @@ export default function WelcomeSettings() {
                     </div>
                 </header>
 
-                <main className="mee6-content animate-fade">
-                    <div className="settings-grid">
+                <main className="mee6-content animate-fade" style={{ position: 'relative' }}>
+
+                    {userPlan.plan_type === 'free' && (
+                        <div className="pro-lock-overlay glass blur-in">
+                            <div className="lock-content animate-pop">
+                                <div className="crown-icon">
+                                    <svg viewBox="0 0 24 24" width="80" height="80">
+                                        <path fill="currentColor" d="M5,16 L19,16 L19,18 L5,18 L5,16 Z M19,8 L15.5,11 L12,5 L8.5,11 L5,8 L5,14 L19,14 L19,8 Z" />
+                                    </svg>
+                                </div>
+                                <h2>Pro Plan Required 👑</h2>
+                                <p>This feature is exclusive for Papa's <strong>Pro</strong> and <strong>Premium</strong> plans. Upgrade now to unlock customized welcome & goodbye messages!</p>
+                                <button className="pricing-upgrade-btn" onClick={() => router.push(`/servers/${guildId}?showPricing=true`)}>
+                                    Upgrade to Pro 🚀
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div className={`settings-grid ${userPlan.plan_type === 'free' ? 'content-locked' : ''}`}>
 
                         {/* Welcome Card */}
                         <div className="settings-card glass animate-pop">
@@ -302,7 +339,7 @@ export default function WelcomeSettings() {
                                     <span className="input-hint">Leave empty to use the default welcome GIF.</span>
                                 </div>
                                 <div style={{ marginTop: '20px' }}>
-                                    <button className="glass-button secondary" onClick={handleTestWelcome}>
+                                    <button className="glass-button secondary" onClick={handleTestWelcome} disabled={userPlan.plan_type === 'free'}>
                                         🧪 Test Welcome Message
                                     </button>
                                 </div>
@@ -364,7 +401,7 @@ export default function WelcomeSettings() {
                                     />
                                 </div>
                                 <div style={{ marginTop: '20px' }}>
-                                    <button className="glass-button secondary" onClick={handleTestGoodbye}>
+                                    <button className="glass-button secondary" onClick={handleTestGoodbye} disabled={userPlan.plan_type === 'free'}>
                                         🧪 Test Goodbye Message
                                     </button>
                                 </div>
@@ -485,6 +522,50 @@ export default function WelcomeSettings() {
                 .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
                 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
                 .animate-fade { animation: fadeIn 0.6s ease-out forwards; }
+
+                .pro-lock-overlay {
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(255, 255, 255, 0.4);
+                    backdrop-filter: blur(8px);
+                    z-index: 50;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 24px;
+                    margin: 50px;
+                }
+                .lock-content {
+                    background: white;
+                    padding: 50px;
+                    border-radius: 30px;
+                    text-align: center;
+                    max-width: 450px;
+                    box-shadow: 0 20px 50px rgba(255, 183, 226, 0.3);
+                    border: 2px solid var(--primary);
+                }
+                .crown-icon {
+                    color: #ffd700;
+                    margin-bottom: 20px;
+                    filter: drop-shadow(0 4px 10px rgba(255, 215, 0, 0.4));
+                }
+                .lock-content h2 { font-size: 28px; margin-bottom: 15px; color: #4a4a68; }
+                .lock-content p { color: #6b7280; line-height: 1.6; margin-bottom: 30px; }
+                .lock-content p strong { color: var(--primary); }
+                .pricing-upgrade-btn {
+                    background: var(--primary);
+                    color: white;
+                    border: none;
+                    padding: 15px 40px;
+                    border-radius: 15px;
+                    font-weight: 800;
+                    font-size: 16px;
+                    cursor: pointer;
+                    transition: 0.3s;
+                    box-shadow: 0 10px 20px rgba(255, 183, 226, 0.4);
+                }
+                .pricing-upgrade-btn:hover { transform: translateY(-3px); filter: brightness(1.1); }
+                .content-locked { filter: blur(2px); pointer-events: none; }
             `}</style>
         </div>
     );
