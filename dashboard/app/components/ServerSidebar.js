@@ -30,16 +30,14 @@ export default function ServerSidebar() {
     return (
         <aside className="mee6-sidebar">
             <div className="guild-switcher-wrapper" ref={guildRef}>
-                <div className={`guild-selector glass ${isDropdownOpen ? 'active' : ''}`} onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
+                <div className={`guild-selector ${isDropdownOpen ? 'active' : ''}`} onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
                     <div className="guild-current">
                         {guildData.icon ?
-                            <img className="guild-icon-large" src={guildData.icon.startsWith('http') ? guildData.icon : `https://cdn.discordapp.com/icons/${guildId}/${guildData.icon}.png`} alt="G" />
-                            : <div className="guild-init-large">{guildData.name[0]}</div>
+                            <img className="guild-icon-small" src={guildData.icon.startsWith('http') ? guildData.icon : `https://cdn.discordapp.com/icons/${guildId}/${guildData.icon}.png`} alt="G" />
+                            : <div className="guild-init-small">{guildData.name[0]}</div>
                         }
-                        <div className="guild-info">
-                            <span>{guildData.name}</span>
-                            <div className="chevron">{isDropdownOpen ? "⌃" : "⌄"}</div>
-                        </div>
+                        <span className="guild-name">{guildData.name}</span>
+                        <div className="chevron">{isDropdownOpen ? "⌃" : "⌄"}</div>
                     </div>
                 </div>
                 {isDropdownOpen && (
