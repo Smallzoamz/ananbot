@@ -40,7 +40,6 @@ export default function ServerHeader() {
                 <div className="user-profile-wrapper" ref={profileRef}>
                     <div className="user-profile" onClick={() => setIsProfileOpen(!isProfileOpen)}>
                         <img src={session?.user?.image || "/ANAN1.png"} alt="U" />
-                        <div className="chevron">⌵</div>
                     </div>
                     {isProfileOpen && (
                         <div className="profile-dropdown glass animate-pop">
@@ -71,34 +70,85 @@ export default function ServerHeader() {
             </div>
 
             <style jsx>{`
-                .mee6-header { height: 80px; background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(214, 207, 255, 0.2); display: flex; align-items: center; justify-content: space-between; padding: 0 50px; position: sticky; top: 0; z-index: 100; }
-                .logo-text { font-size: 24px; font-weight: 950; color: var(--primary); letter-spacing: -0.05em; }
-                .header-right { display: flex; align-items: center; gap: 20px; }
+                .mee6-header {
+                    height: 80px;
+                    border-bottom: 1px solid rgba(214, 207, 255, 0.2);
+                    background: rgba(255, 255, 255, 0.6);
+                    backdrop-filter: blur(12px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 0 50px;
+                    position: sticky;
+                    top: 0;
+                    z-index: 100;
+                }
+                .logo-text { font-size: 24px; font-weight: 900; color: #ff85c1; letter-spacing: 1px; text-shadow: 0 2px 4px rgba(255,133,193,0.1); }
+                .header-right { display: flex; align-items: center; gap: 25px; }
                 
-                .plan-badge-top { padding: 8px 16px; border-radius: 12px; font-size: 12px; font-weight: 900; letter-spacing: 0.05em; }
-                .plan-badge-top.premium { background: linear-gradient(135deg, #ff85c1, #ffd6ed); color: white; box-shadow: 0 0 20px rgba(255,133,193,0.4); }
-                .plan-badge-top.pro { background: #d6cfff; color: #7c3aed; }
-                
-                .premium-btn { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(255,183,226,0.3); }
-                .premium-btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
-                
-                .header-icon { font-size: 20px; color: #94a3b8; cursor: pointer; transition: 0.2s; }
-                .header-icon:hover { color: var(--primary); }
-                
-                .user-profile-wrapper { position: relative; }
-                .user-profile { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 4px; border-radius: 12px; transition: 0.2s; }
-                .user-profile:hover { background: #f1f5f9; }
-                .user-profile img { width: 36px; height: 36px; border-radius: 50%; border: 2px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-                .user-profile .chevron { font-size: 12px; color: #94a3b8; }
+                .plan-badge-top {
+                    padding: 10px 20px;
+                    border-radius: 20px;
+                    font-size: 11px;
+                    font-weight: 900;
+                    letter-spacing: 0.05em;
+                }
+                .plan-badge-top.premium {
+                    background: linear-gradient(135deg, #ff85c1, #c084fc);
+                    color: white;
+                    box-shadow: 0 4px 15px rgba(255,133,193,0.3);
+                }
+                .plan-badge-top.pro {
+                    background: #f5f3ff;
+                    color: #8b5cf6;
+                    border: 1px solid rgba(139, 92, 246, 0.2);
+                }
 
-                .profile-dropdown { position: absolute; top: calc(100% + 15px); right: 0; width: 220px; background: white; border-radius: 20px; padding: 15px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); z-index: 1000; }
-                .dropdown-section { display: flex; flex-direction: column; gap: 4px; }
-                .section-label { font-size: 10px; font-weight: 900; color: #cbd5e1; margin-bottom: 8px; padding: 0 10px; text-transform: uppercase; letter-spacing: 0.1em; }
-                .dropdown-link { padding: 10px; border-radius: 10px; font-size: 13px; font-weight: 700; color: #64748b; cursor: pointer; transition: 0.2s; }
-                .dropdown-link:hover { background: #f8fafc; color: var(--primary); }
-                .dropdown-divider { height: 1px; background: #f1f5f9; margin: 10px 0; }
-                .logout-item { color: #f43f5e; }
-                .logout-item:hover { background: #fff1f2; color: #e11d48; }
+                .premium-btn {
+                    background: linear-gradient(135deg, #ffc107, #ff9800);
+                    color: white;
+                    border: none;
+                    padding: 10px 22px;
+                    border-radius: 20px;
+                    font-weight: 800;
+                    font-size: 13px;
+                    cursor: pointer;
+                    box-shadow: 0 4px 12px rgba(255,193,7,0.3);
+                    transition: 0.3s;
+                }
+                .premium-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+                .header-icon { font-size: 22px; color: #4a4a68; opacity: 0.6; cursor: pointer; transition: 0.3s; }
+                .header-icon:hover { opacity: 1; transform: rotate(15deg); }
+                .user-profile-wrapper { position: relative; z-index: 1000; }
+                .user-profile img { width: 38px; height: 38px; border-radius: 50%; cursor: pointer; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.1); transition: 0.3s; }
+                .user-profile img:hover { border-color: var(--primary); transform: scale(1.1); }
+
+                .profile-dropdown {
+                    position: absolute;
+                    top: calc(100% + 15px);
+                    right: 0;
+                    width: 220px;
+                    background: white;
+                    border-radius: var(--radius-soft);
+                    border: 1px solid rgba(255, 183, 226, 0.2);
+                    box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+                    padding: 15px;
+                    z-index: 2000;
+                }
+                .section-label { font-size: 10px; font-weight: 900; color: #9ca3af; padding: 5px 10px 10px; letter-spacing: 0.1em; }
+                .dropdown-link {
+                    padding: 12px 14px;
+                    border-radius: 10px;
+                    font-size: 14px;
+                    font-weight: 800;
+                    color: #2d2d3f;
+                    cursor: pointer;
+                    transition: 0.2s;
+                }
+                .dropdown-link:hover { background: #fdf2f8; color: var(--primary); }
+                .dropdown-divider { height: 1px; background: #f3f4f6; margin: 10px 0; }
+                .logout-item { color: #ff4757; margin-top: 5px; }
+                .logout-item:hover { background: #fff1f2; color: #ff4757; }
 
                 @keyframes glow { 0%, 100% { box-shadow: 0 0 15px rgba(255,133,193,0.3); } 50% { box-shadow: 0 0 25px rgba(255,133,193,0.6); } }
                 .animate-glow { animation: glow 2s infinite ease-in-out; }
