@@ -248,7 +248,7 @@ export default function WelcomeSettings() {
                     <div className="header-left">
                         <div className="logo-text">WELCOME & GOODBYE</div>
                     </div>
-                    <div class="header-right">
+                    <div className="header-right">
                         <button className={`pc-btn primary ${saving ? 'loading' : ''}`} onClick={handleSave} disabled={saving || userPlan.plan_type === 'free'} style={{ background: userPlan.plan_type === 'free' ? '#cbd5e1' : '#ff85c1', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '12px', fontWeight: '800', cursor: userPlan.plan_type === 'free' ? 'not-allowed' : 'pointer', boxShadow: userPlan.plan_type === 'free' ? 'none' : '0 4px 12px rgba(255,133,193,0.3)' }}>
                             {saving ? "Saving..." : "Save Changes ✨"}
                         </button>
