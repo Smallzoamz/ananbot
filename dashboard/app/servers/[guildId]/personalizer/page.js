@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import { useLanguage } from "../../../context/LanguageContext";
 import { useServer } from "../../../context/ServerContext";
+import ResultModal from "../../../components/ResultModal";
 
 export default function PersonalizerPage() {
     const { data: session } = useSession();
@@ -18,6 +19,8 @@ export default function PersonalizerPage() {
         avatar_url: "/assets/mascot/ANAN1.png",
         banner_color: "#ff85c1"
     });
+
+    const [modalState, setModalState] = useState({ show: false, type: 'success', message: '' });
 
     useEffect(() => {
         if (!guildId) return;
@@ -51,13 +54,13 @@ export default function PersonalizerPage() {
             });
             const data = await res.json();
             if (data.success) {
-                alert(t.personalizer.saveSuccess);
+                setModalState({ show: true, type: 'success', message: t.personalizer.saveSuccess });
             } else {
-                alert("Error: " + (data.error || "Unknown error"));
+                setModalState({ show: true, type: 'error', message: "Error: " + (data.error || "Unknown error") });
             }
         } catch (err) {
             console.error("Save Error:", err);
-            alert("Failed to save settings.");
+            setModalState({ show: true, type: 'error', message: "Failed to save settings." });
         } finally {
             setSaving(false);
         }
@@ -228,7 +231,7 @@ export default function PersonalizerPage() {
                                             <div className="profile-bio">{settings.bot_bio}</div>
                                         </div>
                                         <div className="profile-section">
-                                            <h5>{activityLabel[settings.activity_type].toUpperCase()}</h5>
+                                            <h5>{(activityLabel[settings.activity_type] || "ACTIVITY").toUpperCase()}</h5>
                                             <div className="profile-activity">
                                                 <div className="activity-icon">
                                                     {settings.activity_type === 'PLAYING' ? '🎮' :
@@ -250,6 +253,12 @@ export default function PersonalizerPage() {
                     </div>
                 </div>
             </div>
+            <ResultModal
+                show={modalState.show}
+                type={modalState.type}
+                message={modalState.message}
+                onClose={() => setModalState({ ...modalState, show: false })}
+            />
         </>
     );
 }
