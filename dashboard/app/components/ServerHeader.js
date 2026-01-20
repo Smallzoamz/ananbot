@@ -6,7 +6,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { useServer } from "../context/ServerContext";
 
 export default function ServerHeader() {
-    const { session } = useSession();
+    const { data: session } = useSession();
     const { userPlan } = useServer();
     const { t } = useLanguage();
     const router = useRouter();

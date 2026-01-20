@@ -6,7 +6,7 @@ import { useLanguage } from "../../../context/LanguageContext";
 import { useServer } from "../../../context/ServerContext";
 
 export default function WelcomeSettings() {
-    const { session } = useSession();
+    const { data: session } = useSession();
     const { t } = useLanguage();
     const { guildId, guildData, userPlan, loading: serverLoading } = useServer();
     const router = useRouter();

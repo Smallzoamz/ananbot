@@ -65,23 +65,42 @@ export default function ServerSidebar() {
             </div>
 
             <div className="sidebar-list">
-                <div className={`menu-item ${isActive(`/servers/${guildId}`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}`)}>{t.sidebar.dashboard}</div>
-                <div className={`menu-item ${isActive(`/servers/${guildId}/leaderboard`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/leaderboard`)}>{t.sidebar.leaderboard} <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}><CrownIcon /></span></div>
-                <div className={`menu-item ${isActive(`/servers/${guildId}/personalizer`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/personalizer`)}>{t.sidebar.personalizer}</div>
+                <div className={`menu-item ${isActive(`/servers/${guildId}`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}`)}>
+                    <span className="m-icon">🏠</span>
+                    {t.sidebar.dashboard}
+                </div>
+                <div className={`menu-item ${isActive(`/servers/${guildId}/leaderboard`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/leaderboard`)}>
+                    <span className="m-icon">🏆</span>
+                    {t.sidebar.leaderboard}
+                    <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px', marginLeft: 'auto' }}><CrownIcon /></span>
+                </div>
+                <div className={`menu-item ${isActive(`/servers/${guildId}/personalizer`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/personalizer`)}>
+                    <span className="m-icon">🎭</span>
+                    {t.sidebar.personalizer}
+                </div>
 
                 <div className="menu-category">{t.sidebar.catEssentials}</div>
-                <div className={`menu-item ${isActive(`/servers/${guildId}/welcome`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/welcome`)}>{t.sidebar.welcome} <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px', marginLeft: 'auto' }}><CrownIcon /></span></div>
-                <div className="menu-item">{t.sidebar.reaction}</div>
-                <div className="menu-item">{t.sidebar.moderator}</div>
+                <div className={`menu-item ${isActive(`/servers/${guildId}/welcome`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/welcome`)}>
+                    <span className="m-icon">👋</span>
+                    {t.sidebar.welcome}
+                    <span className="p-badge-s" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '4px', marginLeft: 'auto' }}><CrownIcon /></span>
+                </div>
+                <div className="menu-item"><span className="m-icon">🎭</span> {t.sidebar.reaction}</div>
+                <div className="menu-item"><span className="m-icon">🛡️</span> {t.sidebar.moderator}</div>
 
                 <div className="menu-category">{t.sidebar.catManagement}</div>
-                <div className="menu-item">{t.sidebar.automation}</div>
-                <div className="menu-item">{t.sidebar.commands}</div>
-                <div className="menu-item" onClick={() => router.push(`/servers/${guildId}?action=clear`)}>{t.sidebar.reset}</div>
+                <div className="menu-item"><span className="m-icon">⚙️</span> {t.sidebar.automation}</div>
+                <div className="menu-item"><span className="m-icon">💻</span> {t.sidebar.commands}</div>
+                <div className="menu-item" onClick={() => router.push(`/servers/${guildId}?action=clear`)}>
+                    <span className="m-icon">🧹</span>
+                    {t.sidebar.reset}
+                </div>
             </div>
 
             <div className="sidebar-footer">
-                <button className="invite-btn" onClick={() => router.push("/servers?redirect=false")}>← {t.sidebar.switch}</button>
+                <button className="invite-btn" onClick={() => router.push("/servers?redirect=false")}>
+                    <span style={{ marginRight: '8px' }}>←</span> {t.sidebar.switch}
+                </button>
             </div>
 
             <style jsx>{`
