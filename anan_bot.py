@@ -977,17 +977,39 @@ class AnAnBot(commands.Bot):
                 asyncio.create_task(safe_setup())
                 return web.json_response({"status": "setup_started"}, headers={"Access-Control-Allow-Origin": "*"})
                 
-            elif action == "delete_selective":
-                ids = body.get("ids", [])
-                async def safe_delete():
-                    try: await perform_selective_delete(guild, ids)
-                    except Exception as e:
-                        print(f"Selective Delete Error: {e}")
-                        import traceback; traceback.print_exc()
-                asyncio.create_task(safe_delete())
-                return web.json_response({"status": "deletion_started"}, headers={"Access-Control-Allow-Origin": "*"})
-            
-            
+            elif action == "test_welcome_web":
+                settings = body.get("settings", {})
+                user_obj = guild.get_member(int(user_id)) if user_id else None
+                if not user_obj: return web.json_response({"error": "Member not found in guild"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+                
+                print(f"Web API triggering Test Welcome for {user_obj.name}")
+                success = await send_welcome_message(user_obj, settings=settings)
+                return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "test_goodbye_web":
+                settings = body.get("settings", {})
+                user_obj = guild.get_member(int(user_id)) if user_id else None
+                if not user_obj: return web.json_response({"error": "Member not found in guild"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+                
+                print(f"Web API triggering Test Goodbye for {user_obj.name}")
+                ch_id = settings.get("goodbye_channel_id")
+                channel = guild.get_channel(int(ch_id)) if ch_id else None
+                if not channel:
+                    channel = next((c for c in guild.text_channels if "welcome" in c.name.lower() or "goodbye" in c.name.lower()), None)
+                
+                if channel:
+                    msg = settings.get("goodbye_message", "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸")
+                    img_url = settings.get("goodbye_image_url")
+                    formatted_msg = msg.replace("{user}", user_obj.display_name).replace("{guild}", guild.name).replace("{count}", str(guild.member_count))
+                    
+                    embed = disnake.Embed(description=formatted_msg, color=disnake.Color.from_rgb(255, 182, 193), timestamp=datetime.datetime.now())
+                    if img_url: embed.set_image(url=img_url)
+                    embed.set_footer(text=f"Web Testing | An An v4.1 ✨")
+                    await channel.send(embed=embed)
+                    return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+                else:
+                    return web.json_response({"error": "Goodbye channel not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+
             return web.json_response({"error": "Unknown action"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
             
         except Exception as e:
@@ -1435,6 +1457,31 @@ async def prefix_test_welcome(ctx):
     if not success:
         await ctx.send(f"อุ๊ย! {ctx.author.mention} An An หาห้องที่มีชื่อ **'welcome'** ไม่เจอเลยค่ะ รบกวนสร้างห้องก่อนนะคะ! 🥺")
 
+@bot.command(name="testg")
+async def prefix_test_goodbye(ctx):
+    if not bot.is_superuser(ctx.author, ctx.guild): return
+    await ctx.send(f"กำลังจำลองข้อความอำลาให้ {ctx.author.mention} ดูนะคะ... 🌸")
+    # Simulate on_member_remove logic
+    settings = await get_guild_settings(str(ctx.guild.id))
+    if settings and settings.get("goodbye_enabled"):
+        ch_id = settings.get("goodbye_channel_id")
+        channel = ctx.guild.get_channel(int(ch_id)) if ch_id else None
+        if not channel:
+            channel = next((c for c in ctx.guild.text_channels if "welcome" in c.name.lower() or "goodbye" in c.name.lower()), None)
+        
+        if channel:
+            msg = settings.get("goodbye_message", "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸")
+            img_url = settings.get("goodbye_image_url")
+            formatted_msg = msg.replace("{user}", ctx.author.display_name).replace("{guild}", ctx.guild.name).replace("{count}", str(ctx.guild.member_count))
+            embed = disnake.Embed(description=formatted_msg, color=disnake.Color.from_rgb(255, 182, 193), timestamp=datetime.datetime.now())
+            if img_url: embed.set_image(url=img_url)
+            embed.set_footer(text=f"Goodbye from {ctx.guild.name} | An An v4.1 ✨")
+            await channel.send(embed=embed)
+        else:
+            await ctx.send("An An หาห้องสำหรับอำลาไม่เจอเลยค่ะ")
+    else:
+        await ctx.send("ระบบ Goodbye ยังไม่ได้เปิดใช้งานค่ะ Papa")
+
 @bot.check
 async def globally_restrict_prefix_commands(ctx):
     if not bot.is_superuser(ctx.author, ctx.guild):
@@ -1543,12 +1590,38 @@ async def send_welcome_message(member, settings=None):
 
 @bot.slash_command(description="ส่งตัวอย่างข้อความต้อนรับ (Welcome) ให้ คุณ ดูค่ะ")
 async def test_welcome(inter: disnake.ApplicationCommandInteraction):
-    # (Global interaction_check ensures safety)
     await inter.response.send_message(f"กำลังจำลองข้อความต้อนรับให้ {inter.author.mention} ดูนะคะ... ✨🌸", ephemeral=True)
     settings = await get_guild_settings(str(inter.guild.id))
     success = await send_welcome_message(inter.author, settings=settings)
     if not success:
-        await inter.edit_original_response(content=f"อุ๊ย! {inter.author.mention} An An หาห้องที่มีชื่อ **'welcome'** ไม่เจอเลยค่ะ รบกวนสร้างห้องก่อนนะคะ! 🥺")
+        await inter.edit_original_response(content=f"อุ๊ย! {inter.author.mention} An An หาห้องที่มีชื่อ **'welcome'** ไม่เจอเลยค่ะ รบกวนสร้างห้องหรือตั้งค่าใน Dashboard ก่อนนะคะ! 🥺")
+
+@bot.slash_command(description="ส่งตัวอย่างข้อความอำลา (Goodbye) ให้ คุณ ดูค่ะ")
+async def test_goodbye(inter: disnake.ApplicationCommandInteraction):
+    await inter.response.send_message(f"กำลังจำลองข้อความอำลาให้ {inter.author.mention} ดูนะคะ... 🌸", ephemeral=True)
+    settings = await get_guild_settings(str(inter.guild.id))
+    
+    # Reuse on_member_remove logic for testing
+    enabled = settings.get("goodbye_enabled") if settings else False
+    if not enabled:
+        return await inter.edit_original_response(content="ระบบ Goodbye ยังปิดอยู่ค่ะ Papa รบกวนเปิดใน Dashboard ก่อนนะคะ! ✨")
+
+    ch_id = settings.get("goodbye_channel_id")
+    channel = inter.guild.get_channel(int(ch_id)) if ch_id else None
+    if not channel:
+        channel = next((c for c in inter.guild.text_channels if "welcome" in c.name.lower() or "goodbye" in c.name.lower()), None)
+    
+    if not channel:
+        return await inter.edit_original_response(content="หาห้องส่งข้อความไม่เจอค่ะ")
+
+    msg = settings.get("goodbye_message", "ลาก่อนนะคะคุณ {user} หวังว่าจะได้พบกันใหม่อีกครั้งค่ะ 🌸")
+    img_url = settings.get("goodbye_image_url")
+    formatted_msg = msg.replace("{user}", inter.author.display_name).replace("{guild}", inter.guild.name).replace("{count}", str(inter.guild.member_count))
+    
+    embed = disnake.Embed(description=formatted_msg, color=disnake.Color.from_rgb(255, 182, 193), timestamp=datetime.datetime.now())
+    if img_url: embed.set_image(url=img_url)
+    embed.set_footer(text=f"Goodbye Testing | An An v4.1 ✨")
+    await channel.send(embed=embed)
 
 @bot.slash_command(description="ดูสถิติของกิลด์นี้")
 async def guild_stats(inter: disnake.ApplicationCommandInteraction):

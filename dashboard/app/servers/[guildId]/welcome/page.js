@@ -98,6 +98,44 @@ export default function WelcomeSettings() {
         fetchData();
     }, [guildId]);
 
+    const handleTestWelcome = async () => {
+        const res = await fetch("/api/proxy/action", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "test_welcome_web",
+                guild_id: guildId,
+                user_id: session?.user?.id,
+                settings: settings
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("Test Welcome message sent to Discord! ✨🌸");
+        } else {
+            alert("Error sending test: " + (data.error || "Unknown error"));
+        }
+    };
+
+    const handleTestGoodbye = async () => {
+        const res = await fetch("/api/proxy/action", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                action: "test_goodbye_web",
+                guild_id: guildId,
+                user_id: session?.user?.id,
+                settings: settings
+            })
+        });
+        const data = await res.json();
+        if (data.success) {
+            alert("Test Goodbye message sent to Discord! 🌸");
+        } else {
+            alert("Error sending test: " + (data.error || "Unknown error"));
+        }
+    };
+
     const handleSave = async () => {
         setSaving(true);
         try {
@@ -263,6 +301,11 @@ export default function WelcomeSettings() {
                                     />
                                     <span className="input-hint">Leave empty to use the default welcome GIF.</span>
                                 </div>
+                                <div style={{ marginTop: '20px' }}>
+                                    <button className="glass-button secondary" onClick={handleTestWelcome}>
+                                        🧪 Test Welcome Message
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -319,6 +362,11 @@ export default function WelcomeSettings() {
                                         value={settings.goodbye_image_url}
                                         onChange={(e) => setSettings({ ...settings, goodbye_image_url: e.target.value })}
                                     />
+                                </div>
+                                <div style={{ marginTop: '20px' }}>
+                                    <button className="glass-button secondary" onClick={handleTestGoodbye}>
+                                        🧪 Test Goodbye Message
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -401,6 +449,37 @@ export default function WelcomeSettings() {
                 .loader { height: 100vh; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--primary); font-weight: 800; background: #fdf2f8; }
                 .invite-btn { width: 100%; padding: 14px; background: #f5f3ff; color: #8b5cf6; border: 1px solid rgba(139, 92, 246, 0.1); border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; text-align: center; }
                 .invite-btn:hover { background: #8b5cf6; color: white; }
+
+                .glass-button {
+                    background: var(--primary);
+                    color: white;
+                    border: none;
+                    border-radius: 12px;
+                    padding: 12px 24px;
+                    font-weight: 800;
+                    font-family: var(--font-main);
+                    cursor: pointer;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    box-shadow: 0 4px 15px rgba(255, 183, 226, 0.3);
+                }
+
+                .glass-button.secondary {
+                    background: rgba(255, 255, 255, 0.8);
+                    color: #4a4a68;
+                    border: 2px solid var(--primary-glow);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+                }
+
+                .glass-button:hover {
+                    transform: translateY(-2px);
+                    filter: brightness(1.1);
+                    box-shadow: 0 6px 20px rgba(255, 183, 226, 0.4);
+                }
+
+                .glass-button.secondary:hover {
+                    background: white;
+                    border-color: var(--primary);
+                }
 
                 @keyframes pop { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
                 .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
