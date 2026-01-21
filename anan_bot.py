@@ -1459,29 +1459,6 @@ class AnAnBot(commands.Bot):
                     except Exception as e:
                         return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
                 return
-                    return web.json_response({"error": "Pro Plan required for Social Alerts"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
-                target_ch_id = body.get("channel_id")
-                platform = body.get("platform", "Twitch")
-                streamer = body.get("streamer", "An An")
-                
-                if not target_ch_id: return web.json_response({"error": "channel_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                
-                try:
-                    # Access social manager to trigger a fake alert
-                    if hasattr(self, 'social_manager'):
-                        fake_data = {
-                            "title": f"🌸 Test Stream from {streamer}! ✨",
-                            "url": "https://twitch.tv/ananbot" if platform == "Twitch" else "https://youtube.com",
-                            "thumbnail": "https://placehold.co/1280x720/ffb7e2/ffffff?text=An+An+Live+Test",
-                            "game": "Just Chatting 🌸"
-                        }
-                        await self.social_manager.trigger_alert(guild, target_ch_id, platform, streamer, fake_data)
-                        return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
-                    else:
-                        return web.json_response({"error": "Social Manager not initialized"}, status=500, headers={"Access-Control-Allow-Origin": "*"})
-                except Exception as e:
-                    return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
 
             elif action == "save_social_settings":
                 user_id = body.get("user_id")
