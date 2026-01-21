@@ -34,6 +34,10 @@ export default function Dashboard({ params }) {
     const [extraDataInput, setExtraDataInput] = useState("");
     const [isDeploying, setIsDeploying] = useState(false);
 
+    // Trial State
+    const [showClaimModal, setShowClaimModal] = useState(false);
+    const [isClaimingTrial, setIsClaimingTrial] = useState(false);
+
     // Confirm State
     const [showConfirm, setShowConfirm] = useState(false);
     const [pendingAction, setPendingAction] = useState(null);
@@ -227,6 +231,32 @@ export default function Dashboard({ params }) {
         setModalState({ show: true, type: data.success ? 'success' : 'error', message: data.message });
         if (data.success) {
             setMissions(prev => prev.map(m => m.key === missionKey ? { ...m, is_claimed: true } : m));
+        }
+    };
+
+    const handleClaimTrial = async () => {
+        setIsClaimingTrial(true);
+        try {
+            const res = await fetch(`/api/proxy/guild/${guildId}/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: "claim_trial", user_id: user?.id || user?.uid })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                // Refresh data manually or optimistically update
+                setUserPlan(prev => ({ ...prev, plan_type: "pro", trial_claimed: true, expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() }));
+                setModalState({ show: true, type: 'success', message: "Start your 7-Day Free Trial! Enjoy Pro features! 🌸✨" });
+                setShowClaimModal(false);
+            } else {
+                setModalState({ show: true, type: 'error', message: data.error || "Failed to claim trial." });
+            }
+        } catch (e) {
+            console.error(e);
+            setModalState({ show: true, type: 'error', message: "Network error occurred." });
+        } finally {
+            setIsClaimingTrial(false);
         }
     };
 

@@ -21,6 +21,7 @@ const HeroBanner = ({ guildId, missions, stats, language, onClaimReward }) => {
                 <div className="hero-buttons">
                     <button className="hero-btn primary" onClick={() => router.push(`/servers/${guildId}/leaderboard`)}>Do a Mission 🚀</button>
                     <button className="hero-btn secondary" onClick={() => router.push(`/servers/${guildId}/leaderboard`)}>View Rewards</button>
+
                 </div>
             </div>
 

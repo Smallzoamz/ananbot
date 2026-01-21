@@ -1,8 +1,22 @@
 import React from "react";
 import Portal from "../../../components/Portal";
 
+import { useRouter, useParams } from "next/navigation";
+
 const ProWallModal = ({ show, onClose, onProceed, featureName }) => {
+    const router = useRouter();
+    const params = useParams();
+
     if (!show) return null;
+
+    const handleProceed = () => {
+        // Redirect to Premium Hub
+        if (params?.guildId) {
+            router.push(`/servers/${params.guildId}/premium`);
+        } else if (onProceed) {
+            onProceed();
+        }
+    };
 
     return (
         <Portal>
@@ -21,7 +35,7 @@ const ProWallModal = ({ show, onClose, onProceed, featureName }) => {
                         <span className="pw-sub">Custom branding, status, and more awaits.</span>
                     </p>
 
-                    <button className="modal-btn gold-btn" onClick={() => { onClose(); onProceed(); }}>
+                    <button className="modal-btn gold-btn" onClick={handleProceed}>
                         Proceed to Plan 🚀
                     </button>
                 </div>

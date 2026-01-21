@@ -77,9 +77,18 @@ export default function ServerSelection() {
                     }
                 }
 
-                // Fetch bot guilds from API (via Proxy)
                 const botRes = await fetch("/api/proxy/guilds");
-                const botG = await botRes.json();
+                let botG = [];
+                try {
+                    const botData = await botRes.json();
+                    if (Array.isArray(botData)) {
+                        botG = botData;
+                    } else {
+                        console.warn("Bot API returned non-array:", botData);
+                    }
+                } catch (e) {
+                    console.warn("Failed to parse Bot API response", e);
+                }
 
                 if (Array.isArray(userG)) {
                     // 0x8 is MANAGE_GUILD, 0x20 is MANAGE_CHANNELS

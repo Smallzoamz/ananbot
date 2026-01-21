@@ -109,12 +109,25 @@ const translations = {
             choosePlan: "Choose Your Power",
             currentPlan: "Current Plan",
             getPro: "Get Pro 🚀",
+            try7Days: "Try 7 days for free 🎁",
             getPremium: "Get Premium 👑",
             bestValue: "BEST VALUE",
             features: {
                 free: ["Basic Template Deploy", "Daily Missions", "anan-terminal Access", "General Commands"],
                 pro: ["All Free Features", "Pro Badge on Profile", "Advanced Management"],
                 premium: ["Everything in Pro", "Lifetime Updates", "Custom Bot Branding", "Priority Support 24/7"]
+            },
+            freeTrial: {
+                btn: "Get Pro Free 7 Days 🎁",
+                modal: {
+                    title: "Claim 7-Day Free Trial?",
+                    desc: "Enjoy Pro features for free! No credit card required. Trial ends automatically.",
+                    confirm: "Activate Now 🚀",
+                    cancel: "Maybe Later"
+                },
+                badge: {
+                    endsIn: "Trial ends in {days} days"
+                }
             }
         },
         faq: {
@@ -297,12 +310,25 @@ const translations = {
             choosePlan: "เลือกขุมพลังของคุณ",
             currentPlan: "แผนปัจจุบัน",
             getPro: "รับ Pro 🚀",
+            try7Days: "ทดลองใช้ฟรี 7 วัน 🎁",
             getPremium: "รับ Premium 👑",
             bestValue: "คุ้มค่าที่สุด",
             features: {
                 free: ["ติดตั้งเทมเพลตพื้นฐาน", "ภารกิจรายวัน", "เข้าถึง anan-terminal", "คำสั่งทั่วไป"],
                 pro: ["ฟีเจอร์ฟรีทั้งหมด", "ป้าย Pro บนโปรไฟล์", "การจัดการขั้นสูง"],
                 premium: ["ฟีเจอร์ Pro ทั้งหมด", "อัปเดตฟรีตลอดชีพ", "ปรับแต่งแบรนด์บอทเอง", "ซัพพอร์ตด่วน 24/7"]
+            },
+            freeTrial: {
+                btn: "รับ Pro ฟรี 7 วัน 🎁",
+                modal: {
+                    title: "รับสิทธิ์ทดลองใช้ฟรี 7 วัน?",
+                    desc: "ปลดล็อกฟีเจอร์ Pro ทั้งหมดฟรี! ไม่ต้องผูกบัตร หมดอายุอัตโนมัติเมื่อครบกำหนดค่ะ 🌸",
+                    confirm: "เริ่มใช้งานเลย! 🚀",
+                    cancel: "ไว้ก่อนดีกว่า"
+                },
+                badge: {
+                    endsIn: "ทดลองใช้หมดใน {days} วัน"
+                }
             }
         },
         faq: {

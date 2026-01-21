@@ -3,6 +3,8 @@ import React, { useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useLanguage } from "../../../context/LanguageContext";
 import { useServer } from "../../../context/ServerContext";
+import ClaimTrialModal from "../../../components/ClaimTrialModal";
+import ResultModal from "../../../components/ResultModal";
 
 const MiniProfileCard = ({ planType, level, tierName }) => {
     const { data: session } = useSession();
@@ -157,8 +159,41 @@ const PricingCard = ({ tier, priceTHB, features, btnText, isFeatured, isPremium,
 
 export default function PremiumPage() {
     const { t, language } = useLanguage();
-    const { userPlan } = useServer();
+    const { userPlan, refreshData, guildId } = useServer();
+    const { data: session } = useSession();
     const [openFaq, setOpenFaq] = useState(null);
+
+    // Trial & Modal State
+    const [showClaimModal, setShowClaimModal] = useState(false);
+    const [isClaimingTrial, setIsClaimingTrial] = useState(false);
+    const [modalState, setModalState] = useState({ show: false, type: 'success', message: '' });
+
+    const handleClaimTrial = async () => {
+        setIsClaimingTrial(true);
+        try {
+            const res = await fetch(`/api/proxy/guild/${guildId}/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: "claim_trial", user_id: session?.user?.id || session?.user?.uid })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                setModalState({ show: true, type: 'success', message: "Start your 7-Day Free Trial! Enjoy Pro features! 🌸✨" });
+                setShowClaimModal(false);
+                refreshData();
+            } else {
+                setModalState({ show: true, type: 'error', message: data.error || "Failed to claim trial." });
+            }
+        } catch (e) {
+            console.error(e);
+            setModalState({ show: true, type: 'error', message: "Network error occurred." });
+        } finally {
+            setIsClaimingTrial(false);
+        }
+    };
+
+    const isEligibleForTrial = userPlan?.plan_type === 'free' && !userPlan?.trial_claimed;
 
     return (
         <div className="premium-hub-root">
@@ -214,11 +249,12 @@ export default function PremiumPage() {
                             tier="PRO 💎"
                             priceTHB="199"
                             features={t.premium.features.pro}
-                            btnText={t.premium.getPro}
+                            btnText={isEligibleForTrial ? t.premium.try7Days : t.premium.getPro}
                             isFeatured={true}
                             currentPlan={userPlan?.plan_type === 'pro'}
                             level={5}
                             planType="pro"
+                            onClick={isEligibleForTrial ? () => setShowClaimModal(true) : undefined}
                         />
                         <PricingCard
                             tier="PREMIUM ✨"
@@ -256,6 +292,20 @@ export default function PremiumPage() {
                     </div>
                 </section>
             </div>
-        </div>
+
+
+            <ClaimTrialModal
+                show={showClaimModal}
+                loading={isClaimingTrial}
+                onClose={() => setShowClaimModal(false)}
+                onConfirm={handleClaimTrial}
+            />
+            <ResultModal
+                show={modalState.show}
+                type={modalState.type}
+                message={modalState.message}
+                onClose={() => setModalState({ ...modalState, show: false })}
+            />
+        </div >
     );
 }
