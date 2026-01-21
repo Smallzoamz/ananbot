@@ -100,7 +100,31 @@ const translations = {
             twitchAlerts: "Twitch Alerts",
             youtubeAlerts: "YouTube Alerts",
             reset: "Clear & Reset",
-            switch: "Switch Server"
+            switch: "Switch Server",
+            premiumMenu: "Premium ✨"
+        },
+        premium: {
+            title: "Premium Hub",
+            subtitle: "Power up your community with An An's exclusive features 🌸✨",
+            choosePlan: "Choose Your Power",
+            currentPlan: "Current Plan",
+            getPro: "Get Pro 🚀",
+            getPremium: "Get Premium 👑",
+            bestValue: "BEST VALUE",
+            features: {
+                free: ["Basic Template Deploy", "Daily Missions", "anan-terminal Access", "General Commands"],
+                pro: ["All Free Features", "Pro Badge on Profile", "Advanced Management"],
+                premium: ["Everything in Pro", "Lifetime Updates", "Custom Bot Branding", "Priority Support 24/7"]
+            }
+        },
+        faq: {
+            title: "Frequently Asked Questions",
+            items: [
+                { q: "How do I upgrade my plan?", a: "You can upgrade directly from the dashboard or by contacting Papa in the support server! 🌸" },
+                { q: "Is the Premium plan a one-time payment?", a: "Currently, we offer monthly subscriptions to keep An An's heart beating and growing for you! ✨" },
+                { q: "Can I transfer my Premium to another server?", a: "Yes! You can manage your active premium slots from your account settings. 🎀" },
+                { q: "What is Custom Bot Branding?", a: "It allows you to change An An's name, avatar, and bio to match your server's unique identity! 🛡️" }
+            ]
         },
         personalizer: {
             title: "Bot Personalizer",
@@ -119,7 +143,12 @@ const translations = {
             memberList: "Member list preview",
             profilePreview: "Profile preview",
             saveSuccess: "Personalizer settings saved! ✨🌸",
-            globalWarning: "Note: Activity Status is global across all servers."
+            globalWarning: "Note: Activity Status is global across all servers.",
+            maintenance: {
+                title: "Under Maintenance",
+                desc: "An An is currently polishing this system! Please come back later. 🛠️✨",
+                back: "Go Back"
+            }
         },
         loginPage: {
             title: "Welcome Back!",
@@ -142,6 +171,25 @@ const translations = {
             viewLog: "View Log",
             closed: "Closed",
             ago: "ago"
+        },
+        moderator: {
+            title: "Moderator Center",
+            desc: "Advanced security and moderation tools for your server. 🛡️✨",
+            autoMod: "Auto-Mod",
+            autoModDesc: "Filter bad words and ban invite links.",
+            auditLogs: "Audit Logs",
+            auditLogsDesc: "Track message edits, deletes, and member history.",
+            warnings: "Warning System",
+            warningsDesc: "Manage user warnings and behavioral points.",
+            lockdown: "Server Lockdown",
+            lockdownDesc: "Freeze the server during emergencies.",
+            saveSuccess: "Moderator settings updated! 🛡️🌸",
+            badWords: "Bad Words List",
+            badWordsHint: "Separate words with commas",
+            logChannel: "Log Channel",
+            antiInvite: "Anti-Invite Links",
+            antiLink: "Anti-External Links",
+            auditEnabled: "Enable Audit Logging"
         }
     },
     th: {
@@ -240,7 +288,31 @@ const translations = {
             twitchAlerts: "Twitch Alerts",
             youtubeAlerts: "YouTube Alerts",
             reset: "ล้างและรีเซ็ต",
-            switch: "เปลี่ยนเซิร์ฟเวอร์"
+            switch: "เปลี่ยนเซิร์ฟเวอร์",
+            premiumMenu: "พรีเมียม ✨"
+        },
+        premium: {
+            title: "ศูนย์รวมพรีเมียม",
+            subtitle: "เพิ่มพลังให้ชุมชนของคุณด้วยฟีเจอร์ระดับพรีเมียมของ An An 🌸✨",
+            choosePlan: "เลือกขุมพลังของคุณ",
+            currentPlan: "แผนปัจจุบัน",
+            getPro: "รับ Pro 🚀",
+            getPremium: "รับ Premium 👑",
+            bestValue: "คุ้มค่าที่สุด",
+            features: {
+                free: ["ติดตั้งเทมเพลตพื้นฐาน", "ภารกิจรายวัน", "เข้าถึง anan-terminal", "คำสั่งทั่วไป"],
+                pro: ["ฟีเจอร์ฟรีทั้งหมด", "ป้าย Pro บนโปรไฟล์", "การจัดการขั้นสูง"],
+                premium: ["ฟีเจอร์ Pro ทั้งหมด", "อัปเดตฟรีตลอดชีพ", "ปรับแต่งแบรนด์บอทเอง", "ซัพพอร์ตด่วน 24/7"]
+            }
+        },
+        faq: {
+            title: "คำถามที่พบบ่อย (FAQ)",
+            items: [
+                { q: "ฉันจะอัปเกรดแผนได้อย่างไร?", a: "คุณสามารถอัปเกรดได้โดยตรงผ่านแดชบอร์ด หรือติดต่อ Papa ในเซิร์ฟเวอร์ซัพพอร์ตได้เลยค่ะ! 🌸" },
+                { q: "แผน Premium เป็นการจ่ายครั้งเดียวหรือไม่?", a: "ขณะนี้เราให้บริการแบบรายเดือนเพื่อเลี้ยงดูหัวใจของ An An ให้เติบโตเคียงข้างคุณเสมอค่ะ! ✨" },
+                { q: "ฉันสามารถโอนพรีเมียมไปเซิร์ฟเวอร์อื่นได้ไหม?", a: "ได้แน่นอนค่ะ! คุณสามารถจัดการย้ายสิทธิ์พรีเมียมได้ผ่านทางหน้าตั้งค่าบัญชีของคุณค่ะ 🎀" },
+                { q: "Custom Bot Branding คืออะไร?", a: "คือการที่คุณสามารถเปลี่ยนชื่อ, รูปโปรไฟล์ และ Bio ของ An An ให้เข้ากับเอกลักษณ์ของเซิร์ฟเวอร์คุณได้ 100% ค่ะ! 🛡️" }
+            ]
         },
         personalizer: {
             title: "ปรับแต่งบอท",
@@ -259,7 +331,12 @@ const translations = {
             memberList: "ตัวอย่างในรายชื่อสมาชิก",
             profilePreview: "ตัวอย่างหน้าโปรไฟล์",
             saveSuccess: "บันทึกการปรับแต่งบอทเรียบร้อยแล้วค่ะ! ✨🌸",
-            globalWarning: "หมายเหตุ: สถานะกิจกรรมจะมีผลเหมือนกันในทุกเซิร์ฟเวอร์ค่ะ"
+            globalWarning: "หมายเหตุ: สถานะกิจกรรมจะมีผลเหมือนกันในทุกเซิร์ฟเวอร์ค่ะ",
+            maintenance: {
+                title: "ปิดปรับปรุงชั่วคราว",
+                desc: "อันอันกำลังขัดสีฉวีวรรณระบบนี้อยู่ค่ะ! Papa รอก่อนนะค๊าาา 🛠️✨",
+                back: "กลับหน้าหลัก"
+            }
         },
         loginPage: {
             title: "ยินดีต้อนรับกลับมาค่ะ!",
@@ -282,6 +359,25 @@ const translations = {
             viewLog: "ดูบันทึก",
             closed: "ปิดเมื่อ",
             ago: "ที่ผ่านมา"
+        },
+        moderator: {
+            title: "ศูนย์ควบคุม Moderator",
+            desc: "เครื่องมือรักษาความปลอดภัยและการดูแลเซิร์ฟเวอร์ขั้นสูง 🛡️✨",
+            autoMod: "Auto-Mod",
+            autoModDesc: "กรองคำหยาบและบล็อคลิ้งก์เชิญอัตโนมัติ",
+            auditLogs: "บันทึกเหตุการณ์ (Audit Logs)",
+            auditLogsDesc: "ติดตามการแก้ไข/ลบข้อความ และประวัติสมาชิก",
+            warnings: "ระบบแต้มเตือน",
+            warningsDesc: "จัดการแต้มความประพฤติและการเตือนสมาชิก",
+            lockdown: "ล็อกดาวน์เซิร์ฟเวอร์",
+            lockdownDesc: "ปิดการทำงานของเซิร์ฟเวอร์ชั่วคราวเมื่อเกิดเหตุร้าย",
+            saveSuccess: "อัปเดตการตั้งค่า Moderator เรียบร้อยค่ะ! 🛡️🌸",
+            badWords: "รายการคำหยาบ",
+            badWordsHint: "คั่นแต่ละคำด้วยเครื่องหมายคอมมา (,)",
+            logChannel: "ห้องสำหรับเก็บ Log",
+            antiInvite: "บล็อคลิ้งก์เชิญ (Invite)",
+            antiLink: "บล็อคลิ้งก์ภายนอก (Links)",
+            auditEnabled: "เปิดใช้งาน Audit Logging"
         }
     }
 };

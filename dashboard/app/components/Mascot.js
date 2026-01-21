@@ -7,28 +7,40 @@ import { useLanguage } from '../context/LanguageContext';
 // Page descriptions for the bubble chat
 const pageDescriptions = {
     en: {
-        '/': "Welcome! I'm An An, your cute Discord bot assistant! 🌸",
-        '/selection': "Choose a server to manage! I'll help you make it beautiful! ✨",
-        '/servers': "This is the Dashboard! You can setup and manage your server here! 👑",
-        '/leaderboard': "Leaderboard & Missions! Complete tasks to earn XP and rewards! 🏆",
-        '/welcome': "Welcome & Goodbye settings! Customize how you greet new members! (Pro Feature) 👑",
-        '/ticket': "Keep your community support organized with An An's Ticket System! 🎫✨",
-        '/social-alerts': "Social Live Alerts! Never miss a stream from your favorite creators! 🌸🎥",
-        '/twitch-alerts': "Twitch Alerts! Never miss a stream from your favorite creators! 🟣🎥",
-        '/youtube-alerts': "YouTube Alerts! Never miss a stream from your favorite creators! 🔴🎥",
-        'default': "I'm here to help you manage your Discord server! Ask me anything! 💖"
+        '/': "Welcome! I'm An An, your cheerful all-in-one assistant! Let's make your server sparkle together! 🌸✨",
+        '/selection': "Please choose a server to sprinkle some An An magic! I'll help you organize everything beautifully! 🏰✨",
+        '/servers/[guildId]/youtube-alerts': "Stay connected with your audience! Setup your YouTube live alerts right here, Papa! 🔴🎥✨",
+        '/servers/[guildId]/reaction-roles': "Let your members choose their own roles with style! Reaction Roles management is right here! 🏷️🌸🪄",
+        '/servers/[guildId]/ticket': "Ready to help your community? Configure your professional support ticket system here! 🎫✨💖",
+        '/servers': "Welcome to the Dashboard! This is where the magic happens! Manage all your server settings with ease! 👑🌈🪄",
+        '/leaderboard': "Missions & Glory! Check out the leaderboard and complete fun missions to earn exclusive rewards! 🏆✨🍱",
+        '/welcome': "Make a great first impression! Customize how you greet and bid farewell to your precious members! 👑👋🌸",
+        '/ticket': "Organize your community support like a pro with An An's bubbly Ticket System! 🎫✨🎀",
+        '/social-alerts': "Social Live Alerts! I'll make sure your community never misses a single stream! 🌸🎥🔔",
+        '/twitch-alerts': "Twitch Alerts center! Let's notify everyone when their favorite streamers go live! 🟣🎥✨",
+        '/youtube-alerts': "YouTube Alerts center! Instant notifications for all your latest uploads and streams! 🔴🎥🔔",
+        '/servers/[guildId]/moderator': "Keep your server safe, clean, and happy with my advanced moderation tools, Papa! 🛡️✨🌸",
+        '/servers/[guildId]/personalizer': "Express your server's unique soul! Personalize my identity and status exactly how you like! 🌸💎🎨",
+        '/servers/[guildId]/premium': "Welcome to the Premium Hub! Let's elevate your server to the next level of brilliance together! 👑💎✨",
+        'default': "I'm always here by your side, Papa! Let's build the best server in the world together! 💖✨🌸"
     },
     th: {
-        '/': "ยินดีต้อนรับค่ะ! อันอันเป็นบอท Discord ผู้ช่วยสุดน่ารักของคุณนะคะ! 🌸",
-        '/selection': "เลือกเซิร์ฟเวอร์ที่ต้องการจัดการได้เลยค่ะ! อันอันจะช่วยทำให้สวยงาม! ✨",
-        '/servers': "นี่คือแดชบอร์ดค่ะ! Papa สามารถตั้งค่าและจัดการเซิร์ฟเวอร์ได้ที่นี่! 👑",
-        '/leaderboard': "Leaderboard และภารกิจค่ะ! ทำภารกิจเพื่อรับ XP และรางวัลสุดพิเศษ! 🏆",
-        '/welcome': "การตั้งค่า ต้อนรับ & อำลา ค่ะ! ปรับแต่งคำทักทายสมาชิกใหม่ได้ตามใจเลย! (ฟีเจอร์ระดับ Pro) 👑",
-        '/ticket': "จัดระเบียบการช่วยเหลือชุมชนด้วยระบบ Ticket ของอันอันนะคะ! 🎫✨",
-        '/social-alerts': "ระบบแจ้งเตือนสตรีมสดค่ะ! ไม่พลาดทุกการเคลื่อนไหวของ Streamer คนโปรดแน่นอน! 🌸🎥",
-        '/twitch-alerts': "แจ้งเตือนสตรีมจาก Twitch ค่ะ! ไม่พลาดทุกการไลฟ์ของสตรีมเมอร์คนโปรดแน่นอน! 🟣🎥",
-        '/youtube-alerts': "แจ้งเตือนสตรีมจาก YouTube ค่ะ! ติดตามทุกความเคลื่อนไหวบน YouTube ได้ทันที! 🔴🎥",
-        'default': "อันอันพร้อมช่วย Papa จัดการเซิร์ฟเวอร์ Discord นะคะ! ถามได้เลย! 💖"
+        '/': "ยินดีต้อนรับค่ะ! อันอันพร้อมเป็นผู้ช่วยสุดร่าเริงให้ Papa แล้ว! มาทำให้เซิร์ฟเวอร์เปล่งประกายกันนะคะ! 🌸✨",
+        '/selection': "เลือกเซิร์ฟเวอร์ที่ต้องการได้เลยค่ะ! อันอันจะช่วยเนรมิตความสวยงามให้เอง! 🏰✨",
+        '/servers/[guildId]/youtube-alerts': "เชื่อมต่อกับผู้ติดตามของคุณ! ตั้งค่าแจ้งเตือน YouTube ได้ที่นี่เลยนะคะ Papa! 🔴🎥✨",
+        '/servers/[guildId]/reaction-roles': "ให้สมาชิกเลือกยศที่ชอบด้วยสไตล์สุดชิค! จัดการระบบรับยศอัตโนมัติได้ที่นี่เลยค่ะ! 🏷️🌸🪄",
+        '/servers/[guildId]/ticket': "พร้อมช่วยเหลือทุกคนหรือยังคะ? ตั้งค่าระบบ Ticket สำหรับซัพพอร์ตระดับมืออาชีพได้เลยค่ะ! 🎫✨💖",
+        '/servers': "ยินดีต้อนรับสู่หน้าแดชบอร์ดค่ะ! ศูนย์บัญชาการลับสำหรับจัดการทุกอย่างให้เป๊ะปัง! 👑🌈🪄",
+        '/leaderboard': "ภารกิจและเกียรติยศ! มาเช็คกระดานผู้นำและทำภารกิจสุดสนุกเพื่อรับรางวัลกันนะคะ! 🏆✨🍱",
+        '/welcome': "สร้างความประทับใจแรกพบ! ปรับแต่งคำต้อนรับและคำอำลาสมาชิกที่น่ารักได้ตามใจเลยค่ะ! 👑👋🌸",
+        '/ticket': "จัดระเบียบการช่วยเหลือชุมชนให้ดูดีด้วยระบบ Ticket สุดน่ารักของอันอันนะคะ! 🎫✨🎀",
+        '/social-alerts': "ระบบแจ้งเตือนสตรีมสด! อันอันจะคอยสะกิดทุกคนไม่ให้พลาดทุกการไลฟ์เลยค่ะ! 🌸🎥🔔",
+        '/twitch-alerts': "ศูนย์ตั้งค่า Twitch! แจ้งเตือนทุกครั้งที่สตรีมเมอร์คนโปรดเริ่มไลฟ์สดนะคะ! 🟣🎥✨",
+        '/youtube-alerts': "ศูนย์ตั้งค่า YouTube! แจ้งเตือนทันทีเมื่อมีคลิปใหม่หรือเริ่มสตรีมสดค่ะ! 🔴🎥🔔",
+        '/servers/[guildId]/moderator': "ดูแลเซิร์ฟเวอร์ให้ปลอดภัยและน่าอยู่ด้วยเครื่องมือ Moderator ขั้นสูงของอันอันนะคะ Papa! 🛡️✨🌸",
+        '/servers/[guildId]/personalizer': "บ่งบอกตัวตนของเซิร์ฟเวอร์! ปรับแต่งชื่อและสถานะของอันอันได้ตามใจชอบเลยค่ะ! 🌸💎🎨",
+        '/servers/[guildId]/premium': "ยินดีต้อนรับสู่ Premium Hub ค่ะ! มายกระดับเซิร์ฟเวอร์ให้พรีเมียมขั้นสุดไปด้วยกันนะคะ! 👑💎✨",
+        'default': "อันอันอยู่เคียงข้าง Papa เสมอนะคะ! มาสร้างเซิร์ฟเวอร์ที่ดีที่สุดในโลกไปด้วยกันค่ะ! 💖✨🌸"
     }
 };
 
@@ -60,8 +72,11 @@ export default function Mascot() {
         if (pathname?.includes('/social-alerts')) return descriptions['/social-alerts'];
         if (pathname?.includes('/twitch-alerts')) return descriptions['/twitch-alerts'];
         if (pathname?.includes('/youtube-alerts')) return descriptions['/youtube-alerts'];
-        if (pathname?.includes('/servers/')) return descriptions['/servers']; // General Dashboard (Fallback for /servers/xyz)
-        return descriptions['default'];
+        if (pathname?.includes('/moderator')) return descriptions['/servers/[guildId]/moderator'] || descriptions['default'];
+        if (pathname?.includes('/personalizer')) return descriptions['/servers/[guildId]/personalizer'] || descriptions['default'];
+        if (pathname?.includes('/premium')) return descriptions['/servers/[guildId]/premium'] || descriptions['default'];
+        if (pathname?.includes('/servers/')) return descriptions['/servers'] || descriptions['default']; // General Dashboard (Fallback for /servers/xyz)
+        return descriptions['default'] || "I'm here to help! 💖";
     };
 
     // Typewriter effect with loop
@@ -72,13 +87,17 @@ export default function Mascot() {
         let pauseTimeout;
 
         const typeLoop = () => {
+            if (!fullMessage) {
+                setShowBubble(false);
+                return;
+            }
             if (!isDeleting) {
                 if (charIndex === 0) {
                     setShowBubble(true);
                     setDisplayText('');
                 }
 
-                if (charIndex <= fullMessage.length) {
+                if (fullMessage && charIndex <= fullMessage.length) {
                     setDisplayText(fullMessage.substring(0, charIndex));
                     charIndex++;
                     pauseTimeout = setTimeout(typeLoop, 50);

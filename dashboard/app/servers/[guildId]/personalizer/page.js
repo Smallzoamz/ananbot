@@ -66,7 +66,78 @@ export default function PersonalizerPage() {
         }
     };
 
+    const isPapa = session?.user?.id === "956866340474478642";
+    const isPro = userPlan.plan_type !== 'free';
+
     if (serverLoading) return <div className="loader">🌸 Transforming An An...</div>;
+
+    // Maintenance Mode Check (Targeted only to this page)
+    if (!isPapa) {
+        return (
+            <div className="maintenance-wrapper animate-fade">
+                <div className="maintenance-card glass">
+                    <div className="maintenance-icon">🛠️✨</div>
+                    <h2>{t.personalizer.maintenance.title}</h2>
+                    <p>{t.personalizer.maintenance.desc}</p>
+                    <button className="back-btn" onClick={() => window.history.back()}>
+                        {t.personalizer.maintenance.back}
+                    </button>
+                </div>
+                <style jsx>{`
+                    .maintenance-wrapper {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 60vh;
+                        padding: 20px;
+                    }
+                    .maintenance-card {
+                        max-width: 500px;
+                        width: 100%;
+                        padding: 50px 40px;
+                        text-align: center;
+                        border-radius: 32px;
+                    }
+                    .maintenance-icon {
+                        font-size: 60px;
+                        margin-bottom: 20px;
+                        animation: pulse-gear 2s infinite;
+                    }
+                    h2 {
+                        font-size: 28px;
+                        color: #1e293b;
+                        margin-bottom: 15px;
+                        font-weight: 800;
+                    }
+                    p {
+                        color: #64748b;
+                        font-size: 16px;
+                        line-height: 1.6;
+                        margin-bottom: 30px;
+                    }
+                    .back-btn {
+                        padding: 12px 30px;
+                        border-radius: 14px;
+                        background: #ff85c1;
+                        color: white;
+                        border: none;
+                        font-weight: 700;
+                        cursor: pointer;
+                        box-shadow: 0 4px 15px rgba(255, 133, 193, 0.3);
+                        transition: 0.3s;
+                    }
+                    .back-btn:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 6px 20px rgba(255, 133, 193, 0.4);
+                    }
+                    @keyframes pulse-gear {
+                        0%, 100% { transform: scale(1); }
+                        50% { transform: scale(1.1); }
+                    }
+                `}</style>
+            </div>
+        );
+    }
 
     const activityLabel = {
         PLAYING: "Playing",
@@ -74,8 +145,6 @@ export default function PersonalizerPage() {
         WATCHING: "Watching",
         COMPETING: "Competing in"
     };
-
-    const isPro = userPlan.plan_type !== 'free';
 
     return (
         <>

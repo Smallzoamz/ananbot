@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useLanguage } from "../../../context/LanguageContext";
 import Portal from "../../../components/Portal";
 import ResultModal from "../../../components/ResultModal";
@@ -9,6 +10,7 @@ import { TwitchIcon } from "../../../components/Icons";
 export default function TwitchAlertsPage({ params }) {
     const { guildId } = React.use(params);
     const { data: session } = useSession();
+    const router = useRouter();
     const { language } = useLanguage();
 
     const [enabled, setEnabled] = useState(false);

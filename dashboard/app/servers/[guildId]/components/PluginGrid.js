@@ -6,7 +6,7 @@ import { CrownIcon, ProBadge, TwitchIcon, YouTubeIcon } from "../../../component
 const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructure, onShowSelectiveModal, userPlan, onShowProWall }) => {
     const router = useRouter();
 
-    const tabs = ["All Plugins", "Essentials", "Stream Alert", "Server Management", "Security", "Utilities"];
+    const tabs = ["All Plugins", "Essentials", "Stream Alert", "Server Management", "Moderator", "Utilities"];
 
     const checkPro = (featureName, callback) => {
         if (userPlan?.plan_type === 'free') {
@@ -98,15 +98,15 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
             isActive: true
         },
         {
-            id: "security",
-            name: "Security Center",
+            id: "moderator",
+            name: "Moderator",
             icon: "🛡️",
             badge: <ProBadge />,
             badgeClass: "",
-            category: "Security",
-            desc: "Protect your server with instant lockdown and audit log visibility.",
-            action: () => checkPro("Security Center", () => onTabChange("Security")),
-            btnText: "+ Enable"
+            category: "Moderator",
+            desc: "Advanced auto-mod, audit logs, and security tools to keep your server safe.",
+            action: () => checkPro("Moderator", () => router.push(`/servers/${guildId}/moderator`)),
+            btnText: "Configure"
         },
         {
             id: "temproom",
@@ -140,6 +140,17 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
             category: "Utilities",
             desc: "Advanced ticket system with custom menus, auto-close, and transcripts.",
             action: () => checkPro("Ticket System", () => router.push(`/servers/${guildId}/ticket`)),
+            btnText: "Configure"
+        },
+        {
+            id: "reaction-roles",
+            name: "Reaction Roles",
+            icon: "🏷️",
+            badge: <ProBadge />,
+            badgeClass: "",
+            category: "Utilities",
+            desc: "Create interactive buttons for users to self-assign server roles.",
+            action: () => checkPro("Reaction Roles", () => router.push(`/servers/${guildId}/reaction-roles`)),
             btnText: "Configure"
         }
     ];

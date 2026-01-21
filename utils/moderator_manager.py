@@ -21,7 +21,12 @@ class ModeratorManager:
 
         from utils.supabase_client import get_guild_settings
         settings = await get_guild_settings(guild_id) or {}
-        config = settings.get("moderator_config", {})
+        
+        # Pro Plan Check: If not Pro, treat as no config enabled
+        if settings.get("plan_type") == "free":
+            config = {}
+        else:
+            config = settings.get("moderator_config", {})
         
         self.config_cache[guild_id] = config
         self.cache_last_updated[guild_id] = now

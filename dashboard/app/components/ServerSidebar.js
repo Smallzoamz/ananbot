@@ -68,6 +68,9 @@ export default function ServerSidebar() {
                 <div className={`menu-item ${isActive(`/servers/${guildId}`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}`)}>
                     {t.sidebar.dashboard}
                 </div>
+                <div className={`menu-item ${isActive(`/servers/${guildId}/premium`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/premium`)}>
+                    {t.sidebar.premiumMenu}
+                </div>
                 <div className={`menu-item ${isActive(`/servers/${guildId}/leaderboard`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/leaderboard`)}>
                     {t.sidebar.leaderboard}
                     <span className="crown-badge-bubble"><CrownIcon /></span>
@@ -82,8 +85,14 @@ export default function ServerSidebar() {
                     {t.sidebar.welcome}
                     <span className="crown-badge-bubble" style={{ marginLeft: 'auto' }}><CrownIcon /></span>
                 </div>
-                <div className="menu-item">{t.sidebar.reaction}</div>
-                <div className="menu-item">{t.sidebar.moderator}</div>
+                <div className={`menu-item ${isActive(`/servers/${guildId}/reaction-roles`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/reaction-roles`)}>
+                    {t.sidebar.reaction}
+                    <span className="crown-badge-bubble" style={{ marginLeft: 'auto' }}><CrownIcon /></span>
+                </div>
+                <div className={`menu-item ${isActive(`/servers/${guildId}/moderator`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/moderator`)}>
+                    {t.sidebar.moderator}
+                    <span className="crown-badge-bubble" style={{ marginLeft: 'auto' }}><CrownIcon /></span>
+                </div>
 
                 <div className="menu-category">{t.sidebar.catStream}</div>
                 <div className={`menu-item ${isActive(`/servers/${guildId}/twitch-alerts`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/twitch-alerts`)}>

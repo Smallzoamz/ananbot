@@ -1588,15 +1588,21 @@ class AnAnBot(commands.Bot):
         return user.id == papa_uid or (guild and user.id == guild.owner_id)
 
     async def ensure_management_system(self, guild):
+        # 0. Fetch Plan Status
+        from utils.supabase_client import get_user_plan
+        plan_data = await get_user_plan(str(guild.owner_id))
+        plan_type = plan_data.get("plan_type", "free")
+        is_pro = plan_type in ["pro", "premium"]
+
         # Names for the channels
         terminal_name = "｜・💬：anan-terminal"
         
-        # 1. Calculate Stats
+        # 1. Calculate Stats (Only if Pro)
         total_members = guild.member_count
         online_members = sum(1 for m in guild.members if m.status != disnake.Status.offline)
         stats_name = f"｜・📊：MEMBERS ⎯ {online_members}/{total_members}"
         
-        # 2. Get Latest Member
+        # 2. Get Latest Member (Only if Pro)
         # Sort members by join date
         sorted_members = sorted([m for m in guild.members if not m.bot], key=lambda m: m.joined_at or datetime.datetime.min, reverse=True)
         latest_name = f"｜・👣：LATEST ⎯ {sorted_members[0].display_name[:15]}" if sorted_members else "｜・👣：LATEST ⎯ None"
@@ -1660,10 +1666,25 @@ class AnAnBot(commands.Bot):
                     print(f"Error syncing {name}: {e}")
             return None
 
-        # Execute Sync for all 3
+        # Helper to delete channel if it exists
+        async def cleanup_ch(icon):
+            existing = next((c for c in guild.voice_channels if icon in c.name), None)
+            if existing:
+                try:
+                    await existing.delete(reason="Plan Downgrade: Feature restricted to Pro Plan.")
+                except:
+                    pass
+
+        # Execute Sync/Cleanup
         terminal_ch = await sync_ch(terminal_name, "text", text_overwrites, 0)
-        await sync_ch(stats_name, "voice", voice_overwrites, 1)
-        await sync_ch(latest_name, "voice", voice_overwrites, 2)
+        
+        if is_pro:
+            await sync_ch(stats_name, "voice", voice_overwrites, 1)
+            await sync_ch(latest_name, "voice", voice_overwrites, 2)
+        else:
+            # Cleanup only counter channels for Free users
+            await cleanup_ch("📊")
+            await cleanup_ch("👣")
         
         return terminal_ch
 
