@@ -962,6 +962,20 @@ class AnAnBot(commands.Bot):
         if not guild:
             return web.json_response({"error": "Guild not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
             
+        def get_overwrites(ch):
+            ow = []
+            for target, p_ow in ch.overwrites.items():
+                if isinstance(target, disnake.Role):
+                    allow, deny = p_ow.pair()
+                    ow.append({
+                        "id": str(target.id),
+                        "name": target.name,
+                        "type": "role",
+                        "allow": allow.value,
+                        "deny": deny.value
+                    })
+            return ow
+
         structure = []
         # Categories and their channels
         for cat in sorted(guild.categories, key=lambda c: c.position):
@@ -970,13 +984,15 @@ class AnAnBot(commands.Bot):
                 channels.append({
                     "id": str(ch.id),
                     "name": ch.name,
-                    "type": str(ch.type)
+                    "type": str(ch.type),
+                    "overwrites": get_overwrites(ch)
                 })
             structure.append({
                 "id": str(cat.id),
                 "name": cat.name,
                 "type": "category",
-                "channels": channels
+                "channels": channels,
+                "overwrites": get_overwrites(cat)
             })
             
         # Orphan channels (no category)
@@ -986,7 +1002,13 @@ class AnAnBot(commands.Bot):
                 "id": "orphans",
                 "name": "UNCATEGORIZED",
                 "type": "category",
-                "channels": [{"id": str(ch.id), "name": ch.name, "type": str(ch.type)} for ch in sorted(orphans, key=lambda c: c.position)]
+                "channels": [{
+                    "id": str(ch.id), 
+                    "name": ch.name, 
+                    "type": str(ch.type),
+                    "overwrites": get_overwrites(ch)
+                } for ch in sorted(orphans, key=lambda c: c.position)],
+                "overwrites": [] # Orphans don't have cat overwrites obviously
             })
 
         return web.json_response(structure, headers={
@@ -1455,6 +1477,32 @@ class AnAnBot(commands.Bot):
                     
                     try:
                         await target_ch.delete()
+                        return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+                    except Exception as e:
+                        return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
+
+                elif action == "update_channel_permissions_live":
+                    target_id = body.get("channel_id")
+                    role_id = body.get("role_id")
+                    allow_val = body.get("allow", 0)
+                    deny_val = body.get("deny", 0)
+                    
+                    if not target_id or not role_id:
+                        return web.json_response({"error": "channel_id and role_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                    
+                    target_ch = guild.get_channel(int(target_id))
+                    role = guild.get_role(int(role_id))
+                    
+                    if not target_ch or not role:
+                        return web.json_response({"error": "Channel or Role not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+                    
+                    try:
+                        # Use disnake's PermissionOverwrite
+                        ow = disnake.PermissionOverwrite.from_pair(
+                            disnake.Permissions(int(allow_val)),
+                            disnake.Permissions(int(deny_val))
+                        )
+                        await target_ch.set_permissions(role, overwrite=ow)
                         return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
                     except Exception as e:
                         return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
