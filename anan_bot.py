@@ -1099,42 +1099,30 @@ class AnAnBot(commands.Bot):
                 plan = await get_user_plan(user_id)
                 
                 # Calculate Level (Max 10)
-                # XP for Level n: 2500 * n * (n-1)
                 xp_balance = stats.get("xp_balance", 0)
                 
                 def get_level_info(total_xp):
                     if total_xp <= 0: return 1, 0, 5000
-                    
-                    # Solve 2500 * L * (L-1) <= total_xp
-                    # L^2 - L - (total_xp/2500) <= 0
                     import math
                     l_exact = (1 + math.sqrt(1 + total_xp / 625)) / 2
                     level = min(10, math.floor(l_exact))
-                    
                     if level >= 10:
                         xp_for_current = 2500 * 10 * 9
                         return 10, total_xp - xp_for_current, 0
-                    
                     xp_for_current = 2500 * level * (level - 1)
                     xp_for_next = 2500 * (level + 1) * level
                     current_level_xp = total_xp - xp_for_current
                     xp_needed_for_next = xp_for_next - xp_for_current
-                    
                     return level, current_level_xp, xp_needed_for_next
 
                 level, current_xp, next_xp = get_level_info(xp_balance)
-                
-                # Papa is ALWAYS Level 10 👑
                 if str(user_id) == "956866340474478642":
                     level = 10
                     current_xp = 0
                     next_xp = 0
-
                 stats["level"] = level
                 stats["current_level_xp"] = current_xp
                 stats["xp_needed_for_next"] = next_xp
-                
-                print(f"Returning {len(missions)} missions for user {user_id} (Level {level})")
                 return web.json_response({"missions": missions, "stats": stats, "plan": plan}, headers={"Access-Control-Allow-Origin": "*"})
                 
             elif action == "claim_mission":
@@ -1150,7 +1138,6 @@ class AnAnBot(commands.Bot):
                 config = body.get("config")
                 if not user_id or not guild_id or not config:
                     return web.json_response({"error": "Missing params"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                
                 from utils.supabase_client import save_rank_card_db
                 result = await save_rank_card_db(user_id, guild_id, config)
                 return web.json_response(result, headers={"Access-Control-Allow-Origin": "*"})
@@ -1160,7 +1147,6 @@ class AnAnBot(commands.Bot):
                 guild_id = body.get("guild_id")
                 if not user_id or not guild_id:
                     return web.json_response({"error": "Missing params"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                
                 from utils.supabase_client import get_rank_card_db
                 config = await get_rank_card_db(user_id, guild_id)
                 return web.json_response({"config": config}, headers={"Access-Control-Allow-Origin": "*"})
@@ -1168,23 +1154,16 @@ class AnAnBot(commands.Bot):
             if action == "save_welcome_settings":
                 user_id = body.get("user_id")
                 if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                
-                # Pro Plan Check
                 plan = await get_user_plan(user_id)
                 if plan.get("plan_type") == "free":
                     return web.json_response({"error": "Pro Plan required for this feature"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
                 settings = body.get("settings", {})
-                print(f"Saving welcome settings for guild {guild_id}")
-                
-                # Whitelist filtering for welcome/goodbye settings 🛡️
                 welcome_keys = [
                     "welcome_enabled", "welcome_channel_id", "welcome_message", 
                     "welcome_image_url", "goodbye_enabled", "goodbye_channel_id", 
                     "goodbye_message", "goodbye_image_url"
                 ]
                 filtered_settings = {k: v for k, v in settings.items() if k in welcome_keys}
-                
                 result = await save_guild_settings(guild_id, filtered_settings)
                 return web.json_response(result, headers={"Access-Control-Allow-Origin": "*"})
 
@@ -1193,20 +1172,15 @@ class AnAnBot(commands.Bot):
                 guild = self.get_guild(int(guild_id)) if guild_id else (self.guilds[0] if self.guilds else None)
             except:
                 guild = None
-                
             if not guild:
                 return web.json_response({"error": "Guild not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
             
-            print(f"Processing guild action {action} for {guild.name}")
-            
             if action == "clear":
                 user_id = body.get("user_id")
-                # Start clear in background to avoid blocking API
                 async def safe_clear():
                     try: await perform_clear(guild, user_id=user_id)
                     except Exception as e:
                         print(f"Clear Error: {e}")
-                        import traceback; traceback.print_exc()
                 asyncio.create_task(safe_clear())
                 return web.json_response({"success": True, "message": "Cleaning up the guild... 🧹"}, headers={"Access-Control-Allow-Origin": "*"})
                 
@@ -1216,8 +1190,6 @@ class AnAnBot(commands.Bot):
             
             elif action == "delete_selective":
                 ids = body.get("ids", [])
-                user_id = body.get("user_id")
-                print(f"Selective deleting {len(ids)} items...")
                 async def safe_delete():
                     try: await perform_selective_delete(guild, ids)
                     except Exception as e:
@@ -1236,37 +1208,27 @@ class AnAnBot(commands.Bot):
                 template = body.get("template", "Shop")
                 user_id = body.get("user_id")
                 if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                
-                # Pro Plan Check for Custom Template
                 if template == "Custom":
                     plan = await get_user_plan(user_id)
                     if plan.get("plan_type") == "free":
                         return web.json_response({"error": "Pro Plan required for Custom Template"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
                 extra_data = body.get("extra_data", {})
-                # Perform setup in background
                 async def safe_setup():
                     try: await perform_guild_setup(guild, template, extra_data, user_id=user_id)
                     except Exception as e:
                         print(f"Setup Error: {e}")
-                        import traceback; traceback.print_exc()
                 asyncio.create_task(safe_setup())
                 return web.json_response({"success": True, "message": "Setup started! 🚀"}, headers={"Access-Control-Allow-Origin": "*"})
                 
             elif action == "test_welcome_web":
                 user_id = body.get("user_id")
                 if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                
-                # Pro Plan Check
                 plan = await get_user_plan(user_id)
                 if plan.get("plan_type") == "free":
                     return web.json_response({"error": "Pro Plan required for this feature"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
                 settings = body.get("settings", {})
                 user_obj = guild.get_member(int(user_id)) if user_id else None
                 if not user_obj: return web.json_response({"error": "Member not found in guild"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
-                
-                print(f"Web API triggering Test Welcome for {user_obj.name}")
                 success = await send_welcome_message(user_obj, settings=settings)
                 return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
 
@@ -1275,11 +1237,7 @@ class AnAnBot(commands.Bot):
                 plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
                 if plan.get("plan_type") == "free":
                     return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
-                channels = [
-                    {"id": str(ch.id), "name": ch.name}
-                    for ch in guild.text_channels
-                ]
+                channels = [{"id": str(ch.id), "name": ch.name} for ch in guild.text_channels]
                 return web.json_response({"channels": channels}, headers={"Access-Control-Allow-Origin": "*"})
 
             elif action == "get_server_emojis":
@@ -1287,11 +1245,7 @@ class AnAnBot(commands.Bot):
                 plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
                 if plan.get("plan_type") == "free":
                     return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
-                emojis = [
-                    {"id": str(e.id), "name": e.name, "url": e.url, "animated": e.animated}
-                    for e in guild.emojis
-                ]
+                emojis = [{"id": str(e.id), "name": e.name, "url": e.url, "animated": e.animated} for e in guild.emojis]
                 return web.json_response({"emojis": emojis}, headers={"Access-Control-Allow-Origin": "*"})
 
             elif action == "get_roles":
@@ -1299,15 +1253,10 @@ class AnAnBot(commands.Bot):
                 plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
                 if plan.get("plan_type") == "free":
                     return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
                 roles = []
                 for role in reversed(guild.roles):
                     if role.is_default() or role.managed: continue
-                    roles.append({
-                        "id": str(role.id),
-                        "name": role.name,
-                        "color": role.color.value
-                    })
+                    roles.append({"id": str(role.id), "name": role.name, "color": role.color.value})
                 return web.json_response({"roles": roles}, headers={"Access-Control-Allow-Origin": "*"})
 
             elif action == "save_reaction_role_config":
@@ -1315,7 +1264,6 @@ class AnAnBot(commands.Bot):
                 plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
                 if plan.get("plan_type") == "free":
                     return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
                 config = body.get("config", {})
                 await save_guild_settings(guild_id, {"reaction_roles_config": config})
                 return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
@@ -1325,10 +1273,8 @@ class AnAnBot(commands.Bot):
                 plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
                 if plan.get("plan_type") == "free":
                     return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
                 config = body.get("config", {})
                 await save_guild_settings(guild_id, {"moderator_config": config})
-                # Clear cache to reflect changes immediately
                 self.moderator.config_cache.pop(int(guild_id), None)
                 return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
 
@@ -1337,52 +1283,137 @@ class AnAnBot(commands.Bot):
                 plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
                 if plan.get("plan_type") == "free":
                     return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
                 config = body.get("config", {})
                 target_ch_id = config.get("channel_id")
                 if not target_ch_id: return web.json_response({"error": "Target channel required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-
                 channel = guild.get_channel(int(target_ch_id))
                 if not channel: return web.json_response({"error": "Channel not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
-
-                # Build Embed
                 title = config.get("title", "Reaction Roles")
                 desc = config.get("description", "Select your roles below!")
                 mappings = config.get("mappings", [])
-
-                embed = disnake.Embed(
-                    title=title,
-                    description=desc,
-                    color=disnake.Color.from_rgb(255, 182, 193)
-                )
-                
-                # Add mapping descriptions to embed
+                embed = disnake.Embed(title=title, description=desc, color=disnake.Color.from_rgb(255, 182, 193))
                 if mappings:
                     mappings_desc = "\n".join([f"{m.get('emoji', '✨')} **{m.get('label', 'Role')}** - {m.get('desc', 'Click to get role')}" for m in mappings])
                     embed.add_field(name="Available Roles", value=mappings_desc, inline=False)
-
                 embed.set_footer(text="An An Reaction Roles 🌸")
                 embed.timestamp = datetime.datetime.now()
-
                 await channel.send(embed=embed, view=ReactionRoleView(mappings))
                 return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
 
             elif action == "test_goodbye_web":
                 user_id = body.get("user_id")
                 if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                
-                # Pro Plan Check
                 plan = await get_user_plan(user_id)
                 if plan.get("plan_type") == "free":
                     return web.json_response({"error": "Pro Plan required for this feature"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
                 settings = body.get("settings", {})
                 user_obj = guild.get_member(int(user_id)) if user_id else None
                 if not user_obj: return web.json_response({"error": "Member not found in guild"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
-                
-                print(f"Web API triggering Test Goodbye for {user_obj.name}")
                 success = await send_goodbye_message(user_obj, settings=settings)
                 return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "save_personalizer_settings":
+                user_id = body.get("user_id")
+                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                plan = await get_user_plan(user_id)
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required for this feature"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+                settings = body.get("settings", {})
+                await save_guild_settings(guild_id, settings)
+                if guild:
+                    try:
+                        nickname = settings.get("bot_nickname")
+                        if nickname: await guild.me.edit(nick=nickname)
+                    except Exception as e:
+                        print(f"Error changing nickname: {e}")
+                try:
+                    act_type_str = settings.get("activity_type", "LISTENING")
+                    status_text = settings.get("status_text", "/help")
+                    act_type = getattr(disnake.ActivityType, act_type_str.lower(), disnake.ActivityType.listening)
+                    await self.change_presence(activity=disnake.Activity(type=act_type, name=status_text))
+                except Exception as e:
+                    print(f"Error changing presence: {e}")
+                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "save_ticket_settings":
+                settings = body.get("settings", {})
+                current = await get_guild_settings(guild_id) or {}
+                current_ticket = current.get("ticket_config", {})
+                if "counts" in current_ticket:
+                    settings["counts"] = current_ticket["counts"]
+                await save_guild_settings(guild_id, {"ticket_config": settings})
+                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "send_ticket_panel":
+                user_id = body.get("user_id")
+                settings = body.get("settings", {})
+                result = await self.perform_ticket_setup(guild, settings, user_id)
+                return web.json_response(result, status=200 if result.get("success") else 400, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "test_social_alert":
+                user_id = body.get("user_id")
+                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                plan = await get_user_plan(user_id)
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required for this feature"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+                success = await self.social_manager.test_alert(guild_id)
+                return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action in ["create_channel_live", "delete_channel_live", "update_channel_permissions_live"]:
+                papa_id = "956866340474478642"
+                if str(user_id) != papa_id:
+                    return web.json_response({"error": "🚫 Forbidden: Papa access only!"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+                
+                if action == "create_channel_live":
+                    name = body.get("name", "new-channel")
+                    ch_type = body.get("type", "text")
+                    cat_id = body.get("category_id")
+                    emoji = body.get("emoji", "💬" if ch_type == "text" else "🔊" if ch_type == "voice" else "📂")
+                    try:
+                        final_name = name
+                        if ch_type == "category": final_name = f"{emoji} ⎯  {name.upper()}"
+                        else:
+                            def internal_format(e, n, is_v=False): return f"｜・{e}：{n.upper() if is_v else n.lower()}"
+                            final_name = internal_format(emoji, name, is_v=(ch_type == "voice"))
+                        cat = guild.get_channel(int(cat_id)) if cat_id else None
+                        if ch_type == "category": new_ch = await guild.create_category(name=final_name)
+                        elif ch_type == "voice": new_ch = await guild.create_voice_channel(name=final_name, category=cat)
+                        else: new_ch = await guild.create_text_channel(name=final_name, category=cat)
+                        return web.json_response({"success": True, "id": str(new_ch.id)}, headers={"Access-Control-Allow-Origin": "*"})
+                    except Exception as e: return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
+
+                elif action == "delete_channel_live":
+                    target_id = body.get("channel_id")
+                    target_ch = guild.get_channel(int(target_id))
+                    if not target_ch: return web.json_response({"error": "Channel not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+                    try:
+                        await target_ch.delete()
+                        return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+                    except Exception as e: return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
+
+                elif action == "update_channel_permissions_live":
+                    target_id = body.get("channel_id"); role_id = body.get("role_id"); allow_val = body.get("allow", 0); deny_val = body.get("deny", 0)
+                    target_ch = guild.get_channel(int(target_id)); role = guild.get_role(int(role_id))
+                    if not target_ch or not role: return web.json_response({"error": "Channel/Role not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+                    try:
+                        ow = disnake.PermissionOverwrite.from_pair(disnake.Permissions(int(allow_val)), disnake.Permissions(int(deny_val)))
+                        await target_ch.set_permissions(role, overwrite=ow)
+                        return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+                    except Exception as e: return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "save_social_settings":
+                user_id = body.get("user_id")
+                plan = await get_user_plan(user_id)
+                if plan.get("plan_type") == "free": return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+                settings = body.get("settings", {})
+                await save_guild_settings(guild_id, {"social_config": settings})
+                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+
+            return web.json_response({"error": "Unknown action"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+            
+        except Exception as e:
+            print(f"API Action Error: {e}")
+            return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
 
     async def handle_guild_settings(self, request):
         guild_id = request.match_info.get('guild_id')
@@ -1393,192 +1424,6 @@ class AnAnBot(commands.Bot):
         
         # Ensure it's a dict and remove sensitive or internal fields if any
         return web.json_response(settings, headers={"Access-Control-Allow-Origin": "*"})
-
-    async def handle_action(self, request):
-        print(f"API Request: POST /api/action from {request.remote}")
-        try:
-            body = await request.json()
-            action = body.get("action")
-            guild_id = body.get("guild_id") or request.match_info.get('guild_id')
-            user_id = body.get("user_id")
-            
-            print(f"Web API triggering {action}")
-            
-            # ... (rest of the actions remain same above ...)
-
-            elif action == "save_personalizer_settings":
-                user_id = body.get("user_id")
-                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                
-                # Pro Plan Check
-                plan = await get_user_plan(user_id)
-                if plan.get("plan_type") == "free":
-                    return web.json_response({"error": "Pro Plan required for this feature"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
-                settings = body.get("settings", {})
-                print(f"Saving personalizer settings for guild {guild_id}")
-                
-                # 1. Update DB (Full sync for Personalizer fields)
-                await save_guild_settings(guild_id, settings)
-                
-                # 2. Apply Nickname (Local)
-                guild = self.get_guild(int(guild_id))
-                if guild:
-                    try:
-                        nickname = settings.get("bot_nickname")
-                        if nickname:
-                            await guild.me.edit(nick=nickname)
-                    except Exception as e:
-                        print(f"Error changing nickname: {e}")
-                
-                # 3. Apply Presence (Global) - An An's global vibe ✨
-                try:
-                    act_type_str = settings.get("activity_type", "LISTENING")
-                    status_text = settings.get("status_text", "/help")
-                    
-                    act_type = getattr(disnake.ActivityType, act_type_str.lower(), disnake.ActivityType.listening)
-                    await self.change_presence(activity=disnake.Activity(type=act_type, name=status_text))
-                except Exception as e:
-                    print(f"Error changing presence: {e}")
-                
-                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
-
-            elif action == "save_ticket_settings":
-                settings = body.get("settings", {})
-                # Save to DB
-                # settings = {topics: [], support_role_id: str}
-                # merge with existing count?
-                current = await get_guild_settings(guild_id) or {}
-                current_ticket = current.get("ticket_config", {})
-                
-                # Preserve counts
-                if "counts" in current_ticket:
-                    settings["counts"] = current_ticket["counts"]
-                
-                await save_guild_settings(guild_id, {"ticket_config": settings})
-                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
-
-            elif action == "send_ticket_panel":
-                user_id = body.get("user_id")
-                settings = body.get("settings", {})
-                
-                result = await self.perform_ticket_setup(guild, settings, user_id)
-                if result.get("success"):
-                    return web.json_response(result, headers={"Access-Control-Allow-Origin": "*"})
-                else:
-                    return web.json_response(result, status=400, headers={"Access-Control-Allow-Origin": "*"})
-
-            elif action == "test_social_alert":
-                user_id = body.get("user_id")
-                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                
-                # Pro Plan Check
-                plan = await get_user_plan(user_id)
-                if plan.get("plan_type") == "free":
-                    return web.json_response({"error": "Pro Plan required for this feature"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
-                success = await self.social_manager.test_alert(guild_id)
-                return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
-
-            # --- Live Channel Management (Papa Exclusive 🤫👑) ---
-            elif action in ["create_channel_live", "delete_channel_live"]:
-                papa_id = "956866340474478642"
-                if str(user_id) != papa_id:
-                    return web.json_response({"error": "🚫 Forbidden: Papa access only!"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-                
-                if action == "create_channel_live":
-                    name = body.get("name", "new-channel")
-                    ch_type = body.get("type", "text") # text, voice, category
-                    cat_id = body.get("category_id")
-                    emoji = body.get("emoji", "💬" if ch_type == "text" else "🔊" if ch_type == "voice" else "📂")
-                    
-                    try:
-                        # Follow Bot Design: format_name helper
-                        final_name = name
-                        if ch_type == "category":
-                            # Category Design: [Emoji] ⎯  [NAME]
-                            final_name = f"{emoji} ⎯  {name.upper()}"
-                        else:
-                            # Channel Design: ｜・[Emoji]：[NAME]
-                            def internal_format(e, n, is_v=False):
-                                if is_v: return f"｜・{e}：{n.upper()}"
-                                return f"｜・{e}：{n.lower()}"
-                            final_name = internal_format(emoji, name, is_v=(ch_type == "voice"))
-
-                        cat = guild.get_channel(int(cat_id)) if cat_id else None
-                        
-                        if ch_type == "category":
-                            new_ch = await guild.create_category(name=final_name)
-                        elif ch_type == "voice":
-                            new_ch = await guild.create_voice_channel(name=final_name, category=cat)
-                        else:
-                            new_ch = await guild.create_text_channel(name=final_name, category=cat)
-                            
-                        return web.json_response({"success": True, "id": str(new_ch.id)}, headers={"Access-Control-Allow-Origin": "*"})
-                    except Exception as e:
-                        return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
-
-                elif action == "delete_channel_live":
-                    target_id = body.get("channel_id")
-                    if not target_id: return web.json_response({"error": "channel_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                    
-                    target_ch = guild.get_channel(int(target_id))
-                    if not target_ch: return web.json_response({"error": "Channel not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
-                    
-                    try:
-                        await target_ch.delete()
-                        return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
-                    except Exception as e:
-                        return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
-
-                elif action == "update_channel_permissions_live":
-                    target_id = body.get("channel_id")
-                    role_id = body.get("role_id")
-                    allow_val = body.get("allow", 0)
-                    deny_val = body.get("deny", 0)
-                    
-                    if not target_id or not role_id:
-                        return web.json_response({"error": "channel_id and role_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                    
-                    target_ch = guild.get_channel(int(target_id))
-                    role = guild.get_role(int(role_id))
-                    
-                    if not target_ch or not role:
-                        return web.json_response({"error": "Channel or Role not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
-                    
-                    try:
-                        # Use disnake's PermissionOverwrite
-                        ow = disnake.PermissionOverwrite.from_pair(
-                            disnake.Permissions(int(allow_val)),
-                            disnake.Permissions(int(deny_val))
-                        )
-                        await target_ch.set_permissions(role, overwrite=ow)
-                        return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
-                    except Exception as e:
-                        return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
-                return
-
-            elif action == "save_social_settings":
-                user_id = body.get("user_id")
-                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                
-                # Pro Plan Check
-                plan = await get_user_plan(user_id)
-                if plan.get("plan_type") == "free":
-                    return web.json_response({"error": "Pro Plan required for Social Alerts"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
-
-                settings = body.get("settings", {})
-                print(f"Saving social settings for guild {guild_id}")
-                
-                # Update DB
-                await save_guild_settings(guild_id, {"social_config": settings})
-                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
-
-            return web.json_response({"error": "Unknown action"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-            
-        except Exception as e:
-            print(f"API Action Error: {e}")
-            return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
 
     async def handle_claim_reward(self, request):
         try:
@@ -1637,35 +1482,7 @@ class AnAnBot(commands.Bot):
         await panel.send(embed=embed, view=TicketView(topics))
         return {"success": True, "message": "Ticket Panel Created!"}
 
-    async def handle_guild_settings(self, request):
-        guild_id = request.match_info.get('guild_id') or request.query.get('guild_id')
-        if not guild_id:
-            return web.json_response({"error": "Missing guild_id"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-        
-        try:
-            settings = await get_guild_settings(guild_id)
-            if not settings:
-                # Provide default structure if not found
-                return web.json_response({
-                    "welcome_enabled": True,
-                    "welcome_channel_id": None,
-                    "welcome_message": None,
-                    "welcome_image_url": None,
-                    "goodbye_enabled": False,
-                    "goodbye_channel_id": None,
-                    "goodbye_message": None,
-                    "goodbye_image_url": None,
-                    "bot_nickname": "An An",
-                    "bot_bio": "Cheerfully serving Papa! 🌸✨",
-                    "activity_type": "LISTENING",
-                    "status_text": "/help | ananbot.xyz",
-                    "avatar_url": "/ANAN1.png",
-                    "banner_color": "#ff85c1"
-                }, headers={"Access-Control-Allow-Origin": "*"})
-            return web.json_response(settings, headers={"Access-Control-Allow-Origin": "*"})
-        except Exception as e:
-            print(f"API Guild Settings Error: {e}")
-            return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
+
 
     @tasks.loop(minutes=1)
     async def ticket_loop(self):
