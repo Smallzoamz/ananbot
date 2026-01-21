@@ -1149,6 +1149,11 @@ class AnAnBot(commands.Bot):
                 return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
 
             elif action == "get_channels":
+                user_id = body.get("user_id")
+                plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
                 channels = [
                     {"id": str(ch.id), "name": ch.name}
                     for ch in guild.text_channels
@@ -1228,6 +1233,14 @@ class AnAnBot(commands.Bot):
                 return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
 
             elif action == "test_social_alert":
+                user_id = body.get("user_id")
+                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                # Pro Plan Check
+                plan = await get_user_plan(user_id)
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required for Social Alerts"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
                 target_ch_id = body.get("channel_id")
                 platform = body.get("platform", "Twitch")
                 streamer = body.get("streamer", "An An")

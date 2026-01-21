@@ -85,6 +85,16 @@ export default function ServerSidebar() {
                 <div className="menu-item">{t.sidebar.reaction}</div>
                 <div className="menu-item">{t.sidebar.moderator}</div>
 
+                <div className="menu-category">{t.sidebar.catStream}</div>
+                <div className={`menu-item ${isActive(`/servers/${guildId}/twitch-alerts`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/twitch-alerts`)}>
+                    {t.sidebar.twitchAlerts}
+                    <span className="crown-badge-bubble" style={{ marginLeft: 'auto' }}><CrownIcon /></span>
+                </div>
+                <div className={`menu-item ${isActive(`/servers/${guildId}/youtube-alerts`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/youtube-alerts`)}>
+                    {t.sidebar.youtubeAlerts}
+                    <span className="crown-badge-bubble" style={{ marginLeft: 'auto' }}><CrownIcon /></span>
+                </div>
+
                 <div className="menu-category">{t.sidebar.catManagement}</div>
                 <div className={`menu-item ${isActive(`/servers/${guildId}/ticket`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/ticket`)}>
                     Ticket System

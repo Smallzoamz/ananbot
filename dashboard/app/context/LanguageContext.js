@@ -96,6 +96,9 @@ const translations = {
             catManagement: "SERVER MANAGEMENT",
             automation: "Automations",
             commands: "Custom Commands",
+            catStream: "STREAM ALERT",
+            twitchAlerts: "Twitch Alerts",
+            youtubeAlerts: "YouTube Alerts",
             reset: "Clear & Reset",
             switch: "Switch Server"
         },
@@ -233,6 +236,9 @@ const translations = {
             catManagement: "การจัดการเซิร์ฟเวอร์",
             automation: "ระบบอัตโนมัติ",
             commands: "คำสั่งกำหนดเอง",
+            catStream: "แจ้งเตือนสตรีม (STREAM)",
+            twitchAlerts: "Twitch Alerts",
+            youtubeAlerts: "YouTube Alerts",
             reset: "ล้างและรีเซ็ต",
             switch: "เปลี่ยนเซิร์ฟเวอร์"
         },

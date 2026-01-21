@@ -32,11 +32,17 @@ class SocialManager:
         for guild in self.bot.guilds:
             try:
                 # 1. Fetch settings from Supabase (via bot's helper)
-                from utils.supabase_client import get_guild_settings
+                # 1. Fetch settings from Supabase
+                from utils.supabase_client import get_guild_settings, get_user_plan
                 settings = await get_guild_settings(str(guild.id))
                 if not settings or 'social_config' not in settings:
                     continue
                 
+                # 2. Pro Plan Check for Guild Owner
+                plan = await get_user_plan(str(guild.owner_id))
+                if plan.get("plan_type") == "free":
+                    continue
+
                 social_config = settings.get('social_config', {})
                 
                 # Check Twitch

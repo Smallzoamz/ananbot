@@ -1,12 +1,12 @@
 "use client";
 import React from "react";
 import { useRouter } from "next/navigation";
-import { CrownIcon, ProBadge } from "../../../components/Icons";
+import { CrownIcon, ProBadge, TwitchIcon, YouTubeIcon } from "../../../components/Icons";
 
 const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructure, onShowSelectiveModal, userPlan, onShowProWall }) => {
     const router = useRouter();
 
-    const tabs = ["All Plugins", "Essentials", "Server Management", "Security", "Utilities"];
+    const tabs = ["All Plugins", "Essentials", "Stream Alert", "Server Management", "Security", "Utilities"];
 
     const checkPro = (featureName, callback) => {
         if (userPlan?.plan_type === 'free') {
@@ -51,6 +51,28 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
             action: () => onAction("setup"),
             btnText: "Deploy",
             isActive: true
+        },
+        {
+            id: "twitch-alerts",
+            name: "Twitch Alerts",
+            icon: <TwitchIcon size={32} />,
+            badge: <ProBadge />,
+            badgeClass: "",
+            category: "Stream Alert",
+            desc: "Instant notifications when your favorite Twitch streamers go live.",
+            action: () => checkPro("Twitch Alerts", () => router.push(`/servers/${guildId}/twitch-alerts`)),
+            btnText: "Configure"
+        },
+        {
+            id: "youtube-alerts",
+            name: "YouTube Alerts",
+            icon: <YouTubeIcon size={32} />,
+            badge: <ProBadge />,
+            badgeClass: "",
+            category: "Stream Alert",
+            desc: "Notify your server immediately when a YouTube channel starts streaming.",
+            action: () => checkPro("YouTube Alerts", () => router.push(`/servers/${guildId}/youtube-alerts`)),
+            btnText: "Configure"
         },
         {
             id: "structure",
