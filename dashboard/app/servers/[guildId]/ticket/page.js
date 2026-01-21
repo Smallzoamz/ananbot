@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 
 import ProWallModal from "../components/ProWallModal";
+import TicketHistoryModal from "../components/TicketHistoryModal";
+import ResultModal from "../components/ResultModal";
 import { useLanguage } from "../../../context/LanguageContext";
 
 export default function TicketPage({ params }) {
@@ -17,6 +19,10 @@ export default function TicketPage({ params }) {
     const [roles, setRoles] = useState([]);
     const [history, setHistory] = useState([]);
     const [showProWall, setShowProWall] = useState(false);
+
+    // Modals State
+    const [historyModal, setHistoryModal] = useState({ isOpen: false, ticket: null });
+    const [resultModal, setResultModal] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
     useEffect(() => {
         if (!session) return;
@@ -56,6 +62,10 @@ export default function TicketPage({ params }) {
         fetchData();
     }, [guildId, session]);
 
+    const showResult = (type, title, message) => {
+        setResultModal({ isOpen: true, type, title, message });
+    };
+
     const handleSave = async () => {
         try {
             await fetch(`/api/proxy/guild/${guildId}/action`, {
@@ -63,9 +73,9 @@ export default function TicketPage({ params }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'save_ticket_settings', settings, user_id: session.user.id })
             });
-            alert("Settings Saved!");
+            showResult('success', 'Settings Saved!', 'Your ticket system configuration has been saved successfully.');
         } catch (e) {
-            alert("Error saving settings");
+            showResult('error', 'Save Failed', 'Could not save settings. Please try again.');
         }
     };
 
@@ -76,9 +86,9 @@ export default function TicketPage({ params }) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'send_ticket_panel', settings, user_id: session.user.id })
             });
-            alert("Ticket Panel Sent!");
+            showResult('success', 'Panel Sent!', 'The Ticket Panel has been sent to the appropriate channel.');
         } catch (e) {
-            alert("Error sending panel");
+            showResult('error', 'Send Failed', 'Could not send the ticket panel. Check bot permissions.');
         }
     };
 
@@ -96,6 +106,10 @@ export default function TicketPage({ params }) {
     const removeTopic = (index) => {
         const newTopics = settings.topics.filter((_, i) => i !== index);
         setSettings({ ...settings, topics: newTopics });
+    };
+
+    const openHistory = (ticket) => {
+        setHistoryModal({ isOpen: true, ticket });
     };
 
     if (isLoading) return <div className="loader">🌸 Loading Ticket System...</div>;
@@ -266,30 +280,46 @@ export default function TicketPage({ params }) {
                     )}
 
                     {history.map((ticket, i) => (
-                        <div key={i} style={{ padding: '15px', background: 'rgba(255,255,255,0.4)', borderRadius: '12px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                        <div
+                            key={i}
+                            onClick={() => openHistory(ticket)}
+                            style={{ padding: '15px', background: 'rgba(255,255,255,0.4)', borderRadius: '12px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px', cursor: 'pointer', transition: 'background 0.2s' }}
+                            className="hover:bg-white/60"
+                        >
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontWeight: 'bold', color: '#4a4a68' }}>{ticket.ticket_id}</span>
                                 <span style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase' }}>TOPIC: {ticket.topic}</span>
                             </div>
                             <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                                 <span style={{ color: '#6b7280', marginBottom: '4px' }}>{t.ticket.closed} {ticket.ago.replace('ago', t.ticket.ago)}</span>
-                                {ticket.log_url && (
-                                    <a href={ticket.log_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 'bold', textDecoration: 'none', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        📄 {t.ticket.viewLog}
-                                    </a>
-                                )}
+                                <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                    📄 {t.ticket.viewLog}
+                                </span>
                             </div>
                         </div>
                     ))}
                 </div>
             </div>
 
-
             <ProWallModal
                 show={showProWall}
                 featureName="Ticket System"
                 onClose={() => router.push(`/servers/${guildId}`)}
                 onProceed={() => window.open('/pricing', '_blank')}
+            />
+
+            <TicketHistoryModal
+                isOpen={historyModal.isOpen}
+                onClose={() => setHistoryModal({ ...historyModal, isOpen: false })}
+                ticket={historyModal.ticket}
+            />
+
+            <ResultModal
+                isOpen={resultModal.isOpen}
+                onClose={() => setResultModal({ ...resultModal, isOpen: false })}
+                type={resultModal.type}
+                title={resultModal.title}
+                message={resultModal.message}
             />
         </div>
     );
