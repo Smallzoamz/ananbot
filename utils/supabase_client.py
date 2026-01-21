@@ -266,7 +266,8 @@ async def save_guild_settings(guild_id: str, settings: dict):
         "guild_id", "welcome_enabled", "welcome_channel_id", "welcome_message", 
         "welcome_image_url", "goodbye_enabled", "goodbye_channel_id", 
         "goodbye_message", "goodbye_image_url", "ticket_config", "social_config",
-        "reaction_roles_config", "moderator_config"
+        "reaction_roles_config", "moderator_config",
+        "bot_nickname", "bot_bio", "activity_type", "status_text", "avatar_url", "banner_color"
     ]
     
     # Create sanitized data dict

@@ -1384,6 +1384,28 @@ class AnAnBot(commands.Bot):
                 success = await send_goodbye_message(user_obj, settings=settings)
                 return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
 
+    async def handle_guild_settings(self, request):
+        guild_id = request.match_info.get('guild_id')
+        from utils.supabase_client import get_guild_settings
+        settings = await get_guild_settings(guild_id)
+        if not settings:
+            return web.json_response({}, headers={"Access-Control-Allow-Origin": "*"})
+        
+        # Ensure it's a dict and remove sensitive or internal fields if any
+        return web.json_response(settings, headers={"Access-Control-Allow-Origin": "*"})
+
+    async def handle_action(self, request):
+        print(f"API Request: POST /api/action from {request.remote}")
+        try:
+            body = await request.json()
+            action = body.get("action")
+            guild_id = body.get("guild_id") or request.match_info.get('guild_id')
+            user_id = body.get("user_id")
+            
+            print(f"Web API triggering {action}")
+            
+            # ... (rest of the actions remain same above ...)
+
             elif action == "save_personalizer_settings":
                 user_id = body.get("user_id")
                 if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
@@ -1396,23 +1418,20 @@ class AnAnBot(commands.Bot):
                 settings = body.get("settings", {})
                 print(f"Saving personalizer settings for guild {guild_id}")
                 
-                # 1. Update DB (Filter out columns that don't exist in guild_settings yet)
-                # This prevents "Could not find column" errors if the table schema isn't updated
-                db_settings = {
-                    k: v for k, v in settings.items()
-                    if k not in ["bot_nickname", "status_text", "activity_type", "banner_color", "avatar_url", "bot_bio"]
-                }
-                await save_guild_settings(guild_id, db_settings)
+                # 1. Update DB (Full sync for Personalizer fields)
+                await save_guild_settings(guild_id, settings)
                 
                 # 2. Apply Nickname (Local)
-                try:
-                    nickname = settings.get("bot_nickname")
-                    if nickname:
-                        await guild.me.edit(nick=nickname)
-                except Exception as e:
-                    print(f"Error changing nickname: {e}")
+                guild = self.get_guild(int(guild_id))
+                if guild:
+                    try:
+                        nickname = settings.get("bot_nickname")
+                        if nickname:
+                            await guild.me.edit(nick=nickname)
+                    except Exception as e:
+                        print(f"Error changing nickname: {e}")
                 
-                # 3. Apply Presence (Global)
+                # 3. Apply Presence (Global) - An An's global vibe ✨
                 try:
                     act_type_str = settings.get("activity_type", "LISTENING")
                     status_text = settings.get("status_text", "/help")
