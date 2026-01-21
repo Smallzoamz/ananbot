@@ -349,3 +349,41 @@ async def get_closed_tickets(guild_id: str, limit: int = 20):
         print(f"Get History Error: {e}")
         return []
 
+async def save_rank_card_db(user_id: str, guild_id: str, config: dict):
+    if not supabase: return {"success": False, "error": "Database not connected"}
+    try:
+        data = {
+            "user_id": str(user_id),
+            "guild_id": str(guild_id),
+            "theme": config.get("theme", "pink"),
+            "bg_type": config.get("bgType", "glass"),
+            "overlay_opacity": config.get("overlayOpacity", 0.2),
+            "show_tape": config.get("showTape", True),
+            "stickers": config.get("stickers", []),
+            "updated_at": "now()"
+        }
+        supabase.table("rank_cards").upsert(data).execute()
+        return {"success": True}
+    except Exception as e:
+        print(f"Save Rank Card Error: {e}")
+        return {"success": False, "error": str(e)}
+
+async def get_rank_card_db(user_id: str, guild_id: str):
+    if not supabase: return None
+    try:
+        res = supabase.table("rank_cards").select("*").eq("user_id", str(user_id)).eq("guild_id", str(guild_id)).execute()
+        if res.data:
+            c = res.data[0]
+            # Convert DB fields back to Frontend camelCase
+            return {
+                "theme": c.get("theme"),
+                "bgType": c.get("bg_type"),
+                "overlayOpacity": float(c.get("overlay_opacity", 0.2)),
+                "showTape": c.get("show_tape"),
+                "stickers": c.get("stickers")
+            }
+        return None
+    except Exception as e:
+        print(f"Get Rank Card Error: {e}")
+        return None
+

@@ -23,6 +23,37 @@ export default function RankCardPage({ params }) {
     const [saving, setSaving] = useState(false);
     const [modalState, setModalState] = useState({ show: false, type: 'success', message: '' });
 
+    // Load Existing Config
+    useEffect(() => {
+        if (session?.user?.id && guildId) {
+            fetchConfig();
+        }
+    }, [session, guildId]);
+
+    const fetchConfig = async () => {
+        try {
+            const res = await fetch(`/api/proxy/guild/${guildId}/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'get_rank_card',
+                    user_id: session.user.id,
+                    guild_id: guildId
+                })
+            });
+            const data = await res.json();
+            if (data.config) {
+                setConfig(prev => ({
+                    ...prev,
+                    ...data.config,
+                    stickers: Array.isArray(data.config.stickers) ? data.config.stickers : []
+                }));
+            }
+        } catch (err) {
+            console.error("Failed to fetch rank card config:", err);
+        }
+    };
+
     // Mock User Data for Preview
     const user = {
         name: session?.user?.name || "An An User",
@@ -59,12 +90,30 @@ export default function RankCardPage({ params }) {
     };
 
     const handleSave = async () => {
+        if (!session?.user?.id) return;
         setSaving(true);
-        // Simulator Saving
-        setTimeout(() => {
+        try {
+            const res = await fetch(`/api/proxy/guild/${guildId}/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'save_rank_card',
+                    user_id: session.user.id,
+                    guild_id: guildId,
+                    config: config
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setModalState({ show: true, type: 'success', message: "Rank Card Design Saved! 🎨✨" });
+            } else {
+                setModalState({ show: true, type: 'error', message: data.error || "Failed to save design 🥺" });
+            }
+        } catch (err) {
+            setModalState({ show: true, type: 'error', message: "Connection Error! 🥺" });
+        } finally {
             setSaving(false);
-            setModalState({ show: true, type: 'success', message: "Rank Card Design Saved! 🎨✨" });
-        }, 1500);
+        }
     };
 
     return (

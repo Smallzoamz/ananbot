@@ -1144,6 +1144,27 @@ class AnAnBot(commands.Bot):
                 result = await claim_mission_reward(user_id, mission_key)
                 return web.json_response(result, headers={"Access-Control-Allow-Origin": "*"})
 
+            elif action == "save_rank_card":
+                user_id = body.get("user_id")
+                guild_id = body.get("guild_id")
+                config = body.get("config")
+                if not user_id or not guild_id or not config:
+                    return web.json_response({"error": "Missing params"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                from utils.supabase_client import save_rank_card_db
+                result = await save_rank_card_db(user_id, guild_id, config)
+                return web.json_response(result, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "get_rank_card":
+                user_id = body.get("user_id")
+                guild_id = body.get("guild_id")
+                if not user_id or not guild_id:
+                    return web.json_response({"error": "Missing params"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                from utils.supabase_client import get_rank_card_db
+                config = await get_rank_card_db(user_id, guild_id)
+                return web.json_response({"config": config}, headers={"Access-Control-Allow-Origin": "*"})
+
             if action == "save_welcome_settings":
                 user_id = body.get("user_id")
                 if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
