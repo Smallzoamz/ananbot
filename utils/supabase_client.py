@@ -103,14 +103,34 @@ async def get_user_stats(user_id: str):
 async def get_user_plan(user_id: str):
     # Papa is ALWAYS Premium/Pro Lifetime 👑
     PAPA_UID = "956866340474478642"
-    # if str(user_id) == PAPA_UID:
-    #     return {"plan_type": "premium", "expires_at": None, "is_lifetime": True}
+    if str(user_id) == PAPA_UID:
+        return {"plan_type": "premium", "expires_at": None, "is_lifetime": True, "trial_claimed": True}
         
     if not supabase: return {"plan_type": "free", "expires_at": None}
     
     res = supabase.table("user_stats").select("plan_type, expires_at, trial_claimed").eq("user_id", str(user_id)).execute()
     if res.data:
-        return res.data[0]
+        plan = res.data[0]
+        expires_at_str = plan.get("expires_at")
+        
+        if expires_at_str:
+            try:
+                # Handle Z or +00:00
+                expires_at = datetime.datetime.fromisoformat(expires_at_str.replace("Z", "+00:00"))
+                # Ensure timezone aware comparison
+                if expires_at.tzinfo is None:
+                    expires_at = expires_at.replace(tzinfo=datetime.timezone.utc)
+                
+                now = datetime.datetime.now(datetime.timezone.utc)
+                
+                if now > expires_at:
+                    # Plan EXPIRED! 🥀
+                    return {"plan_type": "free", "expires_at": expires_at_str, "trial_claimed": plan.get("trial_claimed", False), "is_expired": True}
+            except Exception as e:
+                print(f"Plan expiry check error: {e}")
+                
+        return plan
+        
     return {"plan_type": "free", "expires_at": None, "trial_claimed": False}
 
 async def activate_free_trial(user_id: str):
@@ -125,7 +145,7 @@ async def activate_free_trial(user_id: str):
         return False
 
     # Activate Trial
-    expires_at = (datetime.utcnow() + timedelta(days=7)).isoformat()
+    expires_at = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=7)).isoformat()
     
     # Update user_stats
     data = {
@@ -155,7 +175,8 @@ async def check_expiring_trials():
     # We want to notify users effectively 1 day before expiry.
     # Logic: Find users with plan_type='pro' AND trial_claimed=true AND notification_sent=false AND expires_at <= now + 24h
     
-    tomorrow = (datetime.utcnow() + timedelta(days=1)).isoformat()
+    now = datetime.datetime.now(datetime.timezone.utc)
+    tomorrow = (now + datetime.timedelta(days=1)).isoformat()
     
     # Supabase filter: expires_at <= tomorrow (meaning less than 24 hours left)
     res = supabase.table("user_stats").select("user_id, expires_at")\
@@ -168,6 +189,7 @@ async def check_expiring_trials():
     ids_to_notify = []
     if res.data:
         for user in res.data:
+            # Secondary check to ensure it's not already expired (if it is, it's blocked by get_user_plan anyway)
             ids_to_notify.append(user["user_id"])
             # Mark as notified immediately to prevent double sending
             supabase.table("user_stats").update({"notification_sent": True}).eq("user_id", user["user_id"]).execute()
@@ -327,51 +349,3 @@ async def get_closed_tickets(guild_id: str, limit: int = 20):
         print(f"Get History Error: {e}")
         return []
 
-async def activate_free_trial(user_id: str):
-    if not supabase: return False
-    try:
-        # Check eligibility
-        res_stats = supabase.table("user_stats").select("trial_claimed").eq("user_id", str(user_id)).execute()
-        if res_stats.data and res_stats.data[0].get("trial_claimed"):
-            return False
-            
-        # 7 Days from now
-        expiry = (datetime.datetime.now() + datetime.timedelta(days=7)).isoformat()
-        
-        # Update
-        res = supabase.table("user_stats").update({
-            "plan_type": "pro",
-            "trial_claimed": True,
-            "expires_at": expiry,
-            "notification_sent": False
-        }).eq("user_id", str(user_id)).execute()
-        
-        return True
-    except Exception as e:
-        print(f"Activate Trial Error: {e}")
-        return False
-
-async def check_expiring_trials():
-    if not supabase: return
-    try:
-        # Check for trials expiring in < 24 hours
-        res = supabase.table("user_stats").select("user_id, expires_at, notification_sent").eq("plan_type", "pro").eq("trial_claimed", True).execute()
-        
-        now = datetime.datetime.now()
-        one_day = datetime.timedelta(days=1)
-        
-        expiring_users = []
-        for user in res.data:
-            if not user.get("expires_at"): continue
-            # Handle Z suffix if present
-            iso_str = user["expires_at"].replace("Z", "")
-            expires_at = datetime.datetime.fromisoformat(iso_str)
-            
-            # If expires in less than 24h and notification not sent
-            if now < expires_at < (now + one_day) and not user.get("notification_sent"):
-                expiring_users.append(user["user_id"])
-                
-        return expiring_users
-    except Exception as e:
-        print(f"Check Expiry Error: {e}")
-        return []

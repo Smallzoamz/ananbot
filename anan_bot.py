@@ -711,6 +711,7 @@ class AnAnBot(commands.Bot):
         if not self.db_ready: return
         
         try:
+            # check_expiring_trials returns users who expire in < 24h
             users_to_notify = await check_expiring_trials()
             for user_id in users_to_notify:
                 try:
@@ -733,6 +734,11 @@ class AnAnBot(commands.Bot):
                         print(f"Notified user {user_id} about trial expiry")
                 except Exception as e:
                     print(f"Failed to notify user {user_id}: {e}")
+            
+            # Additional cleanup/sync loop for all guilds to reflect plan status
+            for guild in self.guilds:
+                await self.ensure_management_system(guild)
+                
         except Exception as e:
             print(f"Error in check_trial_expiry_task: {e}")
 
@@ -766,6 +772,24 @@ class AnAnBot(commands.Bot):
     async def on_voice_state_update(self, member, before, after):
         # 1. Check for Joining Hub
         if after.channel and after.channel.name == "｜・➕：CREATE ROOM":
+            # Plan Check 🛡️
+            from utils.supabase_client import get_user_plan
+            plan = await get_user_plan(str(member.guild.owner_id))
+            if plan.get("plan_type") == "free":
+                try:
+                    is_owner = member.id == member.guild.owner_id
+                    msg = "🌸 Papa คะ! Plan ของเซิร์ฟเวอร์หมดอายุแล้วค่ะ\nกรุณาอัปเกรดเพื่อใช้งานระบบ Temporary Room ต่อนะคะ ✨" if is_owner else \
+                          f"ไม่สามารถใช้งานระบบได้นะคะ เนื่องจากแผนของเซิร์ฟเวอร์หมดอายุแล้ว\nกรุณาติดต่อเจ้าของเซิร์ฟเวอร์ ({member.guild.owner.display_name}) นะคะ 🌸"
+                    
+                    embed = disnake.Embed(description=msg, color=disnake.Color.red())
+                    await member.send(embed=embed)
+                except: pass
+                
+                # Disconnect member
+                try: await member.move_to(None)
+                except: pass
+                return
+
             # Create Temp Room
             guild = member.guild
             cat = after.channel.category
@@ -1603,16 +1627,22 @@ class AnAnBot(commands.Bot):
                 break
 
     async def on_member_join(self, member):
-        # 1. Update Stats & Latest Member
+        # 0. Fetch Plan Status 💎
+        from utils.supabase_client import get_user_plan
+        plan = await get_user_plan(member.guild.owner_id)
+        is_pro = plan.get("plan_type") != "free"
+
+        # 1. Update Stats & Latest Member (Always sync, cleanup happens inside if free)
         await self.ensure_management_system(member.guild)
         
-        # 2. Original Welcome Logic (with Database Settings Override)
-        settings = await get_guild_settings(str(member.guild.id))
-        success = await send_welcome_message(member, settings=settings)
-        if success:
-            print(f"Sent welcome to {member.name}")
-            # Mission: Invite Friends (Attribute to the owner or recruiter)
-            await update_mission_progress(str(member.guild.owner_id), "invite_friends", 1)
+        # 2. Welcome Logic (Pro Only)
+        if is_pro:
+            settings = await get_guild_settings(str(member.guild.id))
+            success = await send_welcome_message(member, settings=settings)
+            if success:
+                print(f"Sent welcome to {member.name}")
+                # Mission: Invite Friends (Attribute to the owner or recruiter)
+                await update_mission_progress(str(member.guild.owner_id), "invite_friends", 1)
         
         # 3. Moderator System
         await self.moderator.on_member_join(member)
@@ -1621,11 +1651,14 @@ class AnAnBot(commands.Bot):
         # 1. Update Stats
         await self.ensure_management_system(member.guild)
         
-        # 2. Goodbye Logic
-        settings = await get_guild_settings(str(member.guild.id))
-        success = await send_goodbye_message(member, settings=settings)
-        if success:
-            print(f"Sent goodbye for {member.name}")
+        # 2. Goodbye Logic (Pro Only) 💎
+        from utils.supabase_client import get_user_plan
+        plan = await get_user_plan(member.guild.owner_id)
+        if plan.get("plan_type") != "free":
+            settings = await get_guild_settings(str(member.guild.id))
+            success = await send_goodbye_message(member, settings=settings)
+            if success:
+                print(f"Sent goodbye for {member.name}")
             
         # 3. Moderator System
         await self.moderator.on_member_remove(member)
@@ -1737,10 +1770,25 @@ class AnAnBot(commands.Bot):
         return terminal_ch
 
     async def on_interaction(self, inter: disnake.Interaction):
+        if inter.guild is None: return
+
         # Handle Persistent/Dynamic Ticket Buttons
         if inter.type == disnake.InteractionType.component:
             custom_id = inter.data.custom_id
             
+            # --- Plan Restricted Features Check 🛡️ ---
+            is_pro_restricted = custom_id.startswith("open_ticket_") or custom_id.startswith("rr_role_")
+            
+            if is_pro_restricted:
+                from utils.supabase_client import get_user_plan
+                plan = await get_user_plan(str(inter.guild.owner_id))
+                if plan.get("plan_type") == "free":
+                    is_owner = inter.user.id == inter.guild.owner_id
+                    msg = "🌸 Papa คะ! Plan ของเซิร์ฟเวอร์หมดอายุแล้วค่ะ\nกรุณาอัปเกรดเพื่อใช้งานส่วนนี้นะคะ ✨" if is_owner else \
+                          f"ไม่สามารถใช้งานระบบได้นะคะ เนื่องจากแผนของเซิร์ฟเวอร์หมดอายุแล้ว\nกรุณาติดต่อเจ้าของเซิร์ฟเวอร์ ({inter.guild.owner.display_name}) นะคะ 🌸"
+                    await inter.response.send_message(msg, ephemeral=True)
+                    return
+
             # --- 1. Ticket Opening ---
             if custom_id.startswith("open_ticket_"):
                 # Format: open_ticket_{index}_{code}
