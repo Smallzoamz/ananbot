@@ -19,7 +19,8 @@ from utils.supabase_client import (
     create_ticket, 
     close_ticket_db, 
     update_ticket_activity,
-    check_daily_ticket_limit
+    check_daily_ticket_limit,
+    get_closed_tickets
 )
 
 load_dotenv() # Load variables from .env
@@ -755,6 +756,7 @@ class AnAnBot(commands.Bot):
         app.router.add_get('/api/discord-permissions', self.handle_discord_permissions)
         app.router.add_get('/api/guild/{guild_id}/structure', self.handle_guild_structure)
         app.router.add_get('/api/guild/{guild_id}/roles', self.handle_guild_roles)
+        app.router.add_get('/api/guild/{guild_id}/tickets/history', self.handle_guild_ticket_history) # New History API
         app.router.add_get('/api/guild/{guild_id}/settings', self.handle_guild_settings)
         app.router.add_get('/api/ping', lambda r: web.Response(text="pong"))
         app.router.add_post('/api/action', self.handle_action)
@@ -766,6 +768,7 @@ class AnAnBot(commands.Bot):
         app.router.add_options('/api/guild/{guild_id}/stats', self.handle_options)
         app.router.add_options('/api/guild/{guild_id}/structure', self.handle_options)
         app.router.add_options('/api/guild/{guild_id}/roles', self.handle_options)
+        app.router.add_options('/api/guild/{guild_id}/tickets/history', self.handle_options)
         app.router.add_options('/api/discord-permissions', self.handle_options)
         app.router.add_options('/api/guild/{guild_id}/settings', self.handle_options)
         
@@ -941,6 +944,39 @@ class AnAnBot(commands.Bot):
             })
             
         return web.json_response(roles, headers={"Access-Control-Allow-Origin": "*"})
+
+
+    async def handle_guild_ticket_history(self, request):
+        guild_id = request.match_info.get('guild_id')
+        
+        history = await get_closed_tickets(guild_id, limit=20)
+        
+        data = []
+        for ticket in history:
+            closed_at_str = ticket.get("closed_at")
+            ago_str = "Recently"
+            if closed_at_str:
+                try:
+                    closed_dt = datetime.datetime.fromisoformat(str(closed_at_str).replace("Z", "+00:00"))
+                    time_diff = datetime.datetime.now(datetime.timezone.utc) - closed_dt
+                    
+                    if time_diff.total_seconds() < 3600:
+                        ago_str = f"{int(time_diff.total_seconds() // 60)}m ago"
+                    elif time_diff.total_seconds() < 86400:
+                        ago_str = f"{int(time_diff.total_seconds() // 3600)}h ago"
+                    else:
+                        ago_str = f"{int(time_diff.total_seconds() // 86400)}d ago"
+                except: pass
+
+            data.append({
+                "ticket_id": f"#{ticket['topic_code']}{str(ticket['ticket_id']).zfill(3)}",
+                "topic": ticket.get("topic_code"),
+                "status": "Closed",
+                "ago": ago_str,
+                "log_url": ticket.get("log_url")
+            })
+            
+        return web.json_response(data, headers={"Access-Control-Allow-Origin": "*"})
 
     async def handle_action(self, request):
         print(f"API Request: POST /api/action from {request.remote}")
@@ -1512,10 +1548,11 @@ class AnAnBot(commands.Bot):
                 counts[code] = current_id
                 
                 # Update DB counts
+                # Update DB counts
                 ticket_config["counts"] = counts
                 await save_guild_settings(inter.guild.id, {"ticket_config": ticket_config})
                 
-                ch_name = f"｜・🎫：{code}#{current_id:03d}"
+                ch_name = f"{code.lower()}-{current_id:03d}"
                 
                 # Overwrites: Bot, Owner, User, Support Role
                 overwrites = {
@@ -1534,14 +1571,21 @@ class AnAnBot(commands.Bot):
                 new_ch = await inter.guild.create_text_channel(name=ch_name, overwrites=overwrites, position=1)
                 
                 # 4. First Message
-                embed = disnake.Embed(
-                    title=f"📩 Ticket: {topic.get('name')}",
-                    description=f"สวัสดีค่ะ {inter.user.mention}! \n{topic.get('desc', 'เจ้าหน้าที่กำลังจะมารับเรื่องนะคะ 🌸')}",
-                    color=disnake.Color.green()
-                )
-                
                 view = TicketControlView()
-                await new_ch.send(content=f"{inter.user.mention} {role.mention if role_id and role else ''}", embed=embed, view=view)
+                mention_text = f"{inter.user.mention} {role.mention if role_id and role else ''}"
+                
+                if topic.get('first_msg'):
+                     # Use Custom Message
+                    msg = topic.get('first_msg').replace("{user}", inter.user.mention)
+                    await new_ch.send(content=f"{mention_text}\n\n{msg}", view=view)
+                else:
+                    # Default Embed
+                    embed = disnake.Embed(
+                        title=f"📩 Ticket: {topic.get('name')}",
+                        description=f"สวัสดีค่ะ {inter.user.mention}! \n{topic.get('desc', 'เจ้าหน้าที่กำลังจะมารับเรื่องนะคะ 🌸')}",
+                        color=disnake.Color.green()
+                    )
+                    await new_ch.send(content=mention_text, embed=embed, view=view)
                 
                 # 5. DB Record
                 await create_ticket(inter.guild.id, inter.user.id, new_ch.id, code, current_id)

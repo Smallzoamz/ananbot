@@ -12,6 +12,7 @@ const pageDescriptions = {
         '/servers': "This is the Dashboard! You can setup and manage your server here! 👑",
         '/leaderboard': "Leaderboard & Missions! Complete tasks to earn XP and rewards! 🏆",
         '/welcome': "Welcome & Goodbye settings! Customize how you greet new members! (Pro Feature) 👑",
+        '/ticket': "Keep your community support organized with An An's Ticket System! 🎫✨",
         'default': "I'm here to help you manage your Discord server! Ask me anything! 💖"
     },
     th: {
@@ -20,6 +21,7 @@ const pageDescriptions = {
         '/servers': "นี่คือแดชบอร์ดค่ะ! Papa สามารถตั้งค่าและจัดการเซิร์ฟเวอร์ได้ที่นี่! 👑",
         '/leaderboard': "Leaderboard และภารกิจค่ะ! ทำภารกิจเพื่อรับ XP และรางวัลสุดพิเศษ! 🏆",
         '/welcome': "การตั้งค่า ต้อนรับ & อำลา ค่ะ! ปรับแต่งคำทักทายสมาชิกใหม่ได้ตามใจเลย! (ฟีเจอร์ระดับ Pro) 👑",
+        '/ticket': "จัดระเบียบการช่วยเหลือชุมชนด้วยระบบ Ticket ของอันอันนะคะ! 🎫✨",
         'default': "อันอันพร้อมช่วย Papa จัดการเซิร์ฟเวอร์ Discord นะคะ! ถามได้เลย! 💖"
     }
 };
@@ -48,6 +50,7 @@ export default function Mascot() {
         if (pathname === '/servers') return descriptions['/selection']; // Specific Selection Page
         if (pathname?.includes('/leaderboard')) return descriptions['/leaderboard']; // Specific Leaderboard Page
         if (pathname?.includes('/welcome')) return descriptions['/welcome'];
+        if (pathname?.includes('/ticket')) return descriptions['/ticket'];
         if (pathname?.includes('/servers/')) return descriptions['/servers']; // General Dashboard (Fallback for /servers/xyz)
         return descriptions['default'];
     };

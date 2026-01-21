@@ -2,16 +2,20 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+
 import ProWallModal from "../components/ProWallModal";
+import { useLanguage } from "../../../context/LanguageContext";
 
 export default function TicketPage({ params }) {
     const { guildId } = React.use(params);
     const { data: session } = useSession();
     const router = useRouter();
+    const { t } = useLanguage();
 
     const [isLoading, setIsLoading] = useState(true);
     const [settings, setSettings] = useState({ enabled: true, support_role_id: "", topics: [] });
     const [roles, setRoles] = useState([]);
+    const [history, setHistory] = useState([]);
     const [showProWall, setShowProWall] = useState(false);
 
     useEffect(() => {
@@ -31,6 +35,13 @@ export default function TicketPage({ params }) {
                 if (Array.isArray(dataRoles)) {
                     setRoles(dataRoles);
                 }
+
+                // Fetch History
+                try {
+                    const resHist = await fetch(`/api/proxy/guild/${guildId}/tickets/history`);
+                    const dataHist = await resHist.json();
+                    if (Array.isArray(dataHist)) setHistory(dataHist);
+                } catch (e) { console.error("History error", e); }
 
                 // Check Pro (Mock or basic check)
                 if (session.user.id !== "956866340474478642") {
@@ -94,7 +105,7 @@ export default function TicketPage({ params }) {
             {/* Header Section */}
             <div className="welcome-header-actions" style={{ marginBottom: '30px' }}>
                 <div className="title-group" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <h2 style={{ fontSize: '28px', color: '#4a4a68' }}>🎫 Ticket System</h2>
+                    <h2 style={{ fontSize: '28px', color: '#4a4a68' }}>🎫 {t.ticket.title}</h2>
                     <span className="crown-badge-bubble">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
                             <path d="M5 16L19 16V18H5V16ZM19 8L15.5 11L12 5L8.5 11L5 8V14H19V8Z" />
@@ -109,7 +120,7 @@ export default function TicketPage({ params }) {
                 <div className="settings-card glass animate-pop">
                     <div className="sc-header">
                         <div className="sc-icon">⚙️</div>
-                        <h3>Configuration</h3>
+                        <h3>{t.ticket.config}</h3>
                         <div className="sc-toggle">
                             <input
                                 type="checkbox"
@@ -122,10 +133,10 @@ export default function TicketPage({ params }) {
                     </div>
 
                     <div className="sc-body">
-                        <p className="sc-desc">Enable the advanced ticket system for your server.</p>
+                        <p className="sc-desc">{t.ticket.desc}</p>
 
                         <div className="input-group">
-                            <label>Support Role ID (Staff)</label>
+                            <label>{t.ticket.roleLabel}</label>
                             <select
                                 className="glass-input"
                                 value={settings.support_role_id}
@@ -138,7 +149,7 @@ export default function TicketPage({ params }) {
                                     </option>
                                 ))}
                             </select>
-                            <span className="input-hint">The role that will manage tickets.</span>
+                            <span className="input-hint">{t.ticket.roleHint}</span>
                         </div>
 
                         <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
@@ -147,14 +158,14 @@ export default function TicketPage({ params }) {
                                 className="save-btn"
                                 style={{ width: '100%', padding: '12px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}
                             >
-                                💾 Save Settings
+                                💾 {t.ticket.save}
                             </button>
                             <button
                                 onClick={handleSendPanel}
                                 className="save-btn"
                                 style={{ width: '100%', padding: '12px', background: '#c084fc', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}
                             >
-                                📨 Send Panel
+                                📨 {t.ticket.send}
                             </button>
                         </div>
                     </div>
@@ -164,7 +175,7 @@ export default function TicketPage({ params }) {
                 <div className="settings-card glass animate-pop" style={{ animationDelay: '0.1s' }}>
                     <div className="sc-header">
                         <div className="sc-icon">📂</div>
-                        <h3>Menu Topics ({settings.topics.length}/3)</h3>
+                        <h3>{t.ticket.topics} ({settings.topics.length}/3)</h3>
                         <button
                             onClick={addTopic}
                             disabled={settings.topics.length >= 3}
@@ -180,7 +191,7 @@ export default function TicketPage({ params }) {
                                 color: '#4a4a68'
                             }}
                         >
-                            + Add Topic
+                            {t.ticket.add}
                         </button>
                     </div>
 
@@ -239,24 +250,40 @@ export default function TicketPage({ params }) {
                 </div>
             </div>
 
-            {/* History Mockup */}
-            <div className="settings-card glass animate-pop" style={{ marginTop: '30px', animationDelay: '0.2s', opacity: 0.7 }}>
+            {/* History Card */}
+            <div className="settings-card glass animate-pop" style={{ marginTop: '30px', animationDelay: '0.2s', opacity: 1 }}>
                 <div className="sc-header">
                     <div className="sc-icon">📜</div>
-                    <h3>Recent History (48h)</h3>
-                    <span style={{ marginLeft: '10px', fontSize: '12px', background: '#ffe4e6', color: '#e11d48', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold' }}>Coming Soon</span>
+                    <h3>{t.ticket.history}</h3>
+                    <span style={{ marginLeft: '10px', fontSize: '12px', background: '#e0e7ff', color: '#4338ca', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold' }}>{history.length} Tickets</span>
                 </div>
                 <div className="sc-body" style={{ maxHeight: '300px', overflowY: 'auto', paddingRight: '5px' }}>
-                    <div style={{ padding: '15px', background: 'rgba(255,255,255,0.4)', borderRadius: '12px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                        <span style={{ fontWeight: 'bold', color: '#4a4a68' }}>#SUP005 - Failed Payment</span>
-                        <span style={{ color: '#6b7280' }}>Closed 2h ago</span>
-                    </div>
-                    <div style={{ padding: '15px', background: 'rgba(255,255,255,0.4)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
-                        <span style={{ fontWeight: 'bold', color: '#4a4a68' }}>#REP002 - Bug Report</span>
-                        <span style={{ color: '#6b7280' }}>Closed 5h ago</span>
-                    </div>
+
+                    {history.length === 0 && (
+                        <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '14px', padding: '20px' }}>
+                            {t.ticket.noHistory}
+                        </div>
+                    )}
+
+                    {history.map((ticket, i) => (
+                        <div key={i} style={{ padding: '15px', background: 'rgba(255,255,255,0.4)', borderRadius: '12px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontWeight: 'bold', color: '#4a4a68' }}>{ticket.ticket_id}</span>
+                                <span style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase' }}>TOPIC: {ticket.topic}</span>
+                            </div>
+                            <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <span style={{ color: '#6b7280', marginBottom: '4px' }}>{t.ticket.closed} {ticket.ago.replace('ago', t.ticket.ago)}</span>
+                                {ticket.log_url && (
+                                    <a href={ticket.log_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 'bold', textDecoration: 'none', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        📄 {t.ticket.viewLog}
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+                    ))}
                 </div>
             </div>
+
 
             <ProWallModal
                 show={showProWall}

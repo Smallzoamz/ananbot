@@ -254,3 +254,13 @@ async def check_daily_ticket_limit(user_id: str):
         count = res.count if res.count is not None else len(res.data)
         return count < 3000 # Limit as requested (though 3000 is huge, maybe per server?)
     except: return True
+
+async def get_closed_tickets(guild_id: str, limit: int = 20):
+    if not supabase: return []
+    try:
+        # Fetch recently closed tickets
+        res = supabase.table("tickets").select("*").eq("guild_id", str(guild_id)).eq("status", "closed").order("closed_at", desc=True).limit(limit).execute()
+        return res.data
+    except Exception as e:
+        print(f"Get History Error: {e}")
+        return []

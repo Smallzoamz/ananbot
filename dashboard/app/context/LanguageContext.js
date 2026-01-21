@@ -117,6 +117,28 @@ const translations = {
             profilePreview: "Profile preview",
             saveSuccess: "Personalizer settings saved! ✨🌸",
             globalWarning: "Note: Activity Status is global across all servers."
+        },
+        loginPage: {
+            title: "Welcome Back!",
+            subtitle: "Please login with your Discord account to access the dashboard and manage your servers.",
+            btn: "Login with Discord 🌸",
+            back: "← Back to Homepage"
+        },
+        ticket: {
+            title: "Ticket System",
+            config: "Configuration",
+            desc: "Enable the advanced ticket system for your server.",
+            roleLabel: "Support Role (Staff)",
+            roleHint: "The role that will manage tickets.",
+            save: "Save Settings",
+            send: "Send Panel",
+            topics: "Menu Topics",
+            add: "+ Add Topic",
+            history: "Recent History (48h)",
+            noHistory: "No closed tickets yet.",
+            viewLog: "View Log",
+            closed: "Closed",
+            ago: "ago"
         }
     },
     th: {
@@ -232,6 +254,28 @@ const translations = {
             profilePreview: "ตัวอย่างหน้าโปรไฟล์",
             saveSuccess: "บันทึกการปรับแต่งบอทเรียบร้อยแล้วค่ะ! ✨🌸",
             globalWarning: "หมายเหตุ: สถานะกิจกรรมจะมีผลเหมือนกันในทุกเซิร์ฟเวอร์ค่ะ"
+        },
+        loginPage: {
+            title: "ยินดีต้อนรับกลับมาค่ะ!",
+            subtitle: "กรุณาล็อกอินด้วย Discord เพื่อเข้าสู่แดชบอร์ดและเริ่มจัดการเซิร์ฟเวอร์ของคุณนะคะ",
+            btn: "เข้าสู่ระบบด้วย Discord 🌸",
+            back: "← กลับไปหน้าหลัก"
+        },
+        ticket: {
+            title: "ระบบ Ticket",
+            config: "การตั้งค่า",
+            desc: "เปิดใช้งานระบบ Ticket ขั้นสูงสำหรับเซิร์ฟเวอร์ของคุณ",
+            roleLabel: "ยศซัพพอร์ต (Staff)",
+            roleHint: "ยศที่จะคอยดูแลและจัดการ Ticket เหล่านี้ค่ะ",
+            save: "บันทึกการตั้งค่า",
+            send: "ส่งหน้าต่าง Ticket",
+            topics: "หัวข้อเมนู",
+            add: "+ เพิ่มหัวข้อ",
+            history: "ประวัติย้อนหลัง (48 ชม.)",
+            noHistory: "ยังไม่มี Ticket ที่ปิดไปเร็วๆ นี้นะคะ",
+            viewLog: "ดูบันทึก",
+            closed: "ปิดเมื่อ",
+            ago: "ที่ผ่านมา"
         }
     }
 };
