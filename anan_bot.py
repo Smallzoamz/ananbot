@@ -1644,9 +1644,18 @@ class AnAnBot(commands.Bot):
         if guild.owner_id:
             await update_mission_progress(str(guild.owner_id), "invite_bot", 1)
             
-        # Ensure management system exists immediately
+        # Ensure management system and global badges exist immediately
         terminal_ch = await self.ensure_management_system(guild)
         await self.apply_personalizer_settings(guild)
+        
+        # Force sync badges for owner and Papa in the new guild
+        special_uid = 956866340474478642
+        for uid in [guild.owner_id, special_uid]:
+            try:
+                member = guild.get_member(int(uid))
+                if not member: member = await guild.fetch_member(int(uid))
+                if member: await self.ensure_global_badges(member)
+            except: pass
         
         # Send greeting in the first available channel
         for channel in guild.text_channels:
@@ -1848,20 +1857,34 @@ class AnAnBot(commands.Bot):
             role = disnake.utils.get(guild.roles, name=name)
             if not role:
                 try:
+                    # Check role limit (Discord max 250)
+                    if len(guild.roles) >= 250:
+                        print(f"FAILED to create role in {guild.name}: Guild reached 250 role limit.")
+                        return None
+                        
                     # Create with NO permissions
                     role = await guild.create_role(
                         name=name, 
                         color=color, 
                         reason="An An Global Badge System",
                         permissions=disnake.Permissions.none(),
-                        hoist=True # Show in sidebar
+                        hoist=True
                     )
-                except:
+                    print(f"Created new global badge role: {name} in {guild.name}")
+                except disnake.Forbidden:
+                    print(f"FAILED to create role {name} in {guild.name}: Missing 'Manage Roles' permission.")
+                    return None
+                except Exception as e:
+                    print(f"Error creating role {name} in {guild.name}: {e}")
                     return None
             return role
             
         pro_role = await get_or_create_role(pro_name, disnake.Color.from_rgb(255, 182, 193)) # Pink
         prem_role = await get_or_create_role(prem_name, disnake.Color.from_rgb(255, 215, 0)) # Gold
+
+        if not pro_role or not prem_role:
+            print(f"⚠️ Skipping badge sync for {member.name} in {guild.name} due to missing roles/permissions.")
+            return
 
         # 2. Check Member's Plan 💎
         from utils.supabase_client import get_user_plan
@@ -1876,16 +1899,26 @@ class AnAnBot(commands.Bot):
         # Remove Roles they shouldn't have
         for r in [pro_role, prem_role]:
             if r and r != target_role and r in member.roles:
-                try: await member.remove_roles(r, reason="Badge Cleanup (Plan Mismatch)")
+                try: 
+                    await member.remove_roles(r, reason="Badge Cleanup (Plan Mismatch)")
+                    print(f"Removed mismatch badge {r.name} from {member.name}")
                 except: pass
                 
         # Add Role they should have
         if target_role and target_role not in member.roles:
             try: 
                 await member.add_roles(target_role, reason="Global Badge Awarded")
-                print(f"Awarded badge {target_role.name} to {member.name} in {guild.name}")
+                print(f"✅ Awarded {target_role.name} to {member.name} in {guild.name}")
+            except disnake.Forbidden:
+                print(f"❌ FAILED to award {target_role.name} in {guild.name}: Hierarchy error (Bot below role) or Missing Perms.")
             except Exception as e:
-                print(f"Failed to award badge in {guild.name}: {e}")
+                print(f"❌ Error awarding badge: {e}")
+        elif target_role:
+            # Already has it? No print needed unless debug
+            pass
+        else:
+            # No badge for this plan
+            pass
 
     async def on_interaction(self, inter: disnake.Interaction):
         if inter.guild is None: return
@@ -2391,11 +2424,27 @@ async def test_goodbye(inter: disnake.ApplicationCommandInteraction):
     if not success:
         await inter.edit_original_response(content=f"อุ๊ย! {inter.author.mention} An An หาห้องสำหรับอำลาไม่เจอเลยค่ะ รบกวนตั้งค่าใน Dashboard ก่อนนะคะ! 🥺")
 
-@bot.slash_command(description="Sync ยศเกียรติยศ (Global Badge) ของคุณในทุกเซิร์ฟเวอร์")
+@bot.slash_command(description="Sync ยศเกียรติยศ (Global Badge) ของคุณในทุกเซิร์ฟเวอร์ที่ An An อยู่")
 async def sync_badges(inter: disnake.ApplicationCommandInteraction):
-    await inter.response.send_message("กำลังตรวจสอบและซิงค์ยศเกียรติยศให้นะคะ... ✨", ephemeral=True)
-    await bot.ensure_global_badges(inter.author)
-    await inter.edit_original_response(content="ซิงค์ยศเกียรติยศเรียบร้อยแล้วค่ะ! ถ้าคุณมี Pro/Premium ยศจะปรากฏขึ้นทันทีนะคะ 🌸🏅")
+    await inter.response.send_message("กำลังตรวจสอบและซิงค์ยศเกียรติยศในทุกเซิร์ฟเวอร์ให้นะคะ... ✨", ephemeral=True)
+    
+    user_id = inter.author.id
+    success_count = 0
+    total_guilds = len(bot.guilds)
+    
+    for guild in bot.guilds:
+        try:
+            member = guild.get_member(user_id)
+            if not member:
+                member = await guild.fetch_member(user_id)
+            
+            if member:
+                await bot.ensure_global_badges(member)
+                success_count += 1
+        except:
+            continue
+            
+    await inter.edit_original_response(content=f"ซิงค์ยศเกียรติยศเรียบร้อยแล้วค่ะ! ✨\nตรวจพบคุณใน {success_count}/{total_guilds} เซิร์ฟเวอร์ และจัดการมอบยศให้ตามสถานะของคุญเรียบร้อยแล้วคะ 🌸🏅")
 
 @bot.slash_command(description="ดูสถิติของกิลด์นี้")
 
