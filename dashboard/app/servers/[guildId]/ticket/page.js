@@ -1,0 +1,256 @@
+"use client";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import ProWallModal from "../components/ProWallModal";
+
+export default function TicketPage({ params }) {
+    const { guildId } = React.use(params);
+    const { data: session } = useSession();
+    const router = useRouter();
+
+    const [isLoading, setIsLoading] = useState(true);
+    const [settings, setSettings] = useState({ enabled: true, support_role_id: "", topics: [] });
+    const [showProWall, setShowProWall] = useState(false);
+
+    useEffect(() => {
+        if (!session) return;
+        async function fetchData() {
+            try {
+                const resSettings = await fetch(`/api/proxy/guild/${guildId}/settings`);
+                const dataSettings = await resSettings.json();
+
+                if (dataSettings.ticket_config) {
+                    setSettings({ ...settings, ...dataSettings.ticket_config });
+                }
+
+                // Check Pro (Mock or basic check)
+                if (session.user.id !== "956866340474478642") {
+                    // Add logic if needed
+                }
+                setIsLoading(false);
+            } catch (e) {
+                console.error(e);
+                setIsLoading(false);
+            }
+        }
+        fetchData();
+    }, [guildId, session]);
+
+    const handleSave = async () => {
+        try {
+            await fetch(`/api/proxy/guild/${guildId}/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'save_ticket_settings', settings, user_id: session.user.id })
+            });
+            alert("Settings Saved!");
+        } catch (e) {
+            alert("Error saving settings");
+        }
+    };
+
+    const handleSendPanel = async () => {
+        try {
+            await fetch(`/api/proxy/guild/${guildId}/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'send_ticket_panel', settings, user_id: session.user.id })
+            });
+            alert("Ticket Panel Sent!");
+        } catch (e) {
+            alert("Error sending panel");
+        }
+    };
+
+    const updateTopic = (index, field, value) => {
+        const newTopics = [...settings.topics];
+        newTopics[index] = { ...newTopics[index], [field]: value };
+        setSettings({ ...settings, topics: newTopics });
+    };
+
+    const addTopic = () => {
+        if (settings.topics.length >= 3) return;
+        setSettings({ ...settings, topics: [...settings.topics, { name: "New Topic", code: "NEW", desc: "Description", first_msg: "Hello!" }] });
+    };
+
+    const removeTopic = (index) => {
+        const newTopics = settings.topics.filter((_, i) => i !== index);
+        setSettings({ ...settings, topics: newTopics });
+    };
+
+    if (isLoading) return <div className="loader">🌸 Loading Ticket System...</div>;
+
+    return (
+        <div className="animate-fade">
+            {/* Header Section */}
+            <div className="welcome-header-actions" style={{ marginBottom: '30px' }}>
+                <div className="title-group" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                    <h2 style={{ fontSize: '28px', color: '#4a4a68' }}>🎫 Ticket System</h2>
+                    <span className="crown-badge-bubble">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+                            <path d="M5 16L19 16V18H5V16ZM19 8L15.5 11L12 5L8.5 11L5 8V14H19V8Z" />
+                        </svg>
+                    </span>
+                </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', alignItems: 'start' }}>
+
+                {/* Configuration Card */}
+                <div className="settings-card glass animate-pop">
+                    <div className="sc-header">
+                        <div className="sc-icon">⚙️</div>
+                        <h3>Configuration</h3>
+                        <div className="sc-toggle">
+                            <input
+                                type="checkbox"
+                                id="ticket_enabled"
+                                checked={settings.enabled}
+                                onChange={(e) => setSettings({ ...settings, enabled: e.target.checked })}
+                            />
+                            <label htmlFor="ticket_enabled"></label>
+                        </div>
+                    </div>
+
+                    <div className="sc-body">
+                        <p className="sc-desc">Enable the advanced ticket system for your server.</p>
+
+                        <div className="input-group">
+                            <label>Support Role ID (Staff)</label>
+                            <input
+                                type="text"
+                                className="glass-input"
+                                placeholder="Enter Role ID"
+                                value={settings.support_role_id}
+                                onChange={(e) => setSettings({ ...settings, support_role_id: e.target.value })}
+                            />
+                            <span className="input-hint">The role that will manage tickets.</span>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                            <button
+                                onClick={handleSave}
+                                className="save-btn"
+                                style={{ width: '100%', padding: '12px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}
+                            >
+                                💾 Save Settings
+                            </button>
+                            <button
+                                onClick={handleSendPanel}
+                                className="save-btn"
+                                style={{ width: '100%', padding: '12px', background: '#c084fc', color: 'white', border: 'none', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' }}
+                            >
+                                📨 Send Panel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Topics Card */}
+                <div className="settings-card glass animate-pop" style={{ animationDelay: '0.1s' }}>
+                    <div className="sc-header">
+                        <div className="sc-icon">📂</div>
+                        <h3>Menu Topics ({settings.topics.length}/3)</h3>
+                        <button
+                            onClick={addTopic}
+                            disabled={settings.topics.length >= 3}
+                            style={{
+                                marginLeft: 'auto',
+                                background: 'rgba(74, 74, 104, 0.1)',
+                                border: 'none',
+                                padding: '5px 10px',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                fontSize: '12px',
+                                fontWeight: 'bold',
+                                color: '#4a4a68'
+                            }}
+                        >
+                            + Add Topic
+                        </button>
+                    </div>
+
+                    <div className="sc-body" style={{ maxHeight: '400px', overflowY: 'auto', paddingRight: '5px' }}>
+                        {settings.topics.map((topic, i) => (
+                            <div key={i} style={{ background: 'rgba(255,255,255,0.5)', padding: '15px', borderRadius: '16px', marginBottom: '15px', border: '1px solid rgba(255, 183, 226, 0.3)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
+                                    <span style={{ fontSize: '11px', fontWeight: '900', color: 'var(--primary)', textTransform: 'uppercase' }}>TOPIC #{i + 1}</span>
+                                    <span
+                                        onClick={() => removeTopic(i)}
+                                        style={{ color: '#ff4757', fontWeight: 'bold', fontSize: '11px', cursor: 'pointer' }}
+                                    >
+                                        REMOVE
+                                    </span>
+                                </div>
+
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '10px', marginBottom: '10px' }}>
+                                    <input
+                                        className="glass-input"
+                                        style={{ fontSize: '13px', padding: '8px' }}
+                                        placeholder="Button Name"
+                                        value={topic.name}
+                                        onChange={(e) => updateTopic(i, 'name', e.target.value)}
+                                    />
+                                    <input
+                                        className="glass-input"
+                                        style={{ fontSize: '13px', padding: '8px', fontFamily: 'monospace', textAlign: 'center' }}
+                                        placeholder="CODE"
+                                        maxLength={4}
+                                        value={topic.code}
+                                        onChange={(e) => updateTopic(i, 'code', e.target.value.toUpperCase())}
+                                    />
+                                </div>
+                                <input
+                                    className="glass-input"
+                                    style={{ width: '100%', marginBottom: '10px', fontSize: '13px', padding: '8px' }}
+                                    placeholder="Embed Description"
+                                    value={topic.desc}
+                                    onChange={(e) => updateTopic(i, 'desc', e.target.value)}
+                                />
+                                <textarea
+                                    className="glass-input"
+                                    style={{ width: '100%', height: '60px', fontSize: '13px', padding: '8px', resize: 'none' }}
+                                    placeholder="First Message from Bot..."
+                                    value={topic.first_msg}
+                                    onChange={(e) => updateTopic(i, 'first_msg', e.target.value)}
+                                />
+                            </div>
+                        ))}
+                        {settings.topics.length === 0 && (
+                            <div style={{ textAlign: 'center', color: '#9ca3af', fontSize: '14px', padding: '20px' }}>
+                                No topics added yet. Click "+ Add Topic" to start.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* History Mockup */}
+            <div className="settings-card glass animate-pop" style={{ marginTop: '30px', animationDelay: '0.2s', opacity: 0.7 }}>
+                <div className="sc-header">
+                    <div className="sc-icon">📜</div>
+                    <h3>Recent History (48h)</h3>
+                    <span style={{ marginLeft: '10px', fontSize: '12px', background: '#ffe4e6', color: '#e11d48', padding: '4px 8px', borderRadius: '6px', fontWeight: 'bold' }}>Coming Soon</span>
+                </div>
+                <div className="sc-body" style={{ maxHeight: '300px', overflowY: 'auto', paddingRight: '5px' }}>
+                    <div style={{ padding: '15px', background: 'rgba(255,255,255,0.4)', borderRadius: '12px', marginBottom: '8px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                        <span style={{ fontWeight: 'bold', color: '#4a4a68' }}>#SUP005 - Failed Payment</span>
+                        <span style={{ color: '#6b7280' }}>Closed 2h ago</span>
+                    </div>
+                    <div style={{ padding: '15px', background: 'rgba(255,255,255,0.4)', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                        <span style={{ fontWeight: 'bold', color: '#4a4a68' }}>#REP002 - Bug Report</span>
+                        <span style={{ color: '#6b7280' }}>Closed 5h ago</span>
+                    </div>
+                </div>
+            </div>
+
+            <ProWallModal
+                show={showProWall}
+                featureName="Ticket System"
+                onClose={() => router.push(`/servers/${guildId}`)}
+                onProceed={() => window.open('/pricing', '_blank')}
+            />
+        </div>
+    );
+}

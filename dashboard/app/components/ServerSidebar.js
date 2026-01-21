@@ -86,6 +86,10 @@ export default function ServerSidebar() {
                 <div className="menu-item">{t.sidebar.moderator}</div>
 
                 <div className="menu-category">{t.sidebar.catManagement}</div>
+                <div className={`menu-item ${isActive(`/servers/${guildId}/ticket`) ? 'active' : ''}`} onClick={() => router.push(`/servers/${guildId}/ticket`)}>
+                    Ticket System
+                    <span className="crown-badge-bubble" style={{ marginLeft: 'auto' }}><CrownIcon /></span>
+                </div>
                 <div className="menu-item">{t.sidebar.automation}</div>
                 <div className="menu-item">{t.sidebar.commands}</div>
                 <div className="menu-item" onClick={() => router.push(`/servers/${guildId}?action=clear`)}>{t.sidebar.reset}</div>

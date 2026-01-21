@@ -182,7 +182,7 @@ async def save_guild_settings(guild_id: str, settings: dict):
     VALID_COLUMNS = [
         "guild_id", "welcome_enabled", "welcome_channel_id", "welcome_message", 
         "welcome_image_url", "goodbye_enabled", "goodbye_channel_id", 
-        "goodbye_message", "goodbye_image_url"
+        "goodbye_message", "goodbye_image_url", "ticket_config"
     ]
     
     # Create sanitized data dict
@@ -197,3 +197,60 @@ async def save_guild_settings(guild_id: str, settings: dict):
     except Exception as e:
         print(f"Database Upsert Error: {e}")
         return {"success": False, "error": str(e)}
+
+async def create_ticket(guild_id: str, user_id: str, channel_id: str, topic_code: str, ticket_number: int):
+    if not supabase: return {"success": False}
+    try:
+        supabase.table("tickets").insert({
+            "guild_id": str(guild_id),
+            "user_id": str(user_id),
+            "channel_id": str(channel_id),
+            "topic_code": topic_code,
+            "ticket_id": ticket_number,
+            "status": "open",
+            "last_message_at": "now()"
+        }).execute()
+        return {"success": True}
+    except Exception as e:
+        print(f"Create Ticket Error: {e}")
+        return {"success": False, "error": str(e)}
+
+async def get_ticket_by_channel(channel_id: str):
+    if not supabase: return None
+    try:
+        res = supabase.table("tickets").select("*").eq("channel_id", str(channel_id)).execute()
+        return res.data[0] if res.data else None
+    except:
+        return None
+
+async def update_ticket_activity(channel_id: str):
+    if not supabase: return
+    try:
+        supabase.table("tickets").update({"last_message_at": "now()"}).eq("channel_id", str(channel_id)).execute()
+    except: pass
+
+async def close_ticket_db(channel_id: str, log_url: str = None):
+    if not supabase: return
+    try:
+        data = {"status": "closed", "closed_at": "now()"}
+        if log_url: data["log_url"] = log_url
+        supabase.table("tickets").update(data).eq("channel_id", str(channel_id)).execute()
+    except Exception as e:
+        print(f"Close Ticket Error: {e}")
+
+async def get_active_tickets(guild_id: str):
+    if not supabase: return []
+    try:
+        res = supabase.table("tickets").select("*").eq("guild_id", str(guild_id)).eq("status", "open").execute()
+        return res.data
+    except: return []
+
+async def check_daily_ticket_limit(user_id: str):
+    if not supabase: return True
+    try:
+        # Check tickets created by user in last 24h
+        time_limit = (datetime.datetime.now() - datetime.timedelta(days=1)).isoformat()
+        res = supabase.table("tickets").select("id", count="exact").eq("user_id", str(user_id)).gte("created_at", time_limit).execute()
+        count = res.count if res.count is not None else len(res.data)
+        return count < 3000 # Limit as requested (though 3000 is huge, maybe per server?)
+    except: return True

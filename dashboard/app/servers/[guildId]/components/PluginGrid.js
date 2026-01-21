@@ -108,6 +108,17 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
             action: () => checkPro("Bot Personalizer", () => router.push(`/servers/${guildId}/personalizer`)),
             btnText: "Configure",
             isActive: true
+        },
+        {
+            id: "ticket",
+            name: "Ticket System",
+            icon: "🎫",
+            badge: <ProBadge />,
+            badgeClass: "",
+            category: "Utilities",
+            desc: "Advanced ticket system with custom menus, auto-close, and transcripts.",
+            action: () => checkPro("Ticket System", () => router.push(`/servers/${guildId}/ticket`)),
+            btnText: "Configure"
         }
     ];
 
