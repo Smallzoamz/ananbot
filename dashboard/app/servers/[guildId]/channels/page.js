@@ -41,6 +41,10 @@ export default function ChannelManagement({ params }) {
     const [showAddRole, setShowAddRole] = useState(false);
     const [targetChannelForAddRole, setTargetChannelForAddRole] = useState(null);
 
+    // Zone Permission Modal State
+    const [showZonePermModal, setShowZonePermModal] = useState(false);
+    const [zonePermModalIdx, setZonePermModalIdx] = useState(null);
+
     useEffect(() => {
         if (!isPapa && !loading && user) {
             router.push(`/servers/${guildId}`);
@@ -260,22 +264,31 @@ export default function ChannelManagement({ params }) {
                                     setSelectedChannelId(null);
                                 }}
                             >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <h4 style={{ margin: 0, fontSize: '14px', fontWeight: '900', color: activeZoneIndex === idx ? '#ec4899' : '#4a4a68' }}>{zone.name}</h4>
-                                        <p style={{ margin: 0, fontSize: '10px', opacity: 0.5, fontWeight: '700' }}>{zone.channels?.length || 0} Channels</p>
+                                <div className="zone-item-header">
+                                    <div className="zone-item-info">
+                                        <h4 className="zone-item-name">{zone.name}</h4>
+                                        <p>{zone.channels?.length || 0} Channels</p>
                                     </div>
-                                    <button
-                                        className="mini-del-btn"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setPendingDelete({ id: zone.id, name: zone.name });
-                                            setShowDelete(true);
-                                        }}
-                                        style={{ background: 'rgba(0,0,0,0.03)', width: '24px', height: '24px', fontSize: '14px' }}
-                                    >×</button>
+                                    <div className="zone-item-actions">
+                                        <button
+                                            className="zone-settings-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setZonePermModalIdx(idx);
+                                                setShowZonePermModal(true);
+                                            }}
+                                            title="Role Permissions"
+                                        >⚙️</button>
+                                        <button
+                                            className="mini-del-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setPendingDelete({ id: zone.id, name: zone.name });
+                                                setShowDelete(true);
+                                            }}
+                                        >×</button>
+                                    </div>
                                 </div>
-                                {activeZoneIndex === idx && <PermissionView channel={zone} />}
                             </div>
                         ))}
                     </div>
@@ -373,11 +386,6 @@ export default function ChannelManagement({ params }) {
                                                 }}
                                             >DELETE</button>
                                         </div>
-                                        {selectedChannelId === ch.id && (
-                                            <div className="animate-pop">
-                                                <PermissionView channel={ch} />
-                                            </div>
-                                        )}
                                     </div>
                                 ))}
 
@@ -422,6 +430,10 @@ export default function ChannelManagement({ params }) {
                 targetRole={permsTarget.role}
                 onClose={() => setShowLivePerms(false)}
                 onSave={handleUpdatePermissions}
+                onBack={() => {
+                    setShowLivePerms(false);
+                    setShowZonePermModal(true);
+                }}
             />
 
             <AddRoleModal
@@ -437,6 +449,62 @@ export default function ChannelManagement({ params }) {
                 message={modalState.message}
                 onClose={() => setModalState({ ...modalState, show: false })}
             />
+
+            {/* Zone Permission Modal */}
+            {showZonePermModal && zonePermModalIdx !== null && structure[zonePermModalIdx] && (
+                <Portal>
+                    <div className="sub-modal-overlay" onClick={() => setShowZonePermModal(false)}>
+                        <div className="sub-modal perm-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="sub-modal-header">
+                                <h4>🔐 Category Permissions</h4>
+                                <p>Manage permissions for "{structure[zonePermModalIdx]?.name}"</p>
+                            </div>
+                            <div className="perm-role-list">
+                                {(structure[zonePermModalIdx]?.overwrites || []).length > 0 ? (
+                                    structure[zonePermModalIdx].overwrites.map((ow, owIdx) => (
+                                        <div
+                                            key={owIdx}
+                                            className="perm-role-item selected"
+                                            onClick={() => {
+                                                setPermsTarget({
+                                                    channelId: structure[zonePermModalIdx].id,
+                                                    channelName: structure[zonePermModalIdx].name,
+                                                    role: ow
+                                                });
+                                                setShowZonePermModal(false);
+                                                setShowLivePerms(true);
+                                            }}
+                                        >
+                                            <span className="perm-role-color" style={{ background: '#8b5cf6' }}></span>
+                                            <span className="perm-role-name">{ow.name}</span>
+                                            <span className="perm-role-check">→</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="empty-state" style={{ padding: '30px', textAlign: 'center', opacity: 0.5 }}>
+                                        <p style={{ margin: 0, fontWeight: 700 }}>No role overwrites set.</p>
+                                        <p style={{ margin: '8px 0 0 0', fontSize: '12px' }}>Add a role to customize permissions.</p>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="sub-modal-actions">
+                                <button
+                                    className="sub-modal-btn cancel"
+                                    onClick={() => setShowZonePermModal(false)}
+                                >Close</button>
+                                <button
+                                    className="sub-modal-btn primary"
+                                    onClick={() => {
+                                        setTargetChannelForAddRole(structure[zonePermModalIdx]);
+                                        setShowZonePermModal(false);
+                                        setShowAddRole(true);
+                                    }}
+                                >+ Add Role</button>
+                            </div>
+                        </div>
+                    </div>
+                </Portal>
+            )}
 
             {isProcessing && (
                 <Portal>

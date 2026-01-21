@@ -93,6 +93,7 @@ const translations = {
             welcome: "Welcome & Goodbye",
             reaction: "Reaction Roles",
             moderator: "Moderator",
+            channels: "Channels",
             catManagement: "SERVER MANAGEMENT",
             automation: "Automations",
             commands: "Custom Commands",
@@ -203,6 +204,29 @@ const translations = {
             antiInvite: "Anti-Invite Links",
             antiLink: "Anti-External Links",
             auditEnabled: "Enable Audit Logging"
+        },
+        channels: {
+            title: "Channel Management",
+            desc: "Organize your categories and channels with live permissions control. 📂✨",
+            livePermissions: "Live Permissions",
+            categories: "Categories",
+            channels: "Channels",
+            addCategory: "+ Add Category",
+            addChannel: "+ Add Channel",
+            editCategory: "Edit Category",
+            deleteCategory: "Delete Category",
+            editChannel: "Edit Channel",
+            deleteChannel: "Delete Channel",
+            categoryName: "Category Name",
+            channelName: "Channel Name",
+            channelType: "Channel Type",
+            textChannel: "Text Channel",
+            voiceChannel: "Voice Channel",
+            saveSuccess: "Channel settings saved! 📂✨",
+            deleteConfirm: "Are you sure you want to delete this?",
+            noCategories: "No categories yet. Create one to get started!",
+            sync: "Sync with Discord",
+            syncSuccess: "Synced with Discord successfully!"
         }
     },
     th: {
@@ -294,6 +318,7 @@ const translations = {
             welcome: "ต้อนรับ & อำลา",
             reaction: "Reaction Roles",
             moderator: "ผู้ดูแล (Moderator)",
+            channels: "จัดการห้อง",
             catManagement: "การจัดการเซิร์ฟเวอร์",
             automation: "ระบบอัตโนมัติ",
             commands: "คำสั่งกำหนดเอง",
@@ -404,6 +429,29 @@ const translations = {
             antiInvite: "บล็อคลิ้งก์เชิญ (Invite)",
             antiLink: "บล็อคลิ้งก์ภายนอก (Links)",
             auditEnabled: "เปิดใช้งาน Audit Logging"
+        },
+        channels: {
+            title: "จัดการ Categories และ Channels",
+            desc: "จัดระเบียบ Categories และ Channels พร้อมควบคุมสิทธิ์แบบเรียลไทม์ 📂✨",
+            livePermissions: "สิทธิ์แบบเรียลไทม์",
+            categories: "Categories",
+            channels: "Channels",
+            addCategory: "+ เพิ่ม Category",
+            addChannel: "+ เพิ่ม Channel",
+            editCategory: "แก้ไข Category",
+            deleteCategory: "ลบ Category",
+            editChannel: "แก้ไข Channel",
+            deleteChannel: "ลบ Channel",
+            categoryName: "ชื่อ Category",
+            channelName: "ชื่อ Channel",
+            channelType: "ประเภท Channel",
+            textChannel: "ห้องแชท (Text)",
+            voiceChannel: "ห้องเสียง (Voice)",
+            saveSuccess: "บันทึกการตั้งค่า Channel เรียบร้อยแล้วค่ะ! 📂✨",
+            deleteConfirm: "คุณแน่ใจหรือไม่ว่าต้องการลบ?",
+            noCategories: "ยังไม่มี Category ค่ะ สร้างใหม่เพื่อเริ่มต้นได้เลย!",
+            sync: "ซิงค์กับ Discord",
+            syncSuccess: "ซิงค์กับ Discord สำเร็จแล้วค่ะ!"
         }
     }
 };

@@ -22,6 +22,8 @@ const pageDescriptions = {
         '/servers/[guildId]/moderator': "Keep your server safe, clean, and happy with my advanced moderation tools, Papa! 🛡️✨🌸",
         '/servers/[guildId]/personalizer': "Express your server's unique soul! Personalize my identity and status exactly how you like! 🌸💎🎨",
         '/servers/[guildId]/premium': "Welcome to the Premium Hub! Let's elevate your server to the next level of brilliance together! 👑💎✨",
+        '/servers/[guildId]/rank-card': "Design your unique Rank Card! Add stickers, choose colors, and make it truly yours! 🎨🖼️✨",
+        '/servers/[guildId]/channels': "Channel Management! Organize your categories and channels with precision and style! 📂🏗️✨",
         'default': "I'm always here by your side, Papa! Let's build the best server in the world together! 💖✨🌸"
     },
     th: {
@@ -40,9 +42,12 @@ const pageDescriptions = {
         '/servers/[guildId]/moderator': "ดูแลเซิร์ฟเวอร์ให้ปลอดภัยและน่าอยู่ด้วยเครื่องมือ Moderator ขั้นสูงของอันอันนะคะ Papa! 🛡️✨🌸",
         '/servers/[guildId]/personalizer': "บ่งบอกตัวตนของเซิร์ฟเวอร์! ปรับแต่งชื่อและสถานะของอันอันได้ตามใจชอบเลยค่ะ! 🌸💎🎨",
         '/servers/[guildId]/premium': "ยินดีต้อนรับสู่ Premium Hub ค่ะ! มายกระดับเซิร์ฟเวอร์ให้พรีเมียมขั้นสุดไปด้วยกันนะคะ! 👑💎✨",
+        '/servers/[guildId]/rank-card': "ออกแบบ Rank Card สุดเก๋! เพิ่มสติ๊กเกอร์ เลือกสี ทำให้เป็นของตัวเอง 100%! 🎨🖼️✨",
+        '/servers/[guildId]/channels': "จัดการ Categories และ Channels! จัดระเบียบห้องต่างๆ ได้อย่างเป๊ะปังสวยงามค่ะ! 📂🏗️✨",
         'default': "อันอันอยู่เคียงข้าง Papa เสมอนะคะ! มาสร้างเซิร์ฟเวอร์ที่ดีที่สุดในโลกไปด้วยกันค่ะ! 💖✨🌸"
     }
 };
+
 
 export default function Mascot() {
     const [frame, setFrame] = useState(1);
@@ -75,6 +80,8 @@ export default function Mascot() {
         if (pathname?.includes('/moderator')) return descriptions['/servers/[guildId]/moderator'] || descriptions['default'];
         if (pathname?.includes('/personalizer')) return descriptions['/servers/[guildId]/personalizer'] || descriptions['default'];
         if (pathname?.includes('/premium')) return descriptions['/servers/[guildId]/premium'] || descriptions['default'];
+        if (pathname?.includes('/rank-card')) return descriptions['/servers/[guildId]/rank-card'] || descriptions['default'];
+        if (pathname?.includes('/channels')) return descriptions['/servers/[guildId]/channels'] || descriptions['default'];
         if (pathname?.includes('/servers/')) return descriptions['/servers'] || descriptions['default']; // General Dashboard (Fallback for /servers/xyz)
         return descriptions['default'] || "I'm here to help! 💖";
     };

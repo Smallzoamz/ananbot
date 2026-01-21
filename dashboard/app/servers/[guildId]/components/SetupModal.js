@@ -26,6 +26,13 @@ const SetupModal = ({
     onShowProWall
 }) => {
     const [activeZoneIndex, setActiveZoneIndex] = React.useState(0);
+    // Permission Modal State
+    const [showPermModal, setShowPermModal] = React.useState(false);
+    const [permModalZoneIdx, setPermModalZoneIdx] = React.useState(null);
+    // New Zone Modal State
+    const [showNewZoneModal, setShowNewZoneModal] = React.useState(false);
+    const [newZoneName, setNewZoneName] = React.useState("");
+    const [newZoneRoles, setNewZoneRoles] = React.useState([]);
 
     if (!show) return null;
 
@@ -208,10 +215,9 @@ const SetupModal = ({
                                         key={idx}
                                         className={`zone-item-select ${activeZoneIndex === idx ? 'active' : ''}`}
                                         onClick={() => setActiveZoneIndex(idx)}
-                                        style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}
                                     >
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <div style={{ flex: 1 }}>
+                                        <div className="zone-item-header">
+                                            <div className="zone-item-info">
                                                 <input
                                                     type="text"
                                                     className="bare-input"
@@ -224,55 +230,36 @@ const SetupModal = ({
                                                     }}
                                                     onClick={(e) => e.stopPropagation()}
                                                 />
-                                                <p>{zone.channels.length} Channels</p>
+                                                <p>{zone.channels.length} Channels • {zone.allowedRoles?.length || 0} Roles</p>
                                             </div>
-                                            <button
-                                                className="mini-del-btn"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    const newZones = customZones.filter((_, i) => i !== idx);
-                                                    setCustomZones(newZones);
-                                                    if (activeZoneIndex === idx) setActiveZoneIndex(Math.max(0, idx - 1));
-                                                    else if (activeZoneIndex > idx) setActiveZoneIndex(activeZoneIndex - 1);
-                                                }}
-                                            >×</button>
-                                        </div>
-
-                                        {/* Zone Permissions (Now on Left) */}
-                                        <div className="role-toggler-wrap" style={{ marginTop: '5px' }}>
-                                            {customRoles.map((r, rIdx) => (
-                                                <span
-                                                    key={rIdx}
-                                                    className={`role-badge mini ${zone.allowedRoles?.includes(r.name) ? 'active' : ''}`}
-                                                    style={{
-                                                        borderColor: r.color,
-                                                        color: zone.allowedRoles?.includes(r.name) ? 'white' : r.color,
-                                                        background: zone.allowedRoles?.includes(r.name) ? r.color : 'transparent',
-                                                        fontSize: '9px',
-                                                        padding: '2px 6px'
-                                                    }}
+                                            <div className="zone-item-actions">
+                                                <button
+                                                    className="zone-settings-btn"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        const newZones = [...customZones];
-                                                        const currentAllowed = newZones[idx].allowedRoles || [];
-                                                        if (currentAllowed.includes(r.name)) {
-                                                            newZones[idx].allowedRoles = currentAllowed.filter(n => n !== r.name);
-                                                        } else {
-                                                            newZones[idx].allowedRoles = [...currentAllowed, r.name];
-                                                        }
-                                                        setCustomZones(newZones);
+                                                        setPermModalZoneIdx(idx);
+                                                        setShowPermModal(true);
                                                     }}
-                                                >
-                                                    {r.name}
-                                                </span>
-                                            ))}
+                                                    title="Role Permissions"
+                                                >⚙️</button>
+                                                <button
+                                                    className="mini-del-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const newZones = customZones.filter((_, i) => i !== idx);
+                                                        setCustomZones(newZones);
+                                                        if (activeZoneIndex === idx) setActiveZoneIndex(Math.max(0, idx - 1));
+                                                        else if (activeZoneIndex > idx) setActiveZoneIndex(activeZoneIndex - 1);
+                                                    }}
+                                                >×</button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
                                 <button className="add-btn" onClick={() => {
-                                    const newZones = [...customZones, { name: "NEW ZONE", channels: [] }];
-                                    setCustomZones(newZones);
-                                    setActiveZoneIndex(newZones.length - 1);
+                                    setNewZoneName("");
+                                    setNewZoneRoles([]);
+                                    setShowNewZoneModal(true);
                                 }}>+ New Zone</button>
                             </div>
 
@@ -283,10 +270,10 @@ const SetupModal = ({
 
                                         <div className="ch-list">
                                             {customZones[activeZoneIndex].channels.map((ch, cidx) => (
-                                                <div key={cidx} className="ch-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
+                                                <div key={cidx} className="ch-item">
+                                                    <div className="ch-item-header">
                                                         <span
-                                                            style={{ fontSize: '18px', width: '25px', textAlign: 'center', cursor: 'pointer' }}
+                                                            className="ch-type-toggle"
                                                             onClick={() => {
                                                                 const newZones = [...customZones];
                                                                 newZones[activeZoneIndex].channels[cidx].type = ch.type === 'text' ? 'voice' : 'text';
@@ -304,11 +291,9 @@ const SetupModal = ({
                                                                 newZones[activeZoneIndex].channels[cidx].name = e.target.value;
                                                                 setCustomZones(newZones);
                                                             }}
-                                                            style={{ fontWeight: '700', fontSize: '15px' }}
                                                         />
                                                         <button
                                                             className="delete-btn"
-                                                            style={{ padding: '4px 8px', fontSize: '12px' }}
                                                             onClick={() => {
                                                                 const newZones = [...customZones];
                                                                 newZones[activeZoneIndex].channels = newZones[activeZoneIndex].channels.filter((_, ci) => ci !== cidx);
@@ -317,8 +302,8 @@ const SetupModal = ({
                                                         >×</button>
                                                     </div>
 
-                                                    <div className="role-toggler-wrap" style={{ width: '100%', justifyContent: 'flex-start', paddingLeft: '35px' }}>
-                                                        <span style={{ fontSize: '9px', color: '#cbd5e1', fontWeight: '800', marginRight: '5px' }}>ACCESS:</span>
+                                                    <div className="role-toggler-wrap ch-access">
+                                                        <span className="access-label">ACCESS:</span>
                                                         {customRoles.map((r, rIdx) => (
                                                             <span
                                                                 key={rIdx}
@@ -347,13 +332,13 @@ const SetupModal = ({
                                                     </div>
                                                 </div>
                                             ))}
-                                            <div className="add-ch-group" style={{ display: 'flex', gap: '10px' }}>
-                                                <button className="add-ch-btn" style={{ flex: 1 }} onClick={() => {
+                                            <div className="add-ch-group">
+                                                <button className="add-ch-btn" onClick={() => {
                                                     const newZones = [...customZones];
                                                     newZones[activeZoneIndex].channels.push({ name: "new-text", type: "text", allowedRoles: [] });
                                                     setCustomZones(newZones);
                                                 }}>+ Add Text</button>
-                                                <button className="add-ch-btn" style={{ flex: 1, background: 'rgba(255,133,193,0.1)' }} onClick={() => {
+                                                <button className="add-ch-btn" onClick={() => {
                                                     const newZones = [...customZones];
                                                     newZones[activeZoneIndex].channels.push({ name: "NEW VOICE", type: "voice", allowedRoles: [] });
                                                     setCustomZones(newZones);
@@ -377,6 +362,103 @@ const SetupModal = ({
                     </div>
                 </div>
             </div>
+
+            {/* Permission Modal */}
+            {showPermModal && permModalZoneIdx !== null && (
+                <div className="sub-modal-overlay" onClick={() => setShowPermModal(false)}>
+                    <div className="sub-modal perm-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="sub-modal-header">
+                            <h4>🔐 Role Permissions</h4>
+                            <p>Select roles that can access "{customZones[permModalZoneIdx]?.name}"</p>
+                        </div>
+                        <div className="perm-role-list">
+                            {customRoles.map((r, rIdx) => {
+                                const isSelected = customZones[permModalZoneIdx]?.allowedRoles?.includes(r.name);
+                                return (
+                                    <div
+                                        key={rIdx}
+                                        className={`perm-role-item ${isSelected ? 'selected' : ''}`}
+                                        onClick={() => {
+                                            const newZones = [...customZones];
+                                            const currentAllowed = newZones[permModalZoneIdx].allowedRoles || [];
+                                            if (currentAllowed.includes(r.name)) {
+                                                newZones[permModalZoneIdx].allowedRoles = currentAllowed.filter(n => n !== r.name);
+                                            } else {
+                                                newZones[permModalZoneIdx].allowedRoles = [...currentAllowed, r.name];
+                                            }
+                                            setCustomZones(newZones);
+                                        }}
+                                    >
+                                        <span className="perm-role-color" style={{ background: r.color }}></span>
+                                        <span className="perm-role-name">{r.name}</span>
+                                        <span className="perm-role-check">{isSelected ? '✓' : ''}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <button className="sub-modal-btn" onClick={() => setShowPermModal(false)}>Done ✨</button>
+                    </div>
+                </div>
+            )}
+
+            {/* New Zone Modal */}
+            {showNewZoneModal && (
+                <div className="sub-modal-overlay" onClick={() => setShowNewZoneModal(false)}>
+                    <div className="sub-modal new-zone-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="sub-modal-header">
+                            <h4>✨ Create New Zone</h4>
+                            <p>Enter zone name and select roles</p>
+                        </div>
+                        <div className="new-zone-form">
+                            <label>Zone Name</label>
+                            <input
+                                type="text"
+                                className="new-zone-input"
+                                placeholder="e.g. VIP LOUNGE"
+                                value={newZoneName}
+                                onChange={(e) => setNewZoneName(e.target.value)}
+                                autoFocus
+                            />
+                            <label>Allowed Roles</label>
+                            <div className="perm-role-list compact">
+                                {customRoles.map((r, rIdx) => {
+                                    const isSelected = newZoneRoles.includes(r.name);
+                                    return (
+                                        <div
+                                            key={rIdx}
+                                            className={`perm-role-item ${isSelected ? 'selected' : ''}`}
+                                            onClick={() => {
+                                                if (isSelected) {
+                                                    setNewZoneRoles(newZoneRoles.filter(n => n !== r.name));
+                                                } else {
+                                                    setNewZoneRoles([...newZoneRoles, r.name]);
+                                                }
+                                            }}
+                                        >
+                                            <span className="perm-role-color" style={{ background: r.color }}></span>
+                                            <span className="perm-role-name">{r.name}</span>
+                                            <span className="perm-role-check">{isSelected ? '✓' : ''}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        <div className="sub-modal-actions">
+                            <button className="sub-modal-btn cancel" onClick={() => setShowNewZoneModal(false)}>Cancel</button>
+                            <button className="sub-modal-btn primary" onClick={() => {
+                                const newZones = [...customZones, {
+                                    name: newZoneName || "NEW ZONE",
+                                    channels: [],
+                                    allowedRoles: newZoneRoles
+                                }];
+                                setCustomZones(newZones);
+                                setActiveZoneIndex(newZones.length - 1);
+                                setShowNewZoneModal(false);
+                            }}>Create Zone 🚀</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </Portal>
     );
 };
