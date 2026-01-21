@@ -112,7 +112,7 @@ class SocialManager:
         embed.set_footer(text="An An Social Alerts 🎀", icon_url=self.bot.user.display_avatar.url)
         embed.timestamp = datetime.datetime.now()
 
-        message = alert.get('custom_message', f"@everyone ✨ **{name}** is live now! 🌸")
+        message = data.get('custom_message', f"@everyone ✨ **{name}** is live now! 🌸")
         await channel.send(content=message, embed=embed)
 
     # Note: Papa will need to provide:
