@@ -671,7 +671,7 @@ async def close_ticket_logic(inter):
         # For now, we just save it as text in DB if small enough, or skip full body.
         # But checking requirements "Log Ticket ... 48 hr".
         # We will update DB status.
-        await close_ticket_db(inter.channel.id)
+        await close_ticket_db(inter.channel.id, log_url=log_content)
         
         await inter.channel.delete()
         
