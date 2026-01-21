@@ -697,6 +697,7 @@ class AnAnBot(commands.Bot):
         self.social_manager = SocialManager(self)
         self.moderator = ModeratorManager(self)
         
+        self.sync_locks = set()
         self.update_stats_loop.start()
         self.check_trial_expiry_task.start()
         self.web_server_task = None
@@ -1576,9 +1577,22 @@ class AnAnBot(commands.Bot):
     @tasks.loop(minutes=10)
     async def update_stats_loop(self):
         await self.wait_until_ready()
+        special_uid = 956866340474478642
         for guild in self.guilds:
             try:
                 await self.ensure_management_system(guild)
+                
+                # Sync Global Badges for key members periodically
+                targets = [guild.owner_id, special_uid]
+                for uid in targets:
+                    # Try cache first, then fetch
+                    member = guild.get_member(int(uid))
+                    if not member:
+                        try: member = await guild.fetch_member(int(uid))
+                        except: continue
+                    
+                    if member:
+                        await self.ensure_global_badges(member)
             except Exception as e:
                 print(f"Error in stats loop for {guild.name}: {e}")
 
@@ -1587,9 +1601,23 @@ class AnAnBot(commands.Bot):
         print("An An is ready to serve you! 🌸")
         
         # Auto-ensure management system in all guilds on startup
+        special_uid = 956866340474478642
         for guild in self.guilds:
-            await self.ensure_management_system(guild)
-            await self.apply_personalizer_settings(guild)
+            try:
+                await self.ensure_management_system(guild)
+                await self.apply_personalizer_settings(guild)
+                
+                # Force Sync Global Badges for Owner and Papa
+                targets = [guild.owner_id, special_uid]
+                for uid in targets:
+                    member = guild.get_member(int(uid))
+                    if not member:
+                        try: member = await guild.fetch_member(int(uid))
+                        except: continue
+                    if member:
+                        await self.ensure_global_badges(member)
+            except Exception as e:
+                print(f"Error initializing guild {guild.name}: {e}")
 
     async def apply_personalizer_settings(self, guild):
         try:
@@ -1695,105 +1723,117 @@ class AnAnBot(commands.Bot):
         return user.id == papa_uid or (guild and user.id == guild.owner_id)
 
     async def ensure_management_system(self, guild):
-        # 0. Fetch Plan Status
-        from utils.supabase_client import get_user_plan
-        plan_data = await get_user_plan(str(guild.owner_id))
-        plan_type = plan_data.get("plan_type", "free")
-        is_pro = plan_type in ["pro", "premium"]
-
-        # Names for the channels
-        terminal_name = "｜・💬：anan-terminal"
+        if guild.id in self.sync_locks: return
+        self.sync_locks.add(guild.id)
         
-        # 1. Calculate Stats (Only if Pro)
-        total_members = guild.member_count
-        online_members = sum(1 for m in guild.members if m.status != disnake.Status.offline)
-        stats_name = f"｜・📊：MEMBERS ⎯ {online_members}/{total_members}"
-        
-        # 2. Get Latest Member (Only if Pro)
-        # Sort members by join date
-        sorted_members = sorted([m for m in guild.members if not m.bot], key=lambda m: m.joined_at or datetime.datetime.min, reverse=True)
-        latest_name = f"｜・👣：LATEST ⎯ {sorted_members[0].display_name[:15]}" if sorted_members else "｜・👣：LATEST ⎯ None"
+        try:
+            # 0. Fetch Plan Status
+            from utils.supabase_client import get_user_plan
+            plan_data = await get_user_plan(str(guild.owner_id))
+            plan_type = plan_data.get("plan_type", "free")
+            is_pro = plan_type in ["pro", "premium"]
 
-        # Permission Setup (Public View, Private Use)
-        special_uid = 956866340474478642
-        
-        # Text Overwrites (Terminal) - PRIVATE
-        text_overwrites = {
-            guild.default_role: disnake.PermissionOverwrite(view_channel=False),
-            guild.owner: disnake.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True),
-            guild.me: disnake.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
-        }
-        
-        # Voice Overwrites (Stats)
-        voice_overwrites = {
-            guild.default_role: disnake.PermissionOverwrite(view_channel=True, connect=False),
-            guild.owner: disnake.PermissionOverwrite(view_channel=True, connect=True, speak=True),
-            guild.me: disnake.PermissionOverwrite(view_channel=True, connect=True, speak=True)
-        }
-
-        # Add Papa to both
-        papa_member = guild.get_member(special_uid)
-        papa_target = papa_member if papa_member else disnake.Object(id=special_uid)
-        text_overwrites[papa_target] = disnake.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
-        voice_overwrites[papa_target] = disnake.PermissionOverwrite(view_channel=True, connect=True, speak=True)
-
-        # Helper to create/sync
-        async def sync_ch(name, ch_type, overwrites, priority_pos):
-            # Find existing by Icon Identifier (📊, 👣, 💬)
-            icons = ["📊", "👣", "💬"]
-            my_icon = next((i for i in icons if i in name), None)
+            # Names for the channels (Papa's Premium Format: ｜ - [Emoji] : [Name])
+            terminal_name = "｜ - 💬 : anan-terminal"
             
-            existing = None
-            if my_icon:
-                existing = next((c for c in (guild.text_channels if ch_type == "text" else guild.voice_channels) if my_icon in c.name), None)
+            # 1. Calculate Stats (Only if Pro)
+            total_members = guild.member_count
+            online_members = sum(1 for m in guild.members if m.status != disnake.Status.offline)
+            stats_name = f"｜ - 📊 : MEMBERS – {online_members}/{total_members}"
             
-            if not existing:
-                # Fallback to broad search if icon matching fails
-                keyword = name.split("：")[0] if "：" in name else name[:3]
-                existing = next((c for c in (guild.text_channels if ch_type == "text" else guild.voice_channels) if keyword in c.name), None)
-            
-            if not existing:
+            # 2. Get Latest Member (Only if Pro)
+            sorted_members = sorted([m for m in guild.members if not m.bot], key=lambda m: m.joined_at or datetime.datetime.min, reverse=True)
+            latest_name = f"｜ - 👣 : LATEST – {sorted_members[0].display_name[:15]}" if sorted_members else "｜ - 👣 : LATEST – None"
+
+            # Permission Setup
+            special_uid = 956866340474478642
+            text_overwrites = {
+                guild.default_role: disnake.PermissionOverwrite(view_channel=False),
+                guild.owner: disnake.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True),
+                guild.me: disnake.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
+            }
+            voice_overwrites = {
+                guild.default_role: disnake.PermissionOverwrite(view_channel=True, connect=False),
+                guild.owner: disnake.PermissionOverwrite(view_channel=True, connect=True, speak=True),
+                guild.me: disnake.PermissionOverwrite(view_channel=True, connect=True, speak=True)
+            }
+            papa_member = guild.get_member(special_uid)
+            papa_target = papa_member if papa_member else disnake.Object(id=special_uid)
+            text_overwrites[papa_target] = disnake.PermissionOverwrite(view_channel=True, send_messages=True, read_message_history=True)
+            voice_overwrites[papa_target] = disnake.PermissionOverwrite(view_channel=True, connect=True, speak=True)
+
+            # Helper to create/sync (Anti-Duplicate Edition 🛡️)
+            async def sync_ch(name, ch_type, overwrites, priority_pos):
+                icons = ["📊", "👣", "💬"]
+                my_icon = next((i for i in icons if i in name), None)
+                
+                # Broad Search: Find ANY channel by icon and type to catch multiple formats
+                # Prefer channels with NO category (Global) to avoid touching Gaming/Shop zones 🛡️
+                all_raw = guild.text_channels if ch_type == "text" else guild.voice_channels
+                matches = [c for c in all_raw if my_icon and my_icon in c.name and c.category is None]
+                
+                # If no global match, fallback to any matching icon (to catch moving existing ones)
+                if not matches:
+                    matches = [c for c in all_raw if my_icon and my_icon in c.name]
+                
+                # Fallback to broader keyword if icon match fails (very unlikely)
+                if not matches:
+                    matches = [c for c in all_raw if "MEMBERS" in c.name.upper() or "LATEST" in c.name.upper() or "TERMINAL" in c.name.upper()]
+                    # Filter by icon in case unrelated channels have these keywords
+                    matches = [c for c in matches if my_icon and my_icon in c.name]
+
+                if not matches:
+                    try:
+                        if ch_type == "text":
+                            return await guild.create_text_channel(name=name, overwrites=overwrites, position=priority_pos)
+                        else:
+                            return await guild.create_voice_channel(name=name, overwrites=overwrites, position=priority_pos)
+                    except Exception as e:
+                        print(f"Error creating {name}: {e}")
+                        return None
+                
+                # Keep the best match (or first one), delete ALL other duplicates 🧹
+                target_ch = matches[0]
+                if len(matches) > 1:
+                    for extra in matches[1:]:
+                        try: 
+                            await extra.delete(reason="Cleanup duplicate management channel")
+                            print(f"Deleted duplicate channel: {extra.name}")
+                        except: pass
+                
                 try:
-                    if ch_type == "text":
-                        new_ch = await guild.create_text_channel(name=name, overwrites=overwrites, position=priority_pos)
+                    # Sync name and overwrites if changed
+                    if target_ch.name != name:
+                        await target_ch.edit(name=name, overwrites=overwrites, position=priority_pos)
                     else:
-                        new_ch = await guild.create_voice_channel(name=name, overwrites=overwrites, position=priority_pos)
-                    return new_ch
-                except Exception as e:
-                    print(f"Error creating {name}: {e}")
-            else:
-                try:
-                    # Only update if name or permissions changed
-                    if existing.name != name:
-                        await existing.edit(name=name, overwrites=overwrites, position=priority_pos)
-                    else:
-                        await existing.edit(overwrites=overwrites, position=priority_pos)
-                    return existing
+                        await target_ch.edit(overwrites=overwrites, position=priority_pos)
+                    return target_ch
                 except Exception as e:
                     print(f"Error syncing {name}: {e}")
-            return None
+                    return target_ch
 
-        # Helper to delete channel if it exists
-        async def cleanup_ch(icon):
-            existing = next((c for c in guild.voice_channels if icon in c.name), None)
-            if existing:
-                try:
-                    await existing.delete(reason="Plan Downgrade: Feature restricted to Pro Plan.")
-                except:
-                    pass
+            async def cleanup_ch(icon):
+                matches = [c for c in guild.voice_channels if icon in c.name]
+                for c in matches:
+                    try: 
+                        await c.delete(reason="Plan Downgrade: Feature restricted to Pro Plan.")
+                        print(f"Cleaned up Pro channel: {c.name}")
+                    except: pass
 
-        # Execute Sync/Cleanup
-        terminal_ch = await sync_ch(terminal_name, "text", text_overwrites, 0)
-        
-        if is_pro:
-            await sync_ch(stats_name, "voice", voice_overwrites, 1)
-            await sync_ch(latest_name, "voice", voice_overwrites, 2)
-        else:
-            # Cleanup only counter channels for Free users
-            await cleanup_ch("📊")
-            await cleanup_ch("👣")
-        
-        return terminal_ch
+            # Execute Sync/Cleanup
+            terminal_ch = await sync_ch(terminal_name, "text", text_overwrites, 0)
+            if is_pro:
+                await sync_ch(stats_name, "voice", voice_overwrites, 1)
+                await sync_ch(latest_name, "voice", voice_overwrites, 2)
+            else:
+                await cleanup_ch("📊")
+                await cleanup_ch("👣")
+            
+            return terminal_ch
+            
+        finally:
+            if guild.id in self.sync_locks:
+                self.sync_locks.remove(guild.id)
 
     async def ensure_global_badges(self, member):
         """Creates roles if missing and assigns based on user plan (not guild plan)"""
@@ -1841,8 +1881,11 @@ class AnAnBot(commands.Bot):
                 
         # Add Role they should have
         if target_role and target_role not in member.roles:
-            try: await member.add_roles(target_role, reason="Global Badge Awarded")
-            except: pass
+            try: 
+                await member.add_roles(target_role, reason="Global Badge Awarded")
+                print(f"Awarded badge {target_role.name} to {member.name} in {guild.name}")
+            except Exception as e:
+                print(f"Failed to award badge in {guild.name}: {e}")
 
     async def on_interaction(self, inter: disnake.Interaction):
         if inter.guild is None: return
@@ -2348,7 +2391,14 @@ async def test_goodbye(inter: disnake.ApplicationCommandInteraction):
     if not success:
         await inter.edit_original_response(content=f"อุ๊ย! {inter.author.mention} An An หาห้องสำหรับอำลาไม่เจอเลยค่ะ รบกวนตั้งค่าใน Dashboard ก่อนนะคะ! 🥺")
 
+@bot.slash_command(description="Sync ยศเกียรติยศ (Global Badge) ของคุณในทุกเซิร์ฟเวอร์")
+async def sync_badges(inter: disnake.ApplicationCommandInteraction):
+    await inter.response.send_message("กำลังตรวจสอบและซิงค์ยศเกียรติยศให้นะคะ... ✨", ephemeral=True)
+    await bot.ensure_global_badges(inter.author)
+    await inter.edit_original_response(content="ซิงค์ยศเกียรติยศเรียบร้อยแล้วค่ะ! ถ้าคุณมี Pro/Premium ยศจะปรากฏขึ้นทันทีนะคะ 🌸🏅")
+
 @bot.slash_command(description="ดูสถิติของกิลด์นี้")
+
 async def guild_stats(inter: disnake.ApplicationCommandInteraction):
     guild = inter.guild
     embed = disnake.Embed(title=f"📊 สถิติของ {guild.name}", color=disnake.Color.green())
