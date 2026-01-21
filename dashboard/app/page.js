@@ -278,6 +278,11 @@ export default function Home() {
         <div className={styles.footerContent}>
           <div className={styles.footerBrand}>An An Bot v4.1</div>
           <p>© 2026 Developed with Heart for Papa & Discord Community 🌸✨</p>
+          <div className={styles.footerLinks}>
+            <span onClick={() => router.push('/tos')}>{t.nav.tos}</span>
+            <span className={styles.footerDot}>•</span>
+            <span onClick={() => router.push('/privacy')}>{t.nav.privacy}</span>
+          </div>
         </div>
       </footer>
     </div>

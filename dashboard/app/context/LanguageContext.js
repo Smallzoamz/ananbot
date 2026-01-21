@@ -10,7 +10,9 @@ const translations = {
             premium: "Premium",
             support: "Support",
             login: "Login with Discord",
-            dashboard: "Go to Dashboard"
+            dashboard: "Go to Dashboard",
+            tos: "Terms of Service",
+            privacy: "Privacy Policy"
         },
         hero: {
             title: "The Most Bubbly All-in-one Bot for Discord",
@@ -235,7 +237,9 @@ const translations = {
             premium: "พรีเมียม",
             support: "ช่วยเหลือ",
             login: "เข้าสู่ระบบด้วย Discord",
-            dashboard: "ไปยังแดชบอร์ด"
+            dashboard: "ไปยังแดชบอร์ด",
+            tos: "ข้อกำหนดการใช้งาน",
+            privacy: "นโยบายความเป็นส่วนตัว"
         },
         hero: {
             title: "บอท All-in-one ที่น่ารักที่สุดสำหรับ Discord",
