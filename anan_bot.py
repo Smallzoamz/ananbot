@@ -754,6 +754,7 @@ class AnAnBot(commands.Bot):
         app.router.add_get('/api/guild/{guild_id}/stats', self.handle_guild_stats)
         app.router.add_get('/api/discord-permissions', self.handle_discord_permissions)
         app.router.add_get('/api/guild/{guild_id}/structure', self.handle_guild_structure)
+        app.router.add_get('/api/guild/{guild_id}/roles', self.handle_guild_roles)
         app.router.add_get('/api/guild/{guild_id}/settings', self.handle_guild_settings)
         app.router.add_get('/api/ping', lambda r: web.Response(text="pong"))
         app.router.add_post('/api/action', self.handle_action)
@@ -764,6 +765,7 @@ class AnAnBot(commands.Bot):
         app.router.add_options('/api/guilds', self.handle_options)
         app.router.add_options('/api/guild/{guild_id}/stats', self.handle_options)
         app.router.add_options('/api/guild/{guild_id}/structure', self.handle_options)
+        app.router.add_options('/api/guild/{guild_id}/roles', self.handle_options)
         app.router.add_options('/api/discord-permissions', self.handle_options)
         app.router.add_options('/api/guild/{guild_id}/settings', self.handle_options)
         
@@ -919,6 +921,26 @@ class AnAnBot(commands.Bot):
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type"
         })
+
+    async def handle_guild_roles(self, request):
+        guild_id = request.match_info.get('guild_id')
+        guild = self.get_guild(int(guild_id))
+        if not guild:
+            return web.json_response({"error": "Guild not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+        
+        # Return roles sorted by position (reversed) so highest is top
+        roles = []
+        for role in reversed(guild.roles):
+            if role.is_default(): continue # Skip @everyone if wanted, or keep it
+            roles.append({
+                "id": str(role.id),
+                "name": role.name,
+                "color": role.color.value,
+                "permissions": role.permissions.value,
+                "position": role.position
+            })
+            
+        return web.json_response(roles, headers={"Access-Control-Allow-Origin": "*"})
 
     async def handle_action(self, request):
         print(f"API Request: POST /api/action from {request.remote}")

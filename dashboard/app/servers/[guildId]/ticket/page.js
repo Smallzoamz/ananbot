@@ -11,6 +11,7 @@ export default function TicketPage({ params }) {
 
     const [isLoading, setIsLoading] = useState(true);
     const [settings, setSettings] = useState({ enabled: true, support_role_id: "", topics: [] });
+    const [roles, setRoles] = useState([]);
     const [showProWall, setShowProWall] = useState(false);
 
     useEffect(() => {
@@ -22,6 +23,13 @@ export default function TicketPage({ params }) {
 
                 if (dataSettings.ticket_config) {
                     setSettings({ ...settings, ...dataSettings.ticket_config });
+                }
+
+                // Fetch Roles
+                const resRoles = await fetch(`/api/proxy/guild/${guildId}/roles`);
+                const dataRoles = await resRoles.json();
+                if (Array.isArray(dataRoles)) {
+                    setRoles(dataRoles);
                 }
 
                 // Check Pro (Mock or basic check)
@@ -118,13 +126,18 @@ export default function TicketPage({ params }) {
 
                         <div className="input-group">
                             <label>Support Role ID (Staff)</label>
-                            <input
-                                type="text"
+                            <select
                                 className="glass-input"
-                                placeholder="Enter Role ID"
                                 value={settings.support_role_id}
                                 onChange={(e) => setSettings({ ...settings, support_role_id: e.target.value })}
-                            />
+                            >
+                                <option value="">Select a Role...</option>
+                                {roles.map(role => (
+                                    <option key={role.id} value={role.id} style={{ color: role.color ? `#${role.color.toString(16).padStart(6, '0')}` : 'inherit' }}>
+                                        {role.name}
+                                    </option>
+                                ))}
+                            </select>
                             <span className="input-hint">The role that will manage tickets.</span>
                         </div>
 
