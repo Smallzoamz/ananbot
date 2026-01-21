@@ -1,13 +1,13 @@
 export default function sitemap() {
     return [
         {
-            url: 'https://anan-bot.vercel.app',
+            url: 'https://ananbot.xyz',
             lastModified: new Date(),
             changeFrequency: 'weekly',
             priority: 1,
         },
         {
-            url: 'https://anan-bot.vercel.app/servers',
+            url: 'https://ananbot.xyz/servers',
             lastModified: new Date(),
             changeFrequency: 'always',
             priority: 0.8,

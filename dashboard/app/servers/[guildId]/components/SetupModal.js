@@ -285,7 +285,17 @@ const SetupModal = ({
                                             {customZones[activeZoneIndex].channels.map((ch, cidx) => (
                                                 <div key={cidx} className="ch-item" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '8px' }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
-                                                        <span style={{ fontSize: '18px', width: '25px', textAlign: 'center' }}>{ch.type === 'text' ? '#' : '🔊'}</span>
+                                                        <span
+                                                            style={{ fontSize: '18px', width: '25px', textAlign: 'center', cursor: 'pointer' }}
+                                                            onClick={() => {
+                                                                const newZones = [...customZones];
+                                                                newZones[activeZoneIndex].channels[cidx].type = ch.type === 'text' ? 'voice' : 'text';
+                                                                setCustomZones(newZones);
+                                                            }}
+                                                            title="Toggle Text/Voice"
+                                                        >
+                                                            {ch.type === 'text' ? '#' : '🔊'}
+                                                        </span>
                                                         <input
                                                             type="text"
                                                             value={ch.name || ""}
@@ -337,11 +347,18 @@ const SetupModal = ({
                                                     </div>
                                                 </div>
                                             ))}
-                                            <button className="add-ch-btn" onClick={() => {
-                                                const newZones = [...customZones];
-                                                newZones[activeZoneIndex].channels.push({ name: "new-channel", type: "text", allowedRoles: [] });
-                                                setCustomZones(newZones);
-                                            }}>+ Add Channel</button>
+                                            <div className="add-ch-group" style={{ display: 'flex', gap: '10px' }}>
+                                                <button className="add-ch-btn" style={{ flex: 1 }} onClick={() => {
+                                                    const newZones = [...customZones];
+                                                    newZones[activeZoneIndex].channels.push({ name: "new-text", type: "text", allowedRoles: [] });
+                                                    setCustomZones(newZones);
+                                                }}>+ Add Text</button>
+                                                <button className="add-ch-btn" style={{ flex: 1, background: 'rgba(255,133,193,0.1)' }} onClick={() => {
+                                                    const newZones = [...customZones];
+                                                    newZones[activeZoneIndex].channels.push({ name: "NEW VOICE", type: "voice", allowedRoles: [] });
+                                                    setCustomZones(newZones);
+                                                }}>+ Add Voice</button>
+                                            </div>
                                         </div>
                                     </>
                                 ) : (

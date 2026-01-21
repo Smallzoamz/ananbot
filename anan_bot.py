@@ -1527,7 +1527,7 @@ class AnAnBot(commands.Bot):
                     "bot_nickname": "An An",
                     "bot_bio": "Cheerfully serving Papa! 🌸✨",
                     "activity_type": "LISTENING",
-                    "status_text": "/help",
+                    "status_text": "/help | ananbot.xyz",
                     "avatar_url": "/ANAN1.png",
                     "banner_color": "#ff85c1"
                 }, headers={"Access-Control-Allow-Origin": "*"})
@@ -1660,7 +1660,7 @@ class AnAnBot(commands.Bot):
         # Send greeting in the first available channel
         for channel in guild.text_channels:
             if channel.permissions_for(guild.me).send_messages and channel != terminal_ch:
-                await channel.send("สวัสดีค่ะ! An An มาถึงแล้วค่ะ! ใช้คำสั่ง `/setup` เพื่อเริ่มต้นตั้งค่าห้องต่างๆ ได้เลยนะคะ 💖")
+                await channel.send("สวัสดีค่ะ! An An มาถึงแล้วค่ะ! ใช้คำสั่ง `/setup` เพื่อเริ่มต้นตั้งค่าห้องต่างๆ และเข้าชมหน้าเว็บได้ที่ ananbot.xyz นะคะ 💖")
                 break
 
     async def on_member_join(self, member):
@@ -1942,66 +1942,93 @@ class AnAnBot(commands.Bot):
 
             # --- 1. Ticket Opening ---
             if custom_id.startswith("open_ticket_"):
-                # Format: open_ticket_{index}_{code}
-                parts = custom_id.split("_")
-                topic_index = int(parts[2])
-                code = parts[3]
+                await inter.response.defer(ephemeral=True)
                 
-                # Check Limits
-                can_open = await check_daily_ticket_limit(inter.user.id)
-                if not can_open:
-                    await inter.response.send_message("🙅‍♀️ คุณเปิด Ticket เกินกำหนดต่อวันแล้วค่ะ!", ephemeral=True)
-                    return
-                
-                # Get Settings
-                settings = await get_guild_settings(inter.guild.id) or {}
-                ticket_config = settings.get("ticket_config", {})
-                topics = ticket_config.get("topics", [])
-                topic = topics[topic_index] if len(topics) > topic_index else {"name": "General", "code": code}
-                
-                # Count ID
-                counts = ticket_config.get("counts", {})
-                current_id = counts.get(code, 0) + 1
-                counts[code] = current_id
-                ticket_config["counts"] = counts
-                await save_guild_settings(inter.guild.id, {"ticket_config": ticket_config})
-                
-                ch_name = f"{code.lower()}-{current_id:03d}"
-                overwrites = {
-                    inter.guild.default_role: disnake.PermissionOverwrite(read_messages=False),
-                    inter.guild.me: disnake.PermissionOverwrite(read_messages=True),
-                    inter.user: disnake.PermissionOverwrite(read_messages=True)
-                }
-                
-                role_id = ticket_config.get("support_role_id")
-                role = None
-                if role_id:
-                    role = inter.guild.get_role(int(role_id))
-                    if role: overwrites[role] = disnake.PermissionOverwrite(read_messages=True)
-                
-                new_ch = await inter.guild.create_text_channel(name=ch_name, overwrites=overwrites, position=1)
-                
-                # Greeting
-                greeting = f"{inter.user.mention} {role.mention if role else ''} "
-                if topic.get('first_msg'):
-                    greeting += f"\n\n{topic.get('first_msg').replace('{user}', inter.user.mention)}"
-                else:
-                    greeting += "\n\nสวัสดีค่ะ มีอะไรให้เราช่วยไหมคะ?"
-                
-                description = topic.get('desc', 'เจ้าหน้าที่กำลังจะมารับเรื่องนะคะ 🌸').replace("{user}", inter.user.mention)
-                embed = disnake.Embed(
-                    title=f"📩 Ticket: {topic.get('name')}",
-                    description=description,
-                    color=disnake.Color.from_rgb(255, 182, 193)
-                )
-                embed.set_footer(text="An An Ticket System 🎫", icon_url=inter.guild.me.display_avatar.url if inter.guild.me.display_avatar else None)
-                embed.timestamp = datetime.datetime.now()
+                try:
+                    # Format: open_ticket_{index}_{code}
+                    parts = custom_id.split("_")
+                    if len(parts) < 4:
+                        await inter.edit_original_response(content="❌ ข้อมูลปุ่มไม่ถูกต้องค่ะ Papa! รบกวนกดใหม่นะคะ 🌸")
+                        return
+                    
+                    try:
+                        topic_index = int(parts[2])
+                    except ValueError:
+                        await inter.edit_original_response(content="❌ ไม่สามารถระบุหมวดหมู่ได้ค่ะ! 🥺")
+                        return
+                    
+                    code = parts[3]
+                    
+                    # Check Limits
+                    can_open = await check_daily_ticket_limit(inter.user.id)
+                    if not can_open:
+                        await inter.edit_original_response(content="🙅‍♀️ Papa คะ! คุณเปิด Ticket เกินกำหนดต่อวันแล้วค่ะ! รบกวนลองใหม่วันหลังนะค๊าา 🌸")
+                        return
+                    
+                    # Get Settings
+                    settings = await get_guild_settings(inter.guild.id) or {}
+                    ticket_config = settings.get("ticket_config", {})
+                    topics = ticket_config.get("topics", [])
+                    
+                    topic = topics[topic_index] if len(topics) > topic_index else {"name": "General", "code": code}
+                    
+                    # Count ID
+                    counts = ticket_config.get("counts", {})
+                    current_id = counts.get(code, 0) + 1
+                    counts[code] = current_id
+                    ticket_config["counts"] = counts
+                    
+                    # Permission Check: Can Bot Create Channel?
+                    if not inter.guild.me.guild_permissions.manage_channels:
+                        await inter.edit_original_response(content="❌ อันอันไม่มีสิทธิ์ **'Manage Channels'** ในเซิร์ฟเวอร์นี้ค่ะ! รบกวน Papa ตรวจสอบด้วยนะค๊าา 🥺🌸")
+                        return
 
-                await new_ch.send(content=greeting, embed=embed, view=TicketControlView())
-                await inter.response.send_message(f"✅ สร้าง Ticket เรียบร้อยแล้วค่ะ! ไปที่ห้อง {new_ch.mention} ได้เลยนะคะ 🌸", ephemeral=True)
-                
-                from utils.supabase_client import create_ticket
-                await create_ticket(inter.guild.id, inter.user.id, new_ch.id, code, current_id)
+                    # Save settings (Update count)
+                    await save_guild_settings(inter.guild.id, {"ticket_config": ticket_config})
+                    
+                    ch_name = f"{code.lower()}-{current_id:03d}"
+                    overwrites = {
+                        inter.guild.default_role: disnake.PermissionOverwrite(read_messages=False),
+                        inter.guild.me: disnake.PermissionOverwrite(read_messages=True, send_messages=True, manage_channels=True, manage_permissions=True),
+                        inter.user: disnake.PermissionOverwrite(read_messages=True, send_messages=True)
+                    }
+                    
+                    role_id = ticket_config.get("support_role_id")
+                    role = None
+                    if role_id and str(role_id).isdigit():
+                        role = inter.guild.get_role(int(role_id))
+                        if role: 
+                            overwrites[role] = disnake.PermissionOverwrite(read_messages=True, send_messages=True)
+                    
+                    # Create Channel
+                    new_ch = await inter.guild.create_text_channel(name=ch_name, overwrites=overwrites, position=1)
+                    
+                    # Greeting
+                    greeting = f"{inter.user.mention} {role.mention if role else ''} "
+                    if topic.get('first_msg'):
+                        greeting += f"\n\n{topic.get('first_msg').replace('{user}', inter.user.mention)}"
+                    else:
+                        greeting += "\n\nสวัสดีค่ะ มีอะไรให้เราช่วยไหมคะ?"
+                    
+                    description = topic.get('desc', 'เจ้าหน้าที่กำลังจะมารับเรื่องนะคะ 🌸').replace("{user}", inter.user.mention)
+                    embed = disnake.Embed(
+                        title=f"📩 Ticket: {topic.get('name')}",
+                        description=description,
+                        color=disnake.Color.from_rgb(255, 182, 193)
+                    )
+                    embed.set_footer(text="An An Ticket System 🎫 | ananbot.xyz", icon_url=inter.guild.me.display_avatar.url if inter.guild.me.display_avatar else None)
+                    embed.timestamp = datetime.datetime.now()
+
+                    await new_ch.send(content=greeting, embed=embed, view=TicketControlView())
+                    await inter.edit_original_response(content=f"✅ สร้าง Ticket เรียบร้อยแล้วค่ะ! ไปที่ห้อง {new_ch.mention} ได้เลยนะค๊าา Papa! 🌸💖")
+                    
+                    from utils.supabase_client import create_ticket
+                    await create_ticket(inter.guild.id, inter.user.id, new_ch.id, code, current_id)
+                except Exception as e:
+                    print(f"CRITICAL Ticket Error: {e}")
+                    # Try to inform if possible
+                    try: await inter.edit_original_response(content=f"❌ อุ๊ย! เกิดข้อผิดพลาดขณะสร้าง Ticket ค่ะ: `{str(e)}` รบกวน Papa ตรวจสอบบอทหน่อยนะค๊าา 🥺")
+                    except: pass
                 return
 
             # --- 2. Reaction Roles ---
@@ -2059,10 +2086,10 @@ async def setup(inter: disnake.ApplicationCommandInteraction):
         
     embed = disnake.Embed(
         title="✨ An An Guild Setup Assistant",
-        description="เลือกประเภท Discord ที่ คุณ ต้องการให้ An An ช่วยจัดการสร้างห้องและยศให้ได้เลยค่ะ! แต่ละแบบจะมาพร้อมโซนที่จัดเป็นระเบียบสวยงาม 4 โซน โซนละ 5 ห้องค่ะ",
+        description="เลือกประเภท Discord ที่ Papa ต้องการให้ An An ช่วยจัดการสร้างห้องและยศให้ได้เลยค่ะ! แต่ละแบบจะมาพร้อมโซนที่จัดเป็นระเบียบสวยงาม 4 โซน โซนละ 5 ห้องค่ะ",
         color=disnake.Color.from_rgb(255, 182, 193) # สีชมพู An An
     )
-    embed.set_footer(text="An An v4.1 Hybrid Precision")
+    embed.set_footer(text="An An v4.1 Hybrid Precision | ananbot.xyz")
     
     await inter.response.send_message(embed=embed, view=TemplateView(bot))
 
@@ -2079,7 +2106,7 @@ async def admin_help(inter: disnake.ApplicationCommandInteraction):
     embed.add_field(name="`/clear_guild`", value="ล้างห้องทั้งหมด (เฉพาะ Owner)", inline=False)
     embed.add_field(name="`/rollback`", value="กู้คืนห้องที่ลบไปภายใน 30 นาที", inline=False)
     embed.add_field(name="`/guild_stats`", value="ดูสถิติจำนวนสมาชิกและห้องต่างๆ ในกิลด์นี้", inline=False)
-    embed.set_footer(text="ความไว้วางใจของ คุณ คือสิ่งสำคัญที่สุดของ An An 💖")
+    embed.set_footer(text="ความไว้วางใจของ Papa คือสิ่งสำคัญที่สุดของ An An | ananbot.xyz 💖")
     
     await inter.response.send_message(embed=embed)
 
@@ -2156,7 +2183,7 @@ async def perform_clear(guild, user_id=None):
             f"🧹 **ล้างข้อมูลเรียบร้อยแล้วค่ะ!**\n\n"
             f"An An ได้ช่วยจดจำโครงสร้างห้องและยศเดิมไว้ให้แล้วค่ะ\n"
             f"หากต้องการเอาทุกอย่างกลับคืนมา สามารถพิมพ์ `!rollback` หรือ `/rollback` ได้ที่ห้องนี้ทันทีนะคะ\n"
-            f"*(เหลือเวลาอีก 30 นาทีค่ะ)* 🌸💖"
+            f"*(เหลือเวลาอีก 30 นาทีค่ะ) จัดการต่อได้ที่ ananbot.xyz* 🌸💖"
         )
 
 async def perform_rollback(guild):
