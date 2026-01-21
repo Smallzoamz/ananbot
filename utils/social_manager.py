@@ -37,17 +37,18 @@ class SocialManager:
                 if not settings or 'social_config' not in settings:
                     continue
                 
-                config = settings['social_config']
-                if not config.get('enabled', False):
-                    continue
-
-                # 2. Process Platforms
-                alerts = config.get('alerts', []) # List of {platform: 'twitch', channel_id: '...', target_discord_ch: '...'}
-                for alert in alerts:
-                    platform = alert.get('platform')
-                    if platform == 'twitch':
+                social_config = settings.get('social_config', {})
+                
+                # Check Twitch
+                twitch_config = social_config.get('twitch', {})
+                if twitch_config.get('enabled'):
+                    for alert in twitch_config.get('alerts', []):
                         await self.check_twitch(guild, alert)
-                    elif platform == 'youtube':
+                
+                # Check YouTube
+                yt_config = social_config.get('youtube', {})
+                if yt_config.get('enabled'):
+                    for alert in yt_config.get('alerts', []):
                         await self.check_youtube(guild, alert)
             except Exception as e:
                 print(f"[Social] Loop Error for {guild.name}: {e}")
