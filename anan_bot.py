@@ -1160,6 +1160,79 @@ class AnAnBot(commands.Bot):
                 ]
                 return web.json_response({"channels": channels}, headers={"Access-Control-Allow-Origin": "*"})
 
+            elif action == "get_server_emojis":
+                user_id = body.get("user_id")
+                plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
+                emojis = [
+                    {"id": str(e.id), "name": e.name, "url": e.url, "animated": e.animated}
+                    for e in guild.emojis
+                ]
+                return web.json_response({"emojis": emojis}, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "get_roles":
+                user_id = body.get("user_id")
+                plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
+                roles = []
+                for role in reversed(guild.roles):
+                    if role.is_default() or role.managed: continue
+                    roles.append({
+                        "id": str(role.id),
+                        "name": role.name,
+                        "color": role.color.value
+                    })
+                return web.json_response({"roles": roles}, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "save_reaction_role_config":
+                user_id = body.get("user_id")
+                plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
+                config = body.get("config", {})
+                await save_guild_settings(guild_id, {"reaction_roles_config": config})
+                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "post_reaction_role":
+                user_id = body.get("user_id")
+                plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
+                config = body.get("config", {})
+                target_ch_id = config.get("channel_id")
+                if not target_ch_id: return web.json_response({"error": "Target channel required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+
+                channel = guild.get_channel(int(target_ch_id))
+                if not channel: return web.json_response({"error": "Channel not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+
+                # Build Embed
+                title = config.get("title", "Reaction Roles")
+                desc = config.get("description", "Select your roles below!")
+                mappings = config.get("mappings", [])
+
+                embed = disnake.Embed(
+                    title=title,
+                    description=desc,
+                    color=disnake.Color.from_rgb(255, 182, 193)
+                )
+                
+                # Add mapping descriptions to embed
+                if mappings:
+                    mappings_desc = "\n".join([f"{m.get('emoji', '✨')} **{m.get('label', 'Role')}** - {m.get('desc', 'Click to get role')}" for m in mappings])
+                    embed.add_field(name="Available Roles", value=mappings_desc, inline=False)
+
+                embed.set_footer(text="An An Reaction Roles 🌸")
+                embed.timestamp = datetime.datetime.now()
+
+                await channel.send(embed=embed, view=ReactionRoleView(mappings))
+                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+
             elif action == "test_goodbye_web":
                 user_id = body.get("user_id")
                 if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
@@ -1575,85 +1648,89 @@ class AnAnBot(commands.Bot):
         if inter.type == disnake.InteractionType.component:
             custom_id = inter.data.custom_id
             
+            # --- 1. Ticket Opening ---
             if custom_id.startswith("open_ticket_"):
                 # Format: open_ticket_{index}_{code}
                 parts = custom_id.split("_")
                 topic_index = int(parts[2])
                 code = parts[3]
                 
-                # 1. Check Limits (DB)
+                # Check Limits
                 can_open = await check_daily_ticket_limit(inter.user.id)
                 if not can_open:
-                    await inter.response.send_message("🙅‍♀️ คุณเปิด Ticket เกินกำหนดต่อวันแล้วค่ะ (3000 Ticket/วัน)!", ephemeral=True)
+                    await inter.response.send_message("🙅‍♀️ คุณเปิด Ticket เกินกำหนดต่อวันแล้วค่ะ!", ephemeral=True)
                     return
                 
-                # 2. Get Settings (from DB or default)
+                # Get Settings
                 settings = await get_guild_settings(inter.guild.id) or {}
-                # Ensure ticket_config exists or use fallback
                 ticket_config = settings.get("ticket_config", {})
                 topics = ticket_config.get("topics", [])
-                
-                # Fallback if config missing but button exists (edge case)
                 topic = topics[topic_index] if len(topics) > topic_index else {"name": "General", "code": code}
                 
-                # 3. Create Channel
                 # Count ID
                 counts = ticket_config.get("counts", {})
                 current_id = counts.get(code, 0) + 1
                 counts[code] = current_id
-                
-                # Update DB counts
-                # Update DB counts
                 ticket_config["counts"] = counts
                 await save_guild_settings(inter.guild.id, {"ticket_config": ticket_config})
                 
                 ch_name = f"{code.lower()}-{current_id:03d}"
-                
-                # Overwrites: Bot, Owner, User, Support Role
                 overwrites = {
                     inter.guild.default_role: disnake.PermissionOverwrite(read_messages=False),
                     inter.guild.me: disnake.PermissionOverwrite(read_messages=True),
                     inter.user: disnake.PermissionOverwrite(read_messages=True)
                 }
                 
-                # Support Role
                 role_id = ticket_config.get("support_role_id")
+                role = None
                 if role_id:
                     role = inter.guild.get_role(int(role_id))
                     if role: overwrites[role] = disnake.PermissionOverwrite(read_messages=True)
                 
-                # Create BELOW Terminal (Pos 1)
                 new_ch = await inter.guild.create_text_channel(name=ch_name, overwrites=overwrites, position=1)
                 
-                # 4. First Message
-                view = TicketControlView()
-                
-                # Base Greeting
-                greeting = f"{inter.user.mention} {role.mention if role_id and role else ''} "
-                
-                # Custom Content (Top of Embed)
+                # Greeting
+                greeting = f"{inter.user.mention} {role.mention if role else ''} "
                 if topic.get('first_msg'):
                     greeting += f"\n\n{topic.get('first_msg').replace('{user}', inter.user.mention)}"
                 else:
                     greeting += "\n\nสวัสดีค่ะ มีอะไรให้เราช่วยไหมคะ?"
-
-                # Embed Content (Inside Box)
+                
                 description = topic.get('desc', 'เจ้าหน้าที่กำลังจะมารับเรื่องนะคะ 🌸').replace("{user}", inter.user.mention)
-
                 embed = disnake.Embed(
                     title=f"📩 Ticket: {topic.get('name')}",
                     description=description,
-                    color=disnake.Color.from_rgb(255, 182, 193) # Pink An An
+                    color=disnake.Color.from_rgb(255, 182, 193)
                 )
                 embed.set_footer(text="An An Ticket System 🎫", icon_url=inter.guild.me.display_avatar.url if inter.guild.me.display_avatar else None)
                 embed.timestamp = datetime.datetime.now()
+
+                await new_ch.send(content=greeting, embed=embed, view=TicketControlView())
+                await inter.response.send_message(f"✅ สร้าง Ticket เรียบร้อยแล้วค่ะ! ไปที่ห้อง {new_ch.mention} ได้เลยนะคะ 🌸", ephemeral=True)
                 
-                await new_ch.send(content=greeting, embed=embed, view=view)
-                
-                # 5. DB Record
+                from utils.supabase_client import create_ticket
                 await create_ticket(inter.guild.id, inter.user.id, new_ch.id, code, current_id)
+                return
+
+            # --- 2. Reaction Roles ---
+            elif custom_id.startswith("rr_role_"):
+                role_id = custom_id.replace("rr_role_", "")
+                role = inter.guild.get_role(int(role_id))
                 
-                await inter.response.send_message(f"✅ เปิด Ticket เรียบร้อยแล้วค่ะ! ไปที่ {new_ch.mention} ได้เลย! 🌸", ephemeral=True)
+                if not role:
+                    await inter.response.send_message("❌ ยศนี้ไม่มีอยู่ในเซิร์ฟเวอร์แล้วค่ะ!", ephemeral=True)
+                    return
+
+                if role in inter.user.roles:
+                    await inter.user.remove_roles(role)
+                    await inter.response.send_message(f"✅ เอาออกเรียบร้อย! ถอดยศ **{role.name}** ออกจาก {inter.user.mention} แล้วค่ะ 🌸", ephemeral=True)
+                else:
+                    try:
+                        await inter.user.add_roles(role)
+                        await inter.response.send_message(f"✅ รับยศเรียบร้อย! มอบยศ **{role.name}** ให้ {inter.user.mention} แล้วค่ะ ✨", ephemeral=True)
+                    except disnake.Forbidden:
+                        await inter.response.send_message("❌ อันอันไม่สามารถให้ยศนี้ได้ค่ะ (ยศบอทอยู่ต่ำกว่ายศที่เลือก)!", ephemeral=True)
+                return
                 
             elif custom_id == "close_ticket_btn":
                 pass # Handled by View callback, but good to have fallback here
@@ -1898,6 +1975,24 @@ async def rollback(inter: disnake.ApplicationCommandInteraction):
         await inter.edit_original_response(content=f"เย้! กู้คืนสำเร็จแล้วค่ะ {inter.author.mention}! 💖")
     else:
         await inter.edit_original_response(content=f"An An หาข้อมูลไม่เจอเลยค่ะ {inter.author.mention} ")
+
+class ReactionRoleView(disnake.ui.View):
+    def __init__(self, mappings):
+        super().__init__(timeout=None)
+        # mappings: [{"role_id": "...", "emoji": "...", "label": "..."}]
+        for i, mapping in enumerate(mappings):
+            role_id = mapping.get("role_id")
+            emoji = mapping.get("emoji")
+            label = mapping.get("label", f"Role {i+1}")
+            
+            # Create button with custom_id containing role_id
+            button = disnake.ui.Button(
+                style=disnake.ButtonStyle.secondary,
+                label=label,
+                emoji=emoji if emoji else None,
+                custom_id=f"rr_role_{role_id}"
+            )
+            self.add_item(button)
 
 # Helper functions and Slash Commands below...
 
