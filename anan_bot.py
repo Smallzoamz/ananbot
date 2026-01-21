@@ -1635,7 +1635,10 @@ class AnAnBot(commands.Bot):
         # 1. Update Stats & Latest Member (Always sync, cleanup happens inside if free)
         await self.ensure_management_system(member.guild)
         
-        # 2. Welcome Logic (Pro Only)
+        # 2. Sync Global Badges 🏅
+        await self.ensure_global_badges(member)
+
+        # 3. Welcome Logic (Pro Only)
         if is_pro:
             settings = await get_guild_settings(str(member.guild.id))
             success = await send_welcome_message(member, settings=settings)
@@ -1662,6 +1665,29 @@ class AnAnBot(commands.Bot):
             
         # 3. Moderator System
         await self.moderator.on_member_remove(member)
+
+    async def on_member_update(self, before, after):
+        # Security: Prevent manual badge assignment 🛡️
+        badge_names = ["⎯⎯ ANAN PRO ⎯⎯", "⎯⎯ ANAN PREMIUM ⎯⎯"]
+        
+        added_roles = [r for r in after.roles if r not in before.roles]
+        for role in added_roles:
+            if role.name in badge_names:
+                # User got a badge! Check if authorized
+                from utils.supabase_client import get_user_plan
+                plan_data = await get_user_plan(str(after.id))
+                plan_type = plan_data.get("plan_type", "free")
+                
+                authorized = False
+                if role.name == "⎯⎯ ANAN PRO ⎯⎯" and plan_type in ["pro", "premium"]: authorized = True
+                if role.name == "⎯⎯ ANAN PREMIUM ⎯⎯" and plan_type == "premium": authorized = True
+                
+                if not authorized:
+                    try:
+                        await after.remove_roles(role, reason="Unauthorized Badge Assignment")
+                        print(f"Removed unauthorized badge {role.name} from {after.name}")
+                    except Exception as e:
+                        print(f"Failed to remove manual badge: {e}")
 
     # Security: Superuser Check (Only Papa and Guild Owner)
     def is_superuser(self, user, guild):
@@ -1768,6 +1794,55 @@ class AnAnBot(commands.Bot):
             await cleanup_ch("👣")
         
         return terminal_ch
+
+    async def ensure_global_badges(self, member):
+        """Creates roles if missing and assigns based on user plan (not guild plan)"""
+        if member.bot: return
+        
+        guild = member.guild
+        pro_name = "⎯⎯ ANAN PRO ⎯⎯"
+        prem_name = "⎯⎯ ANAN PREMIUM ⎯⎯"
+        
+        # 1. Ensure Roles Exist
+        async def get_or_create_role(name, color):
+            role = disnake.utils.get(guild.roles, name=name)
+            if not role:
+                try:
+                    # Create with NO permissions
+                    role = await guild.create_role(
+                        name=name, 
+                        color=color, 
+                        reason="An An Global Badge System",
+                        permissions=disnake.Permissions.none(),
+                        hoist=True # Show in sidebar
+                    )
+                except:
+                    return None
+            return role
+            
+        pro_role = await get_or_create_role(pro_name, disnake.Color.from_rgb(255, 182, 193)) # Pink
+        prem_role = await get_or_create_role(prem_name, disnake.Color.from_rgb(255, 215, 0)) # Gold
+
+        # 2. Check Member's Plan 💎
+        from utils.supabase_client import get_user_plan
+        plan_data = await get_user_plan(str(member.id))
+        plan_type = plan_data.get("plan_type", "free")
+        
+        # 3. Sync
+        target_role = None
+        if plan_type == "premium": target_role = prem_role
+        elif plan_type == "pro": target_role = pro_role
+        
+        # Remove Roles they shouldn't have
+        for r in [pro_role, prem_role]:
+            if r and r != target_role and r in member.roles:
+                try: await member.remove_roles(r, reason="Badge Cleanup (Plan Mismatch)")
+                except: pass
+                
+        # Add Role they should have
+        if target_role and target_role not in member.roles:
+            try: await member.add_roles(target_role, reason="Global Badge Awarded")
+            except: pass
 
     async def on_interaction(self, inter: disnake.Interaction):
         if inter.guild is None: return
