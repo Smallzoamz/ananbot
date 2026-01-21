@@ -22,6 +22,7 @@ from utils.supabase_client import (
     check_daily_ticket_limit,
     get_closed_tickets
 )
+from utils.social_manager import SocialManager
 
 load_dotenv() # Load variables from .env
 
@@ -1219,10 +1220,21 @@ class AnAnBot(commands.Bot):
                 await save_guild_settings(guild_id, {"ticket_config": settings})
                 return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
 
-            elif action == "send_ticket_panel":
+            elif action == "save_social_settings":
+                user_id = body.get("user_id")
+                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                # Pro Plan Check
+                plan = await get_user_plan(user_id)
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required for Social Alerts"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
                 settings = body.get("settings", {})
-                res = await self.perform_ticket_setup(guild, settings, user_id)
-                return web.json_response(res, headers={"Access-Control-Allow-Origin": "*"})
+                print(f"Saving social settings for guild {guild_id}")
+                
+                # Update DB
+                await save_guild_settings(guild_id, {"social_config": settings})
+                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
 
             return web.json_response({"error": "Unknown action"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
             
@@ -1608,6 +1620,13 @@ class AnAnBot(commands.Bot):
         return True
 
 bot = AnAnBot()
+
+# Modular Social Manager 🌸
+try:
+    bot.social_manager = SocialManager(bot)
+    print("Social Manager initialized successfully! 🎀")
+except Exception as e:
+    print(f"Error initializing Social Manager: {e}")
 
 @bot.slash_command(description="เริ่มต้นตั้งค่าโครงสร้างห้องตาม Template")
 async def setup(inter: disnake.ApplicationCommandInteraction):
