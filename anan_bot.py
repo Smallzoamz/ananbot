@@ -20,7 +20,10 @@ from utils.supabase_client import (
     close_ticket_db, 
     update_ticket_activity,
     check_daily_ticket_limit,
-    get_closed_tickets
+    check_daily_ticket_limit,
+    get_closed_tickets,
+    activate_free_trial,
+    check_expiring_trials
 )
 from utils.social_manager import SocialManager
 from utils.moderator_manager import ModeratorManager
@@ -695,12 +698,47 @@ class AnAnBot(commands.Bot):
         self.moderator = ModeratorManager(self)
         
         self.update_stats_loop.start()
+        self.check_trial_expiry_task.start()
         self.web_server_task = None
 
     async def start(self, *args, **kwargs):
         # Start web server as a background task
         self.web_server_task = asyncio.create_task(self.run_web_server())
         return await super().start(*args, **kwargs)
+
+    @tasks.loop(hours=1)
+    async def check_trial_expiry_task(self):
+        if not self.db_ready: return
+        
+        try:
+            users_to_notify = await check_expiring_trials()
+            for user_id in users_to_notify:
+                try:
+                    user = await self.fetch_user(int(user_id))
+                    if user:
+                        # Cute customized message
+                        embed = disnake.Embed(
+                            title="⏳ Your Pro Trial is Ending Soon!",
+                            description=(
+                                "ขอบคุณที่เข้าร่วมทดสอบนะคะ Papa! 🌸✨\n"
+                                "ช่วงเวลาทดลองใช้งาน 7 วันของคุณกำลังจะหมดลงในอีก 24 ชั่วโมงค่ะ\n\n"
+                                "หากระบบการชำระเงินพร้อมเมื่อไหร่ อย่าลืมแวะกลับมาอุดหนุนกันน๊า~ \n"
+                                "อันอันดีใจมากๆ ที่ได้ดูแลคุณค่ะ! 💖"
+                            ),
+                            color=disnake.Color.gold()
+                        )
+                        embed.set_thumbnail(url="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMHEybXgxZ3B6Z3B6Z3B6Z3B6Z3B6Z3B6Z3B6Z3B6Z3B6Z3B6JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1nM/M90mJvCqxJvUs/giphy.gif")
+                        embed.set_footer(text="An An Notification System 🔔")
+                        await user.send(embed=embed)
+                        print(f"Notified user {user_id} about trial expiry")
+                except Exception as e:
+                    print(f"Failed to notify user {user_id}: {e}")
+        except Exception as e:
+            print(f"Error in check_trial_expiry_task: {e}")
+
+    @check_trial_expiry_task.before_loop
+    async def before_check_trial_expiry_task(self):
+        await self.wait_until_ready()
 
     # --- Temporary Room System (Pro Plan) ---
     async def perform_temproom_setup(self, guild, user_id=None):
@@ -996,6 +1034,16 @@ class AnAnBot(commands.Bot):
             print(f"Web API triggering {action}")
             
             # These actions don't need a guild context
+            if action == "claim_trial":
+                user_id = body.get("user_id")
+                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                success = await activate_free_trial(user_id)
+                if success:
+                    return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+                else:
+                    return web.json_response({"success": False, "error": "Unable to claim trial (Already claimed or active plan)"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+
             if action == "get_missions":
                 user_id = body.get("user_id")
                 if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
