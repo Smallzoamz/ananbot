@@ -102,9 +102,9 @@ async def get_user_stats(user_id: str):
 
 async def get_user_plan(user_id: str):
     # Papa is ALWAYS Premium/Pro Lifetime 👑
-    PAPA_UID = "956866340474478642"
-    if str(user_id) == PAPA_UID:
-        return {"plan_type": "premium", "expires_at": None, "is_lifetime": True, "trial_claimed": True}
+    # PAPA_UID = "956866340474478642"
+    # if str(user_id) == PAPA_UID:
+    #     return {"plan_type": "premium", "expires_at": None, "is_lifetime": True, "trial_claimed": True}
         
     if not supabase: return {"plan_type": "free", "expires_at": None}
     
