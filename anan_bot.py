@@ -1327,8 +1327,8 @@ class AnAnBot(commands.Bot):
                     except Exception as e:
                         print(f"Error changing nickname: {e}")
                 try:
-                    act_type_str = settings.get("activity_type", "LISTENING")
-                    status_text = settings.get("status_text", "/help")
+                    act_type_str = settings.get("activity_type") or "LISTENING"
+                    status_text = settings.get("status_text") or "/help"
                     act_type = getattr(disnake.ActivityType, act_type_str.lower(), disnake.ActivityType.listening)
                     await self.change_presence(activity=disnake.Activity(type=act_type, name=status_text))
                 except Exception as e:
