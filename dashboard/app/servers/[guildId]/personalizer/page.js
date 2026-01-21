@@ -21,15 +21,26 @@ export default function PersonalizerPage() {
     });
 
     const [modalState, setModalState] = useState({ show: false, type: 'success', message: '' });
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
+        setIsMounted(true);
         if (!guildId) return;
         const fetchSettings = async () => {
             try {
                 const res = await fetch(`/api/proxy/guild/${guildId}/settings`);
                 const data = await res.json();
                 if (data && !data.error) {
-                    setSettings(prev => ({ ...prev, ...data }));
+                    // Safety merge: only overwrite if value is NOT null/undefined
+                    setSettings(prev => {
+                        const newSettings = { ...prev };
+                        Object.keys(data).forEach(key => {
+                            if (data[key] !== null && data[key] !== undefined) {
+                                newSettings[key] = data[key];
+                            }
+                        });
+                        return newSettings;
+                    });
                 }
             } catch (err) {
                 console.error("Failed to fetch personalizer settings:", err);
@@ -69,6 +80,7 @@ export default function PersonalizerPage() {
     const isPapa = session?.user?.id === "956866340474478642";
     const isPro = userPlan.plan_type !== 'free';
 
+    if (!isMounted) return null;
     if (serverLoading) return <div className="loader">🌸 Transforming An An...</div>;
 
     // Maintenance Mode Check (Targeted only to this page)
@@ -83,6 +95,8 @@ export default function PersonalizerPage() {
                         {t.personalizer.maintenance.back}
                     </button>
                 </div>
+                {/* ... style omitted for brevity but preserved in real replacement if needed, 
+                   but since I'm replacing a block, I should keep it all or target precisely */}
                 <style jsx>{`
                     .maintenance-wrapper {
                         display: flex;
@@ -188,7 +202,7 @@ export default function PersonalizerPage() {
                             <input
                                 type="text"
                                 className="glass-input"
-                                value={settings.bot_nickname}
+                                value={settings.bot_nickname || ""}
                                 onChange={(e) => setSettings({ ...settings, bot_nickname: e.target.value })}
                                 placeholder="An An"
                                 disabled={!isPro}
@@ -204,7 +218,7 @@ export default function PersonalizerPage() {
                                 <label>{t.personalizer.activityType}</label>
                                 <select
                                     className="glass-input"
-                                    value={settings.activity_type}
+                                    value={settings.activity_type || "LISTENING"}
                                     onChange={(e) => setSettings({ ...settings, activity_type: e.target.value })}
                                     disabled={!isPro}
                                 >
@@ -219,7 +233,7 @@ export default function PersonalizerPage() {
                                 <input
                                     type="text"
                                     className="glass-input"
-                                    value={settings.status_text}
+                                    value={settings.status_text || ""}
                                     onChange={(e) => setSettings({ ...settings, status_text: e.target.value })}
                                     placeholder={t.personalizer.statusPlaceholder}
                                     disabled={!isPro}
@@ -235,7 +249,7 @@ export default function PersonalizerPage() {
                             <input
                                 type="text"
                                 className="glass-input"
-                                value={settings.avatar_url}
+                                value={settings.avatar_url || ""}
                                 onChange={(e) => setSettings({ ...settings, avatar_url: e.target.value })}
                                 placeholder="https://..."
                                 disabled={!isPro}
@@ -246,7 +260,7 @@ export default function PersonalizerPage() {
                             <textarea
                                 className="glass-input"
                                 rows="3"
-                                value={settings.bot_bio}
+                                value={settings.bot_bio || ""}
                                 onChange={(e) => setSettings({ ...settings, bot_bio: e.target.value })}
                                 placeholder={t.personalizer.bioPlaceholder}
                                 disabled={!isPro}
