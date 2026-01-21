@@ -1403,6 +1403,62 @@ class AnAnBot(commands.Bot):
                 # Pro Plan Check
                 plan = await get_user_plan(user_id)
                 if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required for this feature"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
+                success = await self.social_manager.test_alert(guild_id)
+                return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
+
+            # --- Live Channel Management (Papa Exclusive 🤫👑) ---
+            elif action in ["create_channel_live", "delete_channel_live"]:
+                papa_id = "956866340474478642"
+                if str(user_id) != papa_id:
+                    return web.json_response({"error": "🚫 Forbidden: Papa access only!"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+                
+                if action == "create_channel_live":
+                    name = body.get("name", "new-channel")
+                    ch_type = body.get("type", "text") # text, voice, category
+                    cat_id = body.get("category_id")
+                    emoji = body.get("emoji", "💬" if ch_type == "text" else "🔊" if ch_type == "voice" else "📂")
+                    
+                    try:
+                        # Follow Bot Design: format_name helper
+                        final_name = name
+                        if ch_type == "category":
+                            # Category Design: [Emoji] ⎯  [NAME]
+                            final_name = f"{emoji} ⎯  {name.upper()}"
+                        else:
+                            # Channel Design: ｜・[Emoji]：[NAME]
+                            def internal_format(e, n, is_v=False):
+                                if is_v: return f"｜・{e}：{n.upper()}"
+                                return f"｜・{e}：{n.lower()}"
+                            final_name = internal_format(emoji, name, is_v=(ch_type == "voice"))
+
+                        cat = guild.get_channel(int(cat_id)) if cat_id else None
+                        
+                        if ch_type == "category":
+                            new_ch = await guild.create_category(name=final_name)
+                        elif ch_type == "voice":
+                            new_ch = await guild.create_voice_channel(name=final_name, category=cat)
+                        else:
+                            new_ch = await guild.create_text_channel(name=final_name, category=cat)
+                            
+                        return web.json_response({"success": True, "id": str(new_ch.id)}, headers={"Access-Control-Allow-Origin": "*"})
+                    except Exception as e:
+                        return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
+
+                elif action == "delete_channel_live":
+                    target_id = body.get("channel_id")
+                    if not target_id: return web.json_response({"error": "channel_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                    
+                    target_ch = guild.get_channel(int(target_id))
+                    if not target_ch: return web.json_response({"error": "Channel not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+                    
+                    try:
+                        await target_ch.delete()
+                        return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+                    except Exception as e:
+                        return web.json_response({"error": str(e)}, status=500, headers={"Access-Control-Allow-Origin": "*"})
+                return
                     return web.json_response({"error": "Pro Plan required for Social Alerts"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
 
                 target_ch_id = body.get("channel_id")
