@@ -326,3 +326,52 @@ async def get_closed_tickets(guild_id: str, limit: int = 20):
     except Exception as e:
         print(f"Get History Error: {e}")
         return []
+
+async def activate_free_trial(user_id: str):
+    if not supabase: return False
+    try:
+        # Check eligibility
+        res_stats = supabase.table("user_stats").select("trial_claimed").eq("user_id", str(user_id)).execute()
+        if res_stats.data and res_stats.data[0].get("trial_claimed"):
+            return False
+            
+        # 7 Days from now
+        expiry = (datetime.datetime.now() + datetime.timedelta(days=7)).isoformat()
+        
+        # Update
+        res = supabase.table("user_stats").update({
+            "plan_type": "pro",
+            "trial_claimed": True,
+            "expires_at": expiry,
+            "notification_sent": False
+        }).eq("user_id", str(user_id)).execute()
+        
+        return True
+    except Exception as e:
+        print(f"Activate Trial Error: {e}")
+        return False
+
+async def check_expiring_trials():
+    if not supabase: return
+    try:
+        # Check for trials expiring in < 24 hours
+        res = supabase.table("user_stats").select("user_id, expires_at, notification_sent").eq("plan_type", "pro").eq("trial_claimed", True).execute()
+        
+        now = datetime.datetime.now()
+        one_day = datetime.timedelta(days=1)
+        
+        expiring_users = []
+        for user in res.data:
+            if not user.get("expires_at"): continue
+            # Handle Z suffix if present
+            iso_str = user["expires_at"].replace("Z", "")
+            expires_at = datetime.datetime.fromisoformat(iso_str)
+            
+            # If expires in less than 24h and notification not sent
+            if now < expires_at < (now + one_day) and not user.get("notification_sent"):
+                expiring_users.append(user["user_id"])
+                
+        return expiring_users
+    except Exception as e:
+        print(f"Check Expiry Error: {e}")
+        return []
