@@ -26,6 +26,8 @@ const SetupModal = ({
     onShowProWall
 }) => {
     const [activeZoneIndex, setActiveZoneIndex] = React.useState(0);
+    const [activeTab, setActiveTab] = React.useState('roles'); // 'roles' or 'zones'
+
     // Permission Modal State
     const [showPermModal, setShowPermModal] = React.useState(false);
     const [permModalZoneIdx, setPermModalZoneIdx] = React.useState(null);
@@ -33,13 +35,20 @@ const SetupModal = ({
     const [showNewZoneModal, setShowNewZoneModal] = React.useState(false);
     const [newZoneName, setNewZoneName] = React.useState("");
     const [newZoneRoles, setNewZoneRoles] = React.useState([]);
+    const [roleSearch, setRoleSearch] = React.useState("");
 
     if (!show) return null;
+
+    const filteredRoles = customRoles.filter(r =>
+        r.name.toLowerCase().includes(roleSearch.toLowerCase())
+    );
+
+    const isCustomMode = setupStep === 'custom_role' || setupStep === 'custom_zone';
 
     const handleBack = () => {
         if (setupStep === 3) setSetupStep(2);
         else if (setupStep === 2) setSetupStep(1);
-        else if (setupStep === 'custom_role' || setupStep === 'custom_zone') setSetupStep(1);
+        else if (isCustomMode) setSetupStep(1);
     };
 
     const handleTemplateClick = (key) => {
@@ -51,6 +60,7 @@ const SetupModal = ({
         setSelectedTemplate(key);
         if (key === 'Custom') {
             setSetupStep('custom_role');
+            setActiveTab('roles');
         } else {
             setSetupStep(2);
         }
@@ -59,19 +69,18 @@ const SetupModal = ({
     return (
         <Portal>
             <div className="fixed-overlay z-setup blur-in">
-                <div className={`modal-card glass animate-pop ${setupStep === 'custom_role' || setupStep === 'custom_zone' ? 'wide-card' : ''}`}>
+                <div className={`modal-card glass animate-pop ${isCustomMode ? 'wide-card' : ''}`}>
                     <button className="modal-close" onClick={onClose}>×</button>
 
                     <div className="setup-header">
                         {(setupStep !== 1) && <button className="back-btn" onClick={handleBack}>←</button>}
                         <div className="m-title">
-                            <h3>{setupStep === 'custom_role' || setupStep === 'custom_zone' ? "Custom Template" : "Template Deployment"}</h3>
+                            <h3>{isCustomMode ? "Custom Template Builder" : "Template Deployment"}</h3>
                             <p>
                                 {setupStep === 1 && "Phase 1 of 3 • Select a Template"}
                                 {setupStep === 2 && "Phase 2 of 3 • Choose Type"}
                                 {setupStep === 3 && "Phase 3 of 3 • Final Details"}
-                                {setupStep === 'custom_role' && "Customize Roles"}
-                                {setupStep === 'custom_zone' && "Customize Zones"}
+                                {isCustomMode && "Design your own server structure with An An's magic 🪄"}
                             </p>
                         </div>
                     </div>
@@ -168,196 +177,241 @@ const SetupModal = ({
                         </div>
                     )}
 
-                    {/* Custom Template Logic */}
-                    {setupStep === 'custom_role' && (
-                        <div className="setup-flow">
-                            <div className="custom-scroll-list">
-                                {customRoles.map((role, idx) => (
-                                    <div key={idx} className="role-edit-item">
-                                        <input
-                                            type="color"
-                                            value={role.color || "#000000"}
-                                            onChange={(e) => {
-                                                const newRoles = [...customRoles];
-                                                newRoles[idx].color = e.target.value;
-                                                setCustomRoles(newRoles);
-                                            }}
-                                            className="role-color-input"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={role.name || ""}
-                                            onChange={(e) => {
-                                                const newRoles = [...customRoles];
-                                                newRoles[idx].name = e.target.value;
-                                                setCustomRoles(newRoles);
-                                            }}
-                                            className="role-name-input"
-                                        />
-                                        <button className="role-settings-btn" onClick={() => onShowPermissions(idx)}>⚙️</button>
-                                        <button className="role-del-btn" onClick={() => setCustomRoles(customRoles.filter((_, i) => i !== idx))}>🗑️</button>
-                                    </div>
-                                ))}
-                                <button className="add-btn" onClick={() => setCustomRoles([...customRoles, { name: "NEW ROLE", color: "#FFFFFF", permissions: "member" }])}>+ Add Role</button>
+                    {/* Shadcn-style Custom Template Builder */}
+                    {isCustomMode && (
+                        <div className="sn-tabs">
+                            <div className="sn-tabs-list">
+                                <button
+                                    className={`sn-tabs-trigger ${activeTab === 'roles' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('roles')}
+                                >
+                                    🛡️ Manage Roles
+                                </button>
+                                <button
+                                    className={`sn-tabs-trigger ${activeTab === 'zones' ? 'active' : ''}`}
+                                    onClick={() => {
+                                        setActiveTab('zones');
+                                        setSetupStep('custom_zone');
+                                    }}
+                                >
+                                    📂 Manage Zones
+                                </button>
                             </div>
-                            <div className="setup-footer">
-                                <button className="modal-btn ghost" onClick={() => setSetupStep('custom_zone')}>Next: Customize Zones</button>
-                            </div>
-                        </div>
-                    )}
 
-                    {setupStep === 'custom_zone' && (
-                        <div className="split-view">
-                            {/* Left Panel: Zone List */}
-                            <div className="zone-list-panel">
-                                {customZones.map((zone, idx) => (
-                                    <div
-                                        key={idx}
-                                        className={`zone-item-select ${activeZoneIndex === idx ? 'active' : ''}`}
-                                        onClick={() => setActiveZoneIndex(idx)}
-                                    >
-                                        <div className="zone-item-header">
-                                            <div className="zone-item-info">
-                                                <input
-                                                    type="text"
-                                                    className="bare-input"
-                                                    value={zone.name || ""}
-                                                    placeholder="UNTITLED ZONE"
-                                                    onChange={(e) => {
-                                                        const newZones = [...customZones];
-                                                        newZones[idx].name = e.target.value;
-                                                        setCustomZones(newZones);
-                                                    }}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                />
-                                                <p>{zone.channels.length} Channels • {zone.allowedRoles?.length || 0} Roles</p>
-                                            </div>
-                                            <div className="zone-item-actions">
-                                                <button
-                                                    className="zone-settings-btn"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setPermModalZoneIdx(idx);
-                                                        setShowPermModal(true);
-                                                    }}
-                                                    title="Role Permissions"
-                                                >⚙️</button>
-                                                <button
-                                                    className="mini-del-btn"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        const newZones = customZones.filter((_, i) => i !== idx);
-                                                        setCustomZones(newZones);
-                                                        if (activeZoneIndex === idx) setActiveZoneIndex(Math.max(0, idx - 1));
-                                                        else if (activeZoneIndex > idx) setActiveZoneIndex(activeZoneIndex - 1);
-                                                    }}
-                                                >×</button>
-                                            </div>
+                            {activeTab === 'roles' ? (
+                                <div className="setup-flow">
+                                    {customRoles.length > 5 && (
+                                        <div className="sn-search-wrapper" style={{ maxWidth: '300px' }}>
+                                            <span className="sn-search-icon">🔍</span>
+                                            <input
+                                                type="text"
+                                                className="sn-search-input"
+                                                placeholder="Search roles..."
+                                                value={roleSearch}
+                                                onChange={(e) => setRoleSearch(e.target.value)}
+                                            />
                                         </div>
+                                    )}
+                                    <div className="custom-scroll-list sn-role-scroll" style={{ maxHeight: '400px' }}>
+                                        {filteredRoles.map((role, idx) => (
+                                            <div key={idx} className="sn-card" style={{ marginBottom: '8px' }}>
+                                                <div className="sn-card-content" style={{ gap: '12px', padding: '10px' }}>
+                                                    <input
+                                                        type="color"
+                                                        value={role.color || "#000000"}
+                                                        onChange={(e) => {
+                                                            const newRoles = [...customRoles];
+                                                            const roleIdx = customRoles.indexOf(role);
+                                                            newRoles[roleIdx].color = e.target.value;
+                                                            setCustomRoles(newRoles);
+                                                        }}
+                                                        style={{ width: '32px', height: '32px', borderRadius: '4px', border: 'none', cursor: 'pointer', flexShrink: 0 }}
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={role.name || ""}
+                                                        onChange={(e) => {
+                                                            const newRoles = [...customRoles];
+                                                            const roleIdx = customRoles.indexOf(role);
+                                                            newRoles[roleIdx].name = e.target.value;
+                                                            setCustomRoles(newRoles);
+                                                        }}
+                                                        className="bare-input"
+                                                        placeholder="Role Name"
+                                                        style={{ flex: 1, fontSize: '14px', fontWeight: '600' }}
+                                                    />
+                                                    <button className="sn-button-ghost" style={{ flexShrink: 0 }} onClick={() => onShowPermissions(customRoles.indexOf(role))} title="Permissions">⚙️</button>
+                                                    <button className="sn-button-ghost" style={{ flexShrink: 0 }} onClick={() => setCustomRoles(customRoles.filter(r => r !== role))} title="Delete">🗑️</button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <button className="sn-button-outline" style={{ width: '100%', marginTop: '10px', borderStyle: 'dashed' }} onClick={() => setCustomRoles([...customRoles, { name: "NEW ROLE", color: "#FFFFFF", permissions: "member" }])}>
+                                            + Add New Role
+                                        </button>
                                     </div>
-                                ))}
-                                <button className="add-btn" onClick={() => {
-                                    setNewZoneName("");
-                                    setNewZoneRoles([]);
-                                    setShowNewZoneModal(true);
-                                }}>+ New Zone</button>
-                            </div>
-
-                            {/* Right Panel: Active Zone Details */}
-                            <div className="zone-detail-panel">
-                                {customZones[activeZoneIndex] ? (
-                                    <>
-
-                                        <div className="ch-list">
-                                            {customZones[activeZoneIndex].channels.map((ch, cidx) => (
-                                                <div key={cidx} className="ch-item">
-                                                    <div className="ch-item-header">
-                                                        <span
-                                                            className="ch-type-toggle"
-                                                            onClick={() => {
-                                                                const newZones = [...customZones];
-                                                                newZones[activeZoneIndex].channels[cidx].type = ch.type === 'text' ? 'voice' : 'text';
-                                                                setCustomZones(newZones);
-                                                            }}
-                                                            title="Toggle Text/Voice"
-                                                        >
-                                                            {ch.type === 'text' ? '#' : '🔊'}
-                                                        </span>
+                                </div>
+                            ) : (
+                                <div className="split-view">
+                                    {/* Left Panel: Zone List */}
+                                    <div className="zone-list-panel">
+                                        {customZones.map((zone, idx) => (
+                                            <div
+                                                key={idx}
+                                                className={`zone-item-select ${activeZoneIndex === idx ? 'active' : ''}`}
+                                                onClick={() => setActiveZoneIndex(idx)}
+                                            >
+                                                <div className="zone-item-header">
+                                                    <div className="zone-item-info">
                                                         <input
                                                             type="text"
-                                                            value={ch.name || ""}
+                                                            className="bare-input"
+                                                            value={zone.name || ""}
+                                                            placeholder="UNTITLED ZONE"
                                                             onChange={(e) => {
                                                                 const newZones = [...customZones];
-                                                                newZones[activeZoneIndex].channels[cidx].name = e.target.value;
+                                                                newZones[idx].name = e.target.value;
                                                                 setCustomZones(newZones);
                                                             }}
+                                                            onClick={(e) => e.stopPropagation()}
                                                         />
+                                                        <p>{zone.channels.length} Channels • {zone.allowedRoles?.length || 0} Roles</p>
+                                                    </div>
+                                                    <div className="zone-item-actions">
                                                         <button
-                                                            className="delete-btn"
-                                                            onClick={() => {
-                                                                const newZones = [...customZones];
-                                                                newZones[activeZoneIndex].channels = newZones[activeZoneIndex].channels.filter((_, ci) => ci !== cidx);
+                                                            className="sn-button-ghost"
+                                                            style={{ padding: '4px' }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setPermModalZoneIdx(idx);
+                                                                setShowPermModal(true);
+                                                            }}
+                                                        >⚙️</button>
+                                                        <button
+                                                            className="sn-button-ghost"
+                                                            style={{ padding: '4px', color: '#ef4444' }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const newZones = customZones.filter((_, i) => i !== idx);
                                                                 setCustomZones(newZones);
+                                                                if (activeZoneIndex === idx) setActiveZoneIndex(Math.max(0, idx - 1));
+                                                                else if (activeZoneIndex > idx) setActiveZoneIndex(activeZoneIndex - 1);
                                                             }}
                                                         >×</button>
                                                     </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <button className="sn-button-outline" style={{ marginTop: '10px', borderStyle: 'dashed' }} onClick={() => {
+                                            setNewZoneName("");
+                                            setNewZoneRoles([]);
+                                            setShowNewZoneModal(true);
+                                        }}>+ New Zone</button>
+                                    </div>
 
-                                                    <div className="role-toggler-wrap ch-access">
-                                                        <span className="access-label">ACCESS:</span>
-                                                        {customRoles.map((r, rIdx) => (
-                                                            <span
-                                                                key={rIdx}
-                                                                className={`role-badge mini ${ch.allowedRoles?.includes(r.name) ? 'active' : ''}`}
-                                                                style={{
-                                                                    borderColor: r.color,
-                                                                    color: ch.allowedRoles?.includes(r.name) ? 'white' : r.color,
-                                                                    background: ch.allowedRoles?.includes(r.name) ? r.color : 'transparent',
-                                                                    fontSize: '9px',
-                                                                    padding: '2px 6px'
-                                                                }}
+                                    {/* Right Panel: Active Zone Details */}
+                                    <div className="zone-detail-panel" style={{ background: '#f8fafc', borderRadius: '16px', padding: '16px' }}>
+                                        {customZones[activeZoneIndex] ? (
+                                            <div className="ch-list" style={{ maxHeight: '450px', overflowY: 'auto', paddingRight: '5px' }}>
+                                                {customZones[activeZoneIndex].channels.map((ch, cidx) => (
+                                                    <div key={cidx} className="sn-card">
+                                                        <div className="sn-card-header">
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                                                                <span
+                                                                    className="sn-button-ghost"
+                                                                    style={{ width: '28px', height: '28px', background: '#f1f5f9' }}
+                                                                    onClick={() => {
+                                                                        const newZones = [...customZones];
+                                                                        newZones[activeZoneIndex].channels[cidx].type = ch.type === 'text' ? 'voice' : 'text';
+                                                                        setCustomZones(newZones);
+                                                                    }}
+                                                                >
+                                                                    {ch.type === 'text' ? '#' : '🔊'}
+                                                                </span>
+                                                                <input
+                                                                    type="text"
+                                                                    className="bare-input"
+                                                                    style={{ fontWeight: '600', fontSize: '14px' }}
+                                                                    value={ch.name || ""}
+                                                                    onChange={(e) => {
+                                                                        const newZones = [...customZones];
+                                                                        newZones[activeZoneIndex].channels[cidx].name = e.target.value;
+                                                                        setCustomZones(newZones);
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                            <button
+                                                                className="sn-button-ghost"
+                                                                style={{ color: '#ef4444' }}
                                                                 onClick={() => {
                                                                     const newZones = [...customZones];
-                                                                    const currentAllowed = newZones[activeZoneIndex].channels[cidx].allowedRoles || [];
-                                                                    if (currentAllowed.includes(r.name)) {
-                                                                        newZones[activeZoneIndex].channels[cidx].allowedRoles = currentAllowed.filter(n => n !== r.name);
-                                                                    } else {
-                                                                        newZones[activeZoneIndex].channels[cidx].allowedRoles = [...currentAllowed, r.name];
-                                                                    }
+                                                                    newZones[activeZoneIndex].channels = newZones[activeZoneIndex].channels.filter((_, ci) => ci !== cidx);
                                                                     setCustomZones(newZones);
                                                                 }}
-                                                            >
-                                                                {r.name}
-                                                            </span>
-                                                        ))}
+                                                            >×</button>
+                                                        </div>
+                                                        <div className="sn-card-content" style={{ gap: '12px', padding: '16px' }}>
+                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', width: '100%' }}>
+                                                                <span style={{ fontSize: '10px', fontWeight: '700', color: '#94a3b8', marginRight: '4px' }}>ACCESS:</span>
+                                                                {customRoles.map((r, rIdx) => {
+                                                                    const isActive = ch.allowedRoles?.includes(r.name);
+                                                                    return (
+                                                                        <span
+                                                                            key={rIdx}
+                                                                            className={`sn-badge ${isActive ? 'sn-badge-pink' : 'sn-badge-outline'}`}
+                                                                            style={{
+                                                                                cursor: 'pointer',
+                                                                                borderColor: isActive ? r.color : '#e2e8f0',
+                                                                                color: isActive ? (r.color === '#FFFFFF' ? '#ec4899' : r.color) : '#64748b',
+                                                                                backgroundColor: isActive ? `${r.color}15` : 'transparent',
+                                                                                marginBottom: '2px'
+                                                                            }}
+                                                                            onClick={() => {
+                                                                                const newZones = [...customZones];
+                                                                                const currentAllowed = newZones[activeZoneIndex].channels[cidx].allowedRoles || [];
+                                                                                if (currentAllowed.includes(r.name)) {
+                                                                                    newZones[activeZoneIndex].channels[cidx].allowedRoles = currentAllowed.filter(n => n !== r.name);
+                                                                                } else {
+                                                                                    newZones[activeZoneIndex].channels[cidx].allowedRoles = [...currentAllowed, r.name];
+                                                                                }
+                                                                                setCustomZones(newZones);
+                                                                            }}
+                                                                        >
+                                                                            {r.name}
+                                                                        </span>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
                                                     </div>
+                                                ))}
+                                                <div className="add-ch-group" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '10px' }}>
+                                                    <button className="sn-button-outline" onClick={() => {
+                                                        const newZones = [...customZones];
+                                                        newZones[activeZoneIndex].channels.push({ name: "new-text", type: "text", allowedRoles: [] });
+                                                        setCustomZones(newZones);
+                                                    }}>+ Add Text</button>
+                                                    <button className="sn-button-outline" onClick={() => {
+                                                        const newZones = [...customZones];
+                                                        newZones[activeZoneIndex].channels.push({ name: "NEW VOICE", type: "voice", allowedRoles: [] });
+                                                        setCustomZones(newZones);
+                                                    }}>+ Add Voice</button>
                                                 </div>
-                                            ))}
-                                            <div className="add-ch-group">
-                                                <button className="add-ch-btn" onClick={() => {
-                                                    const newZones = [...customZones];
-                                                    newZones[activeZoneIndex].channels.push({ name: "new-text", type: "text", allowedRoles: [] });
-                                                    setCustomZones(newZones);
-                                                }}>+ Add Text</button>
-                                                <button className="add-ch-btn" onClick={() => {
-                                                    const newZones = [...customZones];
-                                                    newZones[activeZoneIndex].channels.push({ name: "NEW VOICE", type: "voice", allowedRoles: [] });
-                                                    setCustomZones(newZones);
-                                                }}>+ Add Voice</button>
                                             </div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="empty-state">
-                                        <span>👈</span>
-                                        <p>Select a Zone to edit</p>
+                                        ) : (
+                                            <div className="empty-state">
+                                                <span>👈</span>
+                                                <p>Select a Zone to edit</p>
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
                     )}
-                    <div className="setup-footer" style={{ marginTop: '20px' }}>
+
+                    <div className="setup-footer" style={{ marginTop: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '20px' }}>
                         <button className="modal-btn primary-long" onClick={onDeploy} disabled={isDeploying}>
-                            {isDeploying ? "Deploying..." : "Finalize & Deploy 🚀"}
+                            {isDeploying ? "Deploying..." : (isCustomMode ? "Finalize & Magic Deploy 🚀" : "Magic Deploy 🪄")}
                         </button>
                     </div>
                 </div>
@@ -366,37 +420,55 @@ const SetupModal = ({
             {/* Permission Modal */}
             {showPermModal && permModalZoneIdx !== null && (
                 <div className="sub-modal-overlay" onClick={() => setShowPermModal(false)}>
-                    <div className="sub-modal perm-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="sub-modal-header">
+                    <div className="sn-sub-modal glass animate-pop" onClick={(e) => e.stopPropagation()}>
+                        <div className="sn-sub-header">
                             <h4>🔐 Role Permissions</h4>
                             <p>Select roles that can access "{customZones[permModalZoneIdx]?.name}"</p>
                         </div>
-                        <div className="perm-role-list">
-                            {customRoles.map((r, rIdx) => {
-                                const isSelected = customZones[permModalZoneIdx]?.allowedRoles?.includes(r.name);
-                                return (
-                                    <div
-                                        key={rIdx}
-                                        className={`perm-role-item ${isSelected ? 'selected' : ''}`}
-                                        onClick={() => {
-                                            const newZones = [...customZones];
-                                            const currentAllowed = newZones[permModalZoneIdx].allowedRoles || [];
-                                            if (currentAllowed.includes(r.name)) {
-                                                newZones[permModalZoneIdx].allowedRoles = currentAllowed.filter(n => n !== r.name);
-                                            } else {
-                                                newZones[permModalZoneIdx].allowedRoles = [...currentAllowed, r.name];
-                                            }
-                                            setCustomZones(newZones);
-                                        }}
-                                    >
-                                        <span className="perm-role-color" style={{ background: r.color }}></span>
-                                        <span className="perm-role-name">{r.name}</span>
-                                        <span className="perm-role-check">{isSelected ? '✓' : ''}</span>
-                                    </div>
-                                );
-                            })}
+                        <div className="sn-field-group">
+                            <label className="sn-label-caps">Allowed Roles</label>
+                            {customRoles.length > 5 && (
+                                <div className="sn-search-wrapper">
+                                    <span className="sn-search-icon">🔍</span>
+                                    <input
+                                        type="text"
+                                        className="sn-search-input"
+                                        placeholder="Search roles..."
+                                        value={roleSearch}
+                                        onChange={(e) => setRoleSearch(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            <div className="sn-role-scroll">
+                                {filteredRoles.map((r, rIdx) => {
+                                    const roleOriginalIdx = customRoles.indexOf(r);
+                                    const isSelected = customZones[permModalZoneIdx]?.allowedRoles?.includes(r.name);
+                                    return (
+                                        <div
+                                            key={rIdx}
+                                            className={`sn-role-item-card ${isSelected ? 'active' : ''}`}
+                                            onClick={() => {
+                                                const newZones = [...customZones];
+                                                const currentAllowed = newZones[permModalZoneIdx].allowedRoles || [];
+                                                if (currentAllowed.includes(r.name)) {
+                                                    newZones[permModalZoneIdx].allowedRoles = currentAllowed.filter(n => n !== r.name);
+                                                } else {
+                                                    newZones[permModalZoneIdx].allowedRoles = [...currentAllowed, r.name];
+                                                }
+                                                setCustomZones(newZones);
+                                            }}
+                                        >
+                                            <span className="sn-role-indicator" style={{ background: r.color, boxShadow: `0 0 10px ${r.color}50` }}></span>
+                                            <span className="sn-role-text">{r.name}</span>
+                                            {isSelected && <span style={{ color: '#ec4899', fontWeight: '800' }}>✓</span>}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
-                        <button className="sub-modal-btn" onClick={() => setShowPermModal(false)}>Done ✨</button>
+                        <button className="sn-btn-primary" style={{ width: '100%' }} onClick={() => setShowPermModal(false)}>
+                            Save Settings ✨
+                        </button>
                     </div>
                 </div>
             )}
@@ -404,29 +476,43 @@ const SetupModal = ({
             {/* New Zone Modal */}
             {showNewZoneModal && (
                 <div className="sub-modal-overlay" onClick={() => setShowNewZoneModal(false)}>
-                    <div className="sub-modal new-zone-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="sub-modal-header">
+                    <div className="sn-sub-modal glass animate-pop" onClick={(e) => e.stopPropagation()}>
+                        <div className="sn-sub-header">
                             <h4>✨ Create New Zone</h4>
                             <p>Enter zone name and select roles</p>
                         </div>
-                        <div className="new-zone-form">
-                            <label>Zone Name</label>
+                        <div className="sn-field-group">
+                            <label className="sn-label-caps">Zone Name</label>
                             <input
                                 type="text"
-                                className="new-zone-input"
+                                className="sn-input"
                                 placeholder="e.g. VIP LOUNGE"
                                 value={newZoneName}
                                 onChange={(e) => setNewZoneName(e.target.value)}
                                 autoFocus
                             />
-                            <label>Allowed Roles</label>
-                            <div className="perm-role-list compact">
-                                {customRoles.map((r, rIdx) => {
+                        </div>
+                        <div className="sn-field-group">
+                            <label className="sn-label-caps">Initial Roles</label>
+                            {customRoles.length > 5 && (
+                                <div className="sn-search-wrapper">
+                                    <span className="sn-search-icon">🔍</span>
+                                    <input
+                                        type="text"
+                                        className="sn-search-input"
+                                        placeholder="Search roles..."
+                                        value={roleSearch}
+                                        onChange={(e) => setRoleSearch(e.target.value)}
+                                    />
+                                </div>
+                            )}
+                            <div className="sn-role-scroll">
+                                {filteredRoles.map((r, rIdx) => {
                                     const isSelected = newZoneRoles.includes(r.name);
                                     return (
                                         <div
                                             key={rIdx}
-                                            className={`perm-role-item ${isSelected ? 'selected' : ''}`}
+                                            className={`sn-role-item-card ${isSelected ? 'active' : ''}`}
                                             onClick={() => {
                                                 if (isSelected) {
                                                     setNewZoneRoles(newZoneRoles.filter(n => n !== r.name));
@@ -435,17 +521,17 @@ const SetupModal = ({
                                                 }
                                             }}
                                         >
-                                            <span className="perm-role-color" style={{ background: r.color }}></span>
-                                            <span className="perm-role-name">{r.name}</span>
-                                            <span className="perm-role-check">{isSelected ? '✓' : ''}</span>
+                                            <span className="sn-role-indicator" style={{ background: r.color, boxShadow: `0 0 10px ${r.color}50` }}></span>
+                                            <span className="sn-role-text">{r.name}</span>
+                                            {isSelected && <span style={{ color: '#ec4899', fontWeight: '800' }}>✓</span>}
                                         </div>
                                     );
                                 })}
                             </div>
                         </div>
-                        <div className="sub-modal-actions">
-                            <button className="sub-modal-btn cancel" onClick={() => setShowNewZoneModal(false)}>Cancel</button>
-                            <button className="sub-modal-btn primary" onClick={() => {
+                        <div className="sn-action-grid">
+                            <button className="sn-btn-cancel" onClick={() => setShowNewZoneModal(false)}>Cancel</button>
+                            <button className="sn-btn-primary" onClick={() => {
                                 const newZones = [...customZones, {
                                     name: newZoneName || "NEW ZONE",
                                     channels: [],

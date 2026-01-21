@@ -17,7 +17,18 @@ export default function ServerSelection() {
 
     const [lastManagedId, setLastManagedId] = useState(null);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [imgErrors, setImgErrors] = useState({});
     const profileRef = useRef(null);
+
+    const handleImgError = (id) => {
+        setImgErrors(prev => ({ ...prev, [id]: true }));
+    };
+
+    const getIconUrl = (id, hash) => {
+        if (!hash) return null;
+        const format = hash.startsWith('a_') ? 'gif' : 'png';
+        return `https://cdn.discordapp.com/icons/${id}/${hash}.${format}`;
+    };
 
     // Modals
     const [showChangelog, setShowChangelog] = useState(false);
@@ -212,8 +223,13 @@ export default function ServerSelection() {
                             }}
                         >
                             <div className="server-icon-wrapper">
-                                {guild.icon ? (
-                                    <img src={`https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png`} alt={guild.name} className="server-icon" />
+                                {guild.icon && !imgErrors[guild.id] ? (
+                                    <img
+                                        src={getIconUrl(guild.id, guild.icon)}
+                                        alt={guild.name}
+                                        className="server-icon"
+                                        onError={() => handleImgError(guild.id)}
+                                    />
                                 ) : (
                                     <div className="server-icon-placeholder">{guild.name[0]}</div>
                                 )}

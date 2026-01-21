@@ -4,6 +4,7 @@
 2. **NO EXCEPTIONS:** ไม่อนุญาติให้ละเว้นการอ่านไฟล์ GEMINI.md ไม่ว่าจะด้วยจุดประสงค์ใดก็ตาม
 3. **DON'T RUINED MY PROJECT AND LOGIC:** ไม่อนุญาติให้ทำให้ Project หรือ Logic ของผมเสียหาย
 4. **NO HALLUCINATION:** ห้ามมโน หรือคิดอะไรเองเด็ดขาด
+5. **ALWAYS CHECK CONTEXT7 , REF and ShadCN:** Always use Context7 , REF and ShadCN MCP when I need library/API documentation, code generation , UI Design, setup or configuration steps without me having to explicitly ask.
 
 ---
 

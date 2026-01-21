@@ -5882,9 +5882,453 @@ h3 {
   transition: width 0.5s ease-out;
 }
 
+/* Sub-Modal Specific Styles (Image-matched) */
+.sn-sub-modal {
+  background: white;
+  border-radius: 28px;
+  padding: 30px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.sn-sub-header {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.sn-sub-header h4 {
+  color: #ec4899;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sn-sub-header p {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.sn-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sn-label-caps {
+  font-size: 11px;
+  font-weight: 800;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.sn-role-scroll {
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sn-role-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sn-role-scroll::-webkit-scrollbar-thumb {
+  background: rgba(236, 72, 153, 0.2);
+  border-radius: 10px;
+}
+
+.sn-search-wrapper {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.sn-search-input {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 8px 12px 8px 34px;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.sn-search-input:focus {
+  border-color: #ec4899;
+  background: white;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.1);
+}
+
+.sn-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.sn-role-item-card {
+  background: white;
+  border: 1px solid #f1f5f9;
+  padding: 12px 16px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+.sn-role-item-card:hover {
+  border-color: #ec4899;
+  background: rgba(255, 183, 226, 0.05);
+}
+
+.sn-role-item-card.active {
+  border-color: #ec4899;
+  background: white;
+  box-shadow: 0 4px 12px rgba(236, 72, 153, 0.1);
+}
+
+.sn-role-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.sn-role-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #475569;
+  flex: 1;
+}
+
+.sn-action-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.sn-btn-primary {
+  background: #ffb7e2;
+  /* Matching the pink in the image */
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sn-btn-primary:hover {
+  background: #f472b6;
+  transform: translateY(-1px);
+}
+
+.sn-btn-cancel {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  border-radius: 12px;
+  padding: 14px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sn-btn-cancel:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
 /* =====================================================================
-   CUSTOM TEMPLATE MODAL - PREMIUM STYLES (An An v4.1)
+   SHADCN-INSPIRED UI COMPONENTS (An An v4.1)
    ===================================================================== */
+
+/* Tabs Component */
+.sn-tabs {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.sn-tabs-list {
+  display: flex;
+  background: rgba(241, 245, 249, 0.8);
+  padding: 4px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  align-self: flex-start;
+}
+
+.sn-tabs-trigger {
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+}
+
+.sn-tabs-trigger:hover {
+  color: #475569;
+}
+
+.sn-tabs-trigger.active {
+  background: white;
+  color: #ec4899;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Card Component */
+.sn-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.2s;
+  margin-bottom: 12px;
+  width: 100%;
+  display: block;
+  /* Ensure it behaves as a block */
+}
+
+.sn-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.sn-card-header {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+  min-height: 48px;
+}
+
+.sn-card-content {
+  padding: 12px 16px;
+  min-height: 50px;
+  /* Ensure cards don't squash */
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  /* Allow wrapping for badges */
+}
+
+/* Fix for bare-input disappearing in some containers */
+.sn-card .bare-input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+}
+
+/* Shadcn-style Badges */
+.sn-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  transition: colors 0.2s;
+}
+
+.sn-badge-outline {
+  border-color: #e2e8f0;
+  color: #64748b;
+  background: transparent;
+}
+
+.sn-badge-pink {
+  background-color: rgba(255, 183, 226, 0.2);
+  color: #ec4899;
+  border-color: rgba(255, 183, 226, 0.4);
+}
+
+/* Standard Inputs & Buttons */
+.sn-input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  padding: 8px 12px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+  background: white;
+}
+
+.sn-input:focus {
+  border-color: #ec4899;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.1);
+}
+
+.sn-button-ghost {
+  background: transparent;
+  color: #64748b;
+  border: none;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sn-button-ghost:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.sn-button-outline {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sn-button-outline:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+/* =====================================================================
+   STRUCTURE MANAGER (SelectiveModal) - PREMIUM STYLES (An An v4.1)
+   ===================================================================== */
+.sn-selective-card {
+  max-height: 500px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.sn-selective-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  cursor: pointer;
+  gap: 12px;
+  margin-bottom: 2px;
+}
+
+.sn-selective-item:hover {
+  background: rgba(241, 245, 249, 0.8);
+}
+
+.sn-selective-item.selected {
+  background: rgba(236, 72, 153, 0.05);
+}
+
+.sn-selective-cat {
+  font-weight: 800;
+  font-size: 11px;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  margin-top: 16px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.sn-selective-cat:hover {
+  background: #f1f5f9;
+}
+
+.sn-selective-cat .m-checkbox {
+  margin-right: 4px;
+}
+
+.sn-selective-ch {
+  margin-left: 12px;
+  border-left: 1px solid #f1f5f9;
+  padding-left: 16px;
+}
+
+.sn-selective-ch-icon {
+  width: 20px;
+  display: flex;
+  justify-content: center;
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+.sn-selective-ch-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.sn-custom-checkbox {
+  width: 18px;
+  height: 18px;
+  border: 2px solid #e2e8f0;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  background: white;
+}
+
+.sn-custom-checkbox.checked {
+  background: #ec4899;
+  border-color: #ec4899;
+  color: white;
+}
+
+.sn-custom-checkbox.checked::after {
+  content: '✓';
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.sn-footer-stats {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.sn-footer-stats b {
+  color: #ec4899;
+}
 
 /* Wide Card for Custom Template Modal */
 .modal-card.wide-card {

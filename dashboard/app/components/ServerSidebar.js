@@ -11,7 +11,19 @@ export default function ServerSidebar() {
     const router = useRouter();
     const pathname = usePathname();
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [imgErrors, setImgErrors] = useState({});
     const guildRef = useRef(null);
+
+    const getIconUrl = (id, hash) => {
+        if (!hash) return null;
+        if (hash.startsWith('http')) return hash;
+        const format = hash.startsWith('a_') ? 'gif' : 'png';
+        return `https://cdn.discordapp.com/icons/${id}/${hash}.${format}`;
+    };
+
+    const handleImgError = (id) => {
+        setImgErrors(prev => ({ ...prev, [id]: true }));
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -32,8 +44,13 @@ export default function ServerSidebar() {
             <div className="guild-switcher-wrapper" ref={guildRef}>
                 <div className={`guild-selector ${isDropdownOpen ? 'active' : ''}`} onClick={() => setIsDropdownOpen(!isDropdownOpen)}>
                     <div className="guild-current">
-                        {guildData.icon ?
-                            <img className="guild-icon-small" src={guildData.icon.startsWith('http') ? guildData.icon : `https://cdn.discordapp.com/icons/${guildId}/${guildData.icon}.png`} alt="G" />
+                        {guildData.icon && !imgErrors[guildId] ?
+                            <img
+                                className="guild-icon-small"
+                                src={getIconUrl(guildId, guildData.icon)}
+                                alt="G"
+                                onError={() => handleImgError(guildId)}
+                            />
                             : <div className="guild-init-small">{guildData.name[0]}</div>
                         }
                         <span className="guild-name">{guildData.name}</span>
@@ -48,8 +65,13 @@ export default function ServerSidebar() {
                                 setIsDropdownOpen(false);
                                 router.push(`/servers/${g.id}`);
                             }}>
-                                {g.icon ?
-                                    <img src={`https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png`} alt="G" className="guild-icon-mini" /> :
+                                {g.icon && !imgErrors[g.id] ?
+                                    <img
+                                        src={getIconUrl(g.id, g.icon)}
+                                        alt="G"
+                                        className="guild-icon-mini"
+                                        onError={() => handleImgError(g.id)}
+                                    /> :
                                     <div className="guild-init-mini">{g.name[0]}</div>
                                 }
                                 <span>{g.name}</span>
