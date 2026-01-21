@@ -103,15 +103,76 @@ async def get_user_stats(user_id: str):
 async def get_user_plan(user_id: str):
     # Papa is ALWAYS Premium/Pro Lifetime 👑
     PAPA_UID = "956866340474478642"
-    if str(user_id) == PAPA_UID:
-        return {"plan_type": "premium", "expires_at": None, "is_lifetime": True}
+    # if str(user_id) == PAPA_UID:
+    #     return {"plan_type": "premium", "expires_at": None, "is_lifetime": True}
         
     if not supabase: return {"plan_type": "free", "expires_at": None}
     
-    res = supabase.table("user_stats").select("plan_type, expires_at").eq("user_id", str(user_id)).execute()
+    res = supabase.table("user_stats").select("plan_type, expires_at, trial_claimed").eq("user_id", str(user_id)).execute()
     if res.data:
         return res.data[0]
-    return {"plan_type": "free", "expires_at": None}
+    return {"plan_type": "free", "expires_at": None, "trial_claimed": False}
+
+async def activate_free_trial(user_id: str):
+    """
+    Activates a 7-day free trial for the user.
+    """
+    if not supabase: return False
+
+    # Check if already claimed
+    current_plan = await get_user_plan(user_id)
+    if current_plan.get("trial_claimed") or current_plan.get("plan_type") != "free":
+        return False
+
+    # Activate Trial
+    expires_at = (datetime.utcnow() + timedelta(days=7)).isoformat()
+    
+    # Update user_stats
+    data = {
+        "plan_type": "pro",
+        "expires_at": expires_at,
+        "trial_claimed": True,
+        "notification_sent": False
+    }
+    
+    # Check if entry exists to update or insert
+    res = supabase.table("user_stats").select("*").eq("user_id", str(user_id)).execute()
+    if res.data:
+         supabase.table("user_stats").update(data).eq("user_id", str(user_id)).execute()
+    else:
+         data["user_id"] = str(user_id)
+         supabase.table("user_stats").insert(data).execute()
+         
+    return True
+
+async def check_expiring_trials():
+    """
+    Checks for trials expiring in exactly 1 day (within the next hour window) and returns list of user_ids to notify.
+    Also updates notification_sent to True.
+    """
+    if not supabase: return []
+    
+    # We want to notify users effectively 1 day before expiry.
+    # Logic: Find users with plan_type='pro' AND trial_claimed=true AND notification_sent=false AND expires_at <= now + 24h
+    
+    tomorrow = (datetime.utcnow() + timedelta(days=1)).isoformat()
+    
+    # Supabase filter: expires_at <= tomorrow (meaning less than 24 hours left)
+    res = supabase.table("user_stats").select("user_id, expires_at")\
+        .eq("plan_type", "pro")\
+        .eq("trial_claimed", True)\
+        .eq("notification_sent", False)\
+        .lte("expires_at", tomorrow)\
+        .execute()
+        
+    ids_to_notify = []
+    if res.data:
+        for user in res.data:
+            ids_to_notify.append(user["user_id"])
+            # Mark as notified immediately to prevent double sending
+            supabase.table("user_stats").update({"notification_sent": True}).eq("user_id", user["user_id"]).execute()
+            
+    return ids_to_notify
 
 async def claim_mission_reward(user_id: str, mission_key: str):
     if not supabase: return {"success": False, "error": "Database not connected"}
