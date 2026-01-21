@@ -23,6 +23,7 @@ from utils.supabase_client import (
     get_closed_tickets
 )
 from utils.social_manager import SocialManager
+from utils.moderator_manager import ModeratorManager
 
 load_dotenv() # Load variables from .env
 
@@ -688,6 +689,11 @@ class AnAnBot(commands.Bot):
         intents.message_content = True
         intents.presences = True # Needed for counting online members
         super().__init__(command_prefix="!", intents=intents, help_command=None)
+        
+        self.db_ready = False
+        self.social_manager = SocialManager(self)
+        self.moderator = ModeratorManager(self)
+        
         self.update_stats_loop.start()
         self.web_server_task = None
 
@@ -1198,6 +1204,18 @@ class AnAnBot(commands.Bot):
                 await save_guild_settings(guild_id, {"reaction_roles_config": config})
                 return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
 
+            elif action == "save_moderator_settings":
+                user_id = body.get("user_id")
+                plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+
+                config = body.get("config", {})
+                await save_guild_settings(guild_id, {"moderator_config": config})
+                # Clear cache to reflect changes immediately
+                self.moderator.config_cache.pop(int(guild_id), None)
+                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+
             elif action == "post_reaction_role":
                 user_id = body.get("user_id")
                 plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
@@ -1547,6 +1565,9 @@ class AnAnBot(commands.Bot):
             print(f"Sent welcome to {member.name}")
             # Mission: Invite Friends (Attribute to the owner or recruiter)
             await update_mission_progress(str(member.guild.owner_id), "invite_friends", 1)
+        
+        # 3. Moderator System
+        await self.moderator.on_member_join(member)
 
     async def on_member_remove(self, member):
         # 1. Update Stats
@@ -1557,6 +1578,9 @@ class AnAnBot(commands.Bot):
         success = await send_goodbye_message(member, settings=settings)
         if success:
             print(f"Sent goodbye for {member.name}")
+            
+        # 3. Moderator System
+        await self.moderator.on_member_remove(member)
 
     # Security: Superuser Check (Only Papa and Guild Owner)
     def is_superuser(self, user, guild):
@@ -1738,6 +1762,19 @@ class AnAnBot(commands.Bot):
     async def interaction_check(self, inter: disnake.ApplicationCommandInteraction) -> bool:
         # Only verify slash commands here, implementation handled in commands
         return True
+
+    async def on_message_delete(self, message):
+        await self.moderator.on_message_delete(message)
+
+    async def on_message_edit(self, before, after):
+        await self.moderator.on_message_edit(before, after)
+
+    async def on_message(self, message):
+        # Core Moderation Check
+        await self.moderator.check_message(message)
+        
+        # Then process commands if it's not a moderation trigger
+        await self.process_commands(message)
 
 bot = AnAnBot()
 
