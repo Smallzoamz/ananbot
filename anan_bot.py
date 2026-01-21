@@ -1418,6 +1418,16 @@ class AnAnBot(commands.Bot):
                 await save_guild_settings(guild_id, {"ticket_config": settings})
                 return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
 
+            elif action == "send_ticket_panel":
+                user_id = body.get("user_id")
+                settings = body.get("settings", {})
+                
+                result = await self.perform_ticket_setup(guild, settings, user_id)
+                if result.get("success"):
+                    return web.json_response(result, headers={"Access-Control-Allow-Origin": "*"})
+                else:
+                    return web.json_response(result, status=400, headers={"Access-Control-Allow-Origin": "*"})
+
             elif action == "test_social_alert":
                 user_id = body.get("user_id")
                 if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
