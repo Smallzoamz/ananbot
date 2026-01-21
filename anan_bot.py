@@ -1572,14 +1572,18 @@ class AnAnBot(commands.Bot):
                 
                 # 4. First Message
                 view = TicketControlView()
-                mention_text = f"{inter.user.mention} {role.mention if role_id and role else ''}"
                 
+                # Base Greeting
+                greeting = f"{inter.user.mention} {role.mention if role_id and role else ''} "
+                
+                # Custom Content (Top of Embed)
                 if topic.get('first_msg'):
-                     # Use Custom Message as Description
-                    description = topic.get('first_msg').replace("{user}", inter.user.mention)
+                    greeting += f"\n\n{topic.get('first_msg').replace('{user}', inter.user.mention)}"
                 else:
-                    # Default Description
-                    description = f"สวัสดีค่ะ {inter.user.mention}! \n{topic.get('desc', 'เจ้าหน้าที่กำลังจะมารับเรื่องนะคะ 🌸')}"
+                    greeting += "\n\nสวัสดีค่ะ มีอะไรให้เราช่วยไหมคะ?"
+
+                # Embed Content (Inside Box)
+                description = topic.get('desc', 'เจ้าหน้าที่กำลังจะมารับเรื่องนะคะ 🌸').replace("{user}", inter.user.mention)
 
                 embed = disnake.Embed(
                     title=f"📩 Ticket: {topic.get('name')}",
@@ -1589,7 +1593,7 @@ class AnAnBot(commands.Bot):
                 embed.set_footer(text="An An Ticket System 🎫", icon_url=inter.guild.me.display_avatar.url if inter.guild.me.display_avatar else None)
                 embed.timestamp = datetime.datetime.now()
                 
-                await new_ch.send(content=mention_text, embed=embed, view=view)
+                await new_ch.send(content=greeting, embed=embed, view=view)
                 
                 # 5. DB Record
                 await create_ticket(inter.guild.id, inter.user.id, new_ch.id, code, current_id)
