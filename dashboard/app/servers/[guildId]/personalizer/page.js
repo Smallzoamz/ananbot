@@ -13,7 +13,6 @@ export default function PersonalizerPage() {
     const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState({
         bot_nickname: "An An",
-        bot_bio: "Cheerfully serving Papa! 🌸✨",
         activity_type: "LISTENING", // PLAYING, LISTENING, WATCHING, COMPETING
         status_text: "/help",
         avatar_url: "/assets/mascot/ANAN1.png",
@@ -255,17 +254,6 @@ export default function PersonalizerPage() {
                                 disabled={!isPro}
                             />
                         </div>
-                        <div className="input-group">
-                            <label>{t.personalizer.bio}</label>
-                            <textarea
-                                className="glass-input"
-                                rows="3"
-                                value={settings.bot_bio || ""}
-                                onChange={(e) => setSettings({ ...settings, bot_bio: e.target.value })}
-                                placeholder={t.personalizer.bioPlaceholder}
-                                disabled={!isPro}
-                            />
-                        </div>
                     </div>
                 </div>
 
@@ -309,10 +297,6 @@ export default function PersonalizerPage() {
                                         </div>
                                         <div className="profile-username">anan_bot#0001</div>
                                         <div className="profile-divider"></div>
-                                        <div className="profile-section">
-                                            <h5>ABOUT ME</h5>
-                                            <div className="profile-bio">{settings.bot_bio}</div>
-                                        </div>
                                         <div className="profile-section">
                                             <h5>{(activityLabel[settings.activity_type] || "ACTIVITY").toUpperCase()}</h5>
                                             <div className="profile-activity">
