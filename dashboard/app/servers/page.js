@@ -3,10 +3,12 @@ import React, { useEffect, useState, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../context/LanguageContext";
+import ResultModal from "../components/ResultModal";
+import ChangelogModal from "../components/ChangelogModal";
 
 export default function ServerSelection() {
     const { data: session, status: authStatus } = useSession();
-    const { t } = useLanguage();
+    const { t, language, toggleLanguage } = useLanguage();
     const [userGuilds, setUserGuilds] = useState([]);
     const [botGuilds, setBotGuilds] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -16,6 +18,11 @@ export default function ServerSelection() {
     const [lastManagedId, setLastManagedId] = useState(null);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const profileRef = useRef(null);
+
+    // Modals
+    const [showChangelog, setShowChangelog] = useState(false);
+    const [modalState, setModalState] = useState({ show: false, type: 'info', message: '' });
+    const isThai = language === 'th';
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -146,25 +153,33 @@ export default function ServerSelection() {
                         <div className="profile-dropdown glass animate-pop">
                             <div className="dropdown-section">
                                 <div className="section-label">AN AN BOT</div>
-                                <div className="dropdown-link">Personal rank card</div>
-                                <div className="dropdown-link">Pro</div>
-                                <div className="dropdown-link">AI Characters</div>
+                                <div className="dropdown-link" onClick={() => {
+                                    if (lastManagedId) router.push(`/servers/${lastManagedId}/rank-card`);
+                                    else alert(t.selection.selectFirst || "Please select a server first 🌸");
+                                }}>{t.dashboard?.rankCard || "Personal Rank Card"}</div>
+                                <div className="dropdown-link" onClick={() => {
+                                    if (lastManagedId) router.push(`/servers/${lastManagedId}/premium`);
+                                    else alert(t.selection.selectFirst || "Please select a server first 🌸");
+                                }}>{t.dashboard?.pro || "Pro"}</div>
+                                <div className="dropdown-link" onClick={() => setModalState({ show: true, type: 'info', message: isThai ? "ระบบนี้กำลังมาเร็วๆ นี้ค่า สปอยล์: คุยเก่งมาก! 🤖💕" : "AI Characters are Coming Soon! Handcrafted with ❤️" })}>{t.dashboard?.aiCharacters || "AI Characters"}</div>
                             </div>
                             <div className="dropdown-divider"></div>
                             <div className="dropdown-section">
                                 <div className="section-label">SERVERS OWNERS</div>
-                                <div className="dropdown-link active">My servers</div>
-                                <div className="dropdown-link">Transfer premium</div>
+                                <div className="dropdown-link active" onClick={() => router.push('/servers?redirect=false')}>{t.dashboard?.myServers || "My Servers"}</div>
+                                <div className="dropdown-link" onClick={() => setModalState({ show: true, type: 'info', message: isThai ? "กรุณาติดต่อซัพพอร์ตเพื่อโอนย้ายพรีเมียมนะค๊า 🌸" : "Please contact support to transfer premium slots! 🌸" })}>{t.dashboard?.transferPremium || "Transfer Premium"}</div>
                             </div>
                             <div className="dropdown-divider"></div>
                             <div className="dropdown-section">
                                 <div className="section-label">SUPPORT</div>
-                                <div className="dropdown-link">Language</div>
-                                <div className="dropdown-link">Changelogs</div>
-                                <div className="dropdown-link">Support server</div>
+                                <div className="dropdown-link" onClick={() => toggleLanguage(language === 'en' ? 'th' : 'en')}>
+                                    {language === 'en' ? "🇺🇸 English" : "🇹🇭 ภาษาไทย"}
+                                </div>
+                                <div className="dropdown-link" onClick={() => setShowChangelog(true)}>{t.dashboard?.changelogs || "Changelogs"}</div>
+                                <div className="dropdown-link" onClick={() => window.open('https://discord.gg/xArvbwjVYp', '_blank')}>{t.dashboard?.supportServer || "Support Server"}</div>
                             </div>
                             <div className="dropdown-divider"></div>
-                            <div className="dropdown-link logout-item" onClick={() => signOut({ callbackUrl: '/login' })}>Logout</div>
+                            <div className="dropdown-link logout-item" onClick={() => signOut({ callbackUrl: '/login' })}>{t.selection?.logout || "Logout"}</div>
                         </div>
                     )}
                 </div>
@@ -352,6 +367,16 @@ export default function ServerSelection() {
         }
         .loader { height: 100vh; display: flex; align-items: center; justify-content: center; font-size: 26px; color: var(--primary); background: var(--background-hex); font-weight: 700; }
       `}</style>
+            <ResultModal
+                show={modalState.show}
+                type={modalState.type}
+                message={modalState.message}
+                onClose={() => setModalState({ ...modalState, show: false })}
+            />
+            <ChangelogModal
+                show={showChangelog}
+                onClose={() => setShowChangelog(false)}
+            />
         </div>
     );
 }

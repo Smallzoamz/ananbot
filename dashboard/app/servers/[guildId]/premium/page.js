@@ -116,7 +116,10 @@ const PricingCard = ({ tier, priceTHB, features, btnText, isFeatured, isPremium,
             {isPremium && <div className="best-value-tag">{language === 'th' ? 'คุ้มค่าที่สุด' : 'BEST VALUE'}</div>}
 
             <div className="card-content">
+                {/* Tier Name - Centered */}
                 <div className="tier-name">{tier}</div>
+
+                {/* Price - Centered */}
                 <div className="price-tag">
                     <span className="currency">{currencySymbol}</span>
                     <span className="amount">{displayPrice}</span>
@@ -124,9 +127,10 @@ const PricingCard = ({ tier, priceTHB, features, btnText, isFeatured, isPremium,
                     <span className="period">{period}</span>
                 </div>
 
-                {/* Profile Mockup Visual */}
+                {/* Profile Mockup - Centered, Above Features */}
                 <MiniProfileCard planType={planType} level={level} tierName={tier} />
 
+                {/* Features */}
                 <ul className="feature-list">
                     {features.map((feat, i) => (
                         <li key={i}>
@@ -136,10 +140,12 @@ const PricingCard = ({ tier, priceTHB, features, btnText, isFeatured, isPremium,
                     ))}
                 </ul>
 
+
                 <button className={`p-action-btn ${isPremium ? 'premium' : isFeatured ? 'pro' : 'free'}`} onClick={onClick} disabled={currentPlan}>
                     {currentPlan ? (language === 'th' ? 'แพ็กเกจปัจจุบัน' : 'Current Plan') : btnText}
                 </button>
             </div>
+
 
             <div
                 className="plugin-sitting-icon"

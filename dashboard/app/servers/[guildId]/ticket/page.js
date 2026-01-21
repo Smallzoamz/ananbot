@@ -81,14 +81,20 @@ export default function TicketPage({ params }) {
 
     const handleSendPanel = async () => {
         try {
-            await fetch(`/api/proxy/guild/${guildId}/action`, {
+            const res = await fetch(`/api/proxy/guild/${guildId}/action`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ action: 'send_ticket_panel', settings, user_id: session.user.id })
             });
-            showResult('success', 'Panel Sent!', 'The Ticket Panel has been sent to the appropriate channel.');
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                showResult('success', 'Panel Sent!', 'The Ticket Panel has been sent to the appropriate channel.');
+            } else {
+                showResult('error', 'Send Failed', data.error || data.message || 'Unknown error');
+            }
         } catch (e) {
-            showResult('error', 'Send Failed', 'Could not send the ticket panel. Check bot permissions.');
+            showResult('error', 'Send Failed', 'Network or server error occurred.');
         }
     };
 

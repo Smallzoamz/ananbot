@@ -6,6 +6,7 @@ import { useLanguage } from "../../../context/LanguageContext";
 import Portal from "../../../components/Portal";
 import ResultModal from "../../../components/ResultModal";
 import { CrownIcon } from "../../../components/Icons";
+import TagInput from "../../../components/TagInput";
 
 export default function ModeratorPage({ params }) {
     const { guildId } = use(params);
@@ -31,6 +32,7 @@ export default function ModeratorPage({ params }) {
 
     // UI State for Setting Modals
     const [activeModal, setActiveModal] = useState(null); // 'autoMod', 'auditLogs', etc.
+
 
     useEffect(() => {
         if (session?.accessToken && guildId) {
@@ -236,12 +238,10 @@ export default function ModeratorPage({ params }) {
 
                                 <div className="config-item">
                                     <label style={{ fontWeight: '700', color: '#4a4a68', display: 'block', marginBottom: '8px' }}>{t.moderator.badWords}</label>
-                                    <textarea
-                                        className="glass-input"
-                                        style={{ width: '100%', minHeight: '100px', borderRadius: '15px', padding: '15px', background: '#f8f9fb', border: 'none', resize: 'none' }}
-                                        placeholder={t.moderator.badWordsHint}
-                                        value={(config.bad_words || []).join(", ")}
-                                        onChange={(e) => setConfig({ ...config, bad_words: e.target.value.split(",").map(w => w.trim()).filter(w => w !== "") })}
+                                    <TagInput
+                                        tags={config.bad_words || []}
+                                        onChange={(newTags) => setConfig({ ...config, bad_words: newTags })}
+                                        placeholder="Type a word and hit Enter or Comma..."
                                     />
                                     <p style={{ fontSize: '0.85rem', color: '#888', marginTop: '6px' }}>Messages containing these words will be deleted automatically.</p>
                                 </div>

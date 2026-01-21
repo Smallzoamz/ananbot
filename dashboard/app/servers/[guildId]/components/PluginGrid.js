@@ -1,10 +1,13 @@
 "use client";
 import React from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { CrownIcon, ProBadge, TwitchIcon, YouTubeIcon } from "../../../components/Icons";
 
 const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructure, onShowSelectiveModal, userPlan, onShowProWall }) => {
     const router = useRouter();
+    const { data: session } = useSession();
+    const isPapa = session?.user?.id === "956866340474478642" || session?.user?.uid === "956866340474478642";
 
     const tabs = ["All Plugins", "Essentials", "Stream Alert", "Server Management", "Moderator", "Utilities"];
 
@@ -154,6 +157,22 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
             btnText: "Configure"
         }
     ];
+
+    // Papa Exclusive Plugins 🤫👑
+    if (isPapa) {
+        plugins.push({
+            id: "channel-management",
+            name: "Channel Management",
+            icon: "⚙️",
+            badge: "PAPA ONLY",
+            badgeClass: "p-badge animate-glow",
+            category: "Server Management",
+            desc: "Live manage channels, categories, and roles. Exclusive to the Store Owner only.",
+            action: () => router.push(`/servers/${guildId}/channels`),
+            btnText: "Manage Live",
+            isActive: true
+        });
+    }
 
     const filteredPlugins = activeTab === "All Plugins"
         ? plugins
