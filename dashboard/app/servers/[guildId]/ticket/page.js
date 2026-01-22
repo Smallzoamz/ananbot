@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 
 import ProWallModal from "../components/ProWallModal";
 import TicketHistoryModal from "../components/TicketHistoryModal";
-import ResultModal from "../components/ResultModal";
+import ResultModal from "../../../components/ResultModal";
 import { useLanguage } from "../../../context/LanguageContext";
 
 export default function TicketPage({ params }) {

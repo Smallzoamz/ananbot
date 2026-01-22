@@ -49,7 +49,7 @@ const pageDescriptions = {
 };
 
 
-export default function Mascot() {
+export default function Mascot({ isPaused = false }) {
     const [frame, setFrame] = useState(1);
     const [displayText, setDisplayText] = useState('');
     const [showBubble, setShowBubble] = useState(false);
@@ -58,11 +58,12 @@ export default function Mascot() {
 
     // GIF-like frame toggle
     useEffect(() => {
+        if (isPaused) return; // Skip animation if paused
         const interval = setInterval(() => {
             setFrame(prev => (prev === 1 ? 2 : 1));
         }, 800);
         return () => clearInterval(interval);
-    }, []);
+    }, [isPaused]);
 
     // Get the appropriate message based on path and language
     const getMessage = () => {
@@ -94,6 +95,7 @@ export default function Mascot() {
         let pauseTimeout;
 
         const typeLoop = () => {
+            if (isPaused) return; // Stop typing if paused
             if (!fullMessage) {
                 setShowBubble(false);
                 return;
@@ -135,7 +137,7 @@ export default function Mascot() {
             clearTimeout(startTimeout);
             clearTimeout(pauseTimeout);
         };
-    }, [pathname, language]);
+    }, [pathname, language, isPaused]);
 
     return (
         <div className="anan-mascot-container">

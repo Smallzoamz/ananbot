@@ -226,4 +226,4 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
     );
 };
 
-export default PluginGrid;
+export default React.memo(PluginGrid);

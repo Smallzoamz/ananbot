@@ -114,13 +114,6 @@ export default function Dashboard({ params }) {
     ];
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const res = await fetch(`/api/proxy/guild/${guildId}/stats`);
-                if (res.ok) setStats(await res.json());
-            } catch (e) { console.error("Failed to fetch stats", e); }
-        };
-
         const fetchMissions = async () => {
             if (!user) return;
             try {
@@ -130,17 +123,16 @@ export default function Dashboard({ params }) {
                     body: JSON.stringify({
                         action: 'get_missions',
                         user_id: user.id || user.uid,
-                        guild_id: guildId
+                        guild_id: guildId // Consolidated Request! 🚀
                     })
                 });
                 if (res.ok) {
                     const data = await res.json();
                     if (data.plan) setUserPlan(data.plan);
-                    if (data.stats && !stats.total_members) {
-                        setStats(prev => ({ ...prev, ...data.stats }));
-                    }
+                    if (data.stats) setStats(prev => ({ ...prev, ...data.stats }));
+                    if (data.guild_stats) setStats(prev => ({ ...prev, ...data.guild_stats }));
                 }
-            } catch (e) { console.error("Failed to fetch missions/plan", e); }
+            } catch (e) { console.error("Failed to fetch missions/stats/plan", e); }
         };
 
         // MOCK MISSIONS FOR DASHBOARD - 4 items as requested!
@@ -152,7 +144,6 @@ export default function Dashboard({ params }) {
         ];
 
         setMissions(dashboardMocks);
-        fetchStats();
         fetchMissions();
     }, [guildId, user]);
 

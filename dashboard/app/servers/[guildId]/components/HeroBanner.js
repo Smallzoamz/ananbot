@@ -81,4 +81,4 @@ const HeroBanner = ({ guildId, missions, stats, language, onClaimReward }) => {
     );
 };
 
-export default HeroBanner;
+export default React.memo(HeroBanner);

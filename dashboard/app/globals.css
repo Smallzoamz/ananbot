@@ -52,18 +52,20 @@ body {
 }
 
 .glass {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 2px solid rgba(255, 255, 255, 0.8);
   border-radius: var(--radius-soft);
   box-shadow:
     0 10px 40px rgba(74, 74, 104, 0.08),
     inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+  will-change: backdrop-filter;
 }
 
 .blur-in {
-  animation: blurFadeIn 0.4s ease-out forwards;
+  animation: blurFadeIn 0.3s ease-out forwards;
+  will-change: backdrop-filter, background;
 }
 
 @keyframes blurFadeIn {
@@ -73,8 +75,8 @@ body {
   }
 
   to {
-    backdrop-filter: blur(8px);
-    background: rgba(255, 241, 242, 0.4);
+    backdrop-filter: blur(6px);
+    background: rgba(255, 241, 242, 0.35);
   }
 }
 
@@ -548,18 +550,15 @@ h3 {
 
   display: flex !important;
   flex-direction: column;
-  /* Stack vertically */
   align-items: center;
-  /* Horizontal center */
   justify-content: flex-start;
-  /* Clean start for scroll */
 
-  background: rgba(255, 241, 242, 0.4);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 241, 242, 0.3);
+  backdrop-filter: blur(6px);
+  /* Balanced for performance */
   padding: 30px 20px;
-  /* Vertical padding prevents edge touching */
   overflow-y: auto;
-  /* The Overlay itself is the scroller */
+  will-change: backdrop-filter;
 }
 
 /* Safe Centering for Modal Cards */
@@ -1766,6 +1765,22 @@ h3 {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  max-height: 340px;
+  /* Fixed Height For Dashboard 🌸 */
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+/* Premium Scrollbar for Mission Lists 🌸 */
+.mission-list::-webkit-scrollbar,
+.categorized-missions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.mission-list::-webkit-scrollbar-thumb,
+.categorized-missions::-webkit-scrollbar-thumb {
+  background: rgba(255, 183, 226, 0.4);
+  border-radius: 10px;
 }
 
 .mission-item {
@@ -6328,8 +6343,8 @@ h3 {
 .sub-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.4);
+  /* Darker overlay without blur for performance */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -6661,4 +6676,94 @@ h3 {
 
 .mini-add-btn:hover {
   background: rgba(236, 72, 153, 0.15);
+}
+
+/* Mission Hub: Fixed Height & Scrollbar Design  */
+.categorized-missions {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2rem !important;
+  margin-top: 1.5rem !important;
+  max-height: 60vh !important;
+  overflow-y: auto !important;
+  padding-right: 15px !important;
+}
+
+.categorized-missions::-webkit-scrollbar {
+  width: 8px;
+}
+
+.categorized-missions::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.categorized-missions::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(255, 183, 226, 0.5), rgba(214, 207, 255, 0.5));
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.categorized-missions::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(255, 183, 226, 0.8), rgba(214, 207, 255, 0.8));
+  background-clip: content-box;
+}
+
+.mission-group {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 2rem;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.group-header h4 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 850;
+  color: #4a4a68 !important;
+  /* High Contrast Charcoal 🖤 */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dm-info h4 {
+  color: #4a4a68 !important;
+  /* Ensure title is readable */
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.dm-desc {
+  font-size: 0.85rem !important;
+  color: #64748b !important;
+  /* Slate Grey for better legibility 📖 */
+  margin: 0.25rem 0 1rem 0 !important;
+  line-height: 1.6 !important;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease forwards;
 }

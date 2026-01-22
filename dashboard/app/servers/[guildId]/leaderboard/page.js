@@ -5,6 +5,8 @@ import { useSession } from "next-auth/react";
 import { useLanguage } from "../../../context/LanguageContext";
 import ProWallModal from "../components/ProWallModal";
 import PricingModal from "../components/PricingModal";
+import ResultModal from "../../../components/ResultModal";
+import Portal from "../../../components/Portal";
 
 export default function LeaderboardPage() {
     const { guildId } = useParams();
@@ -19,6 +21,7 @@ export default function LeaderboardPage() {
 
     const [showPricing, setShowPricing] = useState(false);
     const [proWallState, setProWallState] = useState({ show: false, featureName: '' });
+    const [modalState, setModalState] = useState({ show: false, type: 'success', message: '' });
 
     const fetchMissionsData = async () => {
         if (!session?.user?.id) return;
@@ -74,19 +77,65 @@ export default function LeaderboardPage() {
             });
             const data = await res.json();
             if (data.success) {
-                alert(`Claimed ${data.xp_added} XP! 🌸✨`);
+                setModalState({ show: true, type: 'success', message: `Claimed ${data.xp_added} XP! 🌸✨` });
                 fetchMissionsData();
             } else {
-                alert(`Error: ${data.error}`);
+                setModalState({ show: true, type: 'error', message: data.error || "Failed to claim reward." });
             }
         } catch (err) {
             console.error("Claim Error:", err);
         }
     };
 
+    const groupedMissions = React.useMemo(() => {
+        return {
+            daily: missions.filter(m => m.mission_type === 'daily'),
+            weekly: missions.filter(m => m.mission_type === 'weekly'),
+            lifetime: missions.filter(m => m.mission_type === 'lifetime')
+        };
+    }, [missions]);
+
     if (loading) return <div className="lb-loader">🌸 Loading Hub...</div>;
 
-    const rank = userStats.xp_balance > 5000 ? "Grandmaster" : userStats.xp_balance > 2000 ? "Master" : userStats.xp_balance > 1000 ? "Pro" : "Novice";
+    const renderMissionList = (list, title, icon) => (
+        <div className="mission-group animate-slide-up">
+            <div className="group-header">
+                <span className="group-icon">{icon}</span>
+                <h4>{title}</h4>
+            </div>
+            {list.length === 0 ? (
+                <div className="lb-empty mini">No {title.toLowerCase()} available 🌸</div>
+            ) : (
+                list.map(m => (
+                    <div key={m.key} className={`d-mission-item ${m.current_count >= m.target_count ? 'completed' : ''}`}>
+                        <div className="dm-icon">
+                            {m.mission_type === 'daily' ? '🌅' : m.mission_type === 'weekly' ? '✨' : '♾️'}
+                        </div>
+                        <div className="dm-info">
+                            <h4>{m.title || 'Mission'}</h4>
+                            <p className="dm-desc">{m.description || 'No description provided'}</p>
+                            <div className="dm-progress-meta">
+                                <span>Progress: <strong>{m.current_count}/{m.target_count}</strong></span>
+                                <span className="dm-xp">+{m.reward_xp} XP</span>
+                            </div>
+                            <div className="dm-progress-bar">
+                                <div className="dm-progress-fill" style={{ width: `${Math.min(100, (m.current_count / m.target_count) * 100)}%` }}></div>
+                            </div>
+                        </div>
+                        <div className="dm-action">
+                            {m.is_claimed ? (
+                                <span className="claimed-label">Success ✅</span>
+                            ) : m.current_count >= m.target_count ? (
+                                <button className="claim-btn-large" onClick={() => handleClaimReward(m.key)}>Claim Reward! 🎁</button>
+                            ) : (
+                                <span className="ongoing-label">Ongoing...</span>
+                            )}
+                        </div>
+                    </div>
+                ))
+            )}
+        </div>
+    );
 
     return (
         <div className="lb-wrapper animate-fade">
@@ -110,6 +159,15 @@ export default function LeaderboardPage() {
                     setShowPricing(true);
                 }}
             />
+
+            <Portal>
+                <ResultModal
+                    show={modalState.show}
+                    type={modalState.type}
+                    message={modalState.message}
+                    onClose={() => setModalState({ ...modalState, show: false })}
+                />
+            </Portal>
 
             <header className="lb-header">
                 <h1>An An <span>Mission Hub</span> 🏆</h1>
@@ -218,42 +276,20 @@ export default function LeaderboardPage() {
                     </div>
                 </aside>
 
-                {/* Right Side: Missions List */}
+                {/* Right Side: Categorized Missions List */}
                 <main className="lb-content">
                     <section className="missions-section glass">
                         <div className="section-header">
                             <h3>🎯 Active Challenges</h3>
                             <p>Complete these tasks to earn rewards 🌸</p>
                         </div>
-                        <div className="detailed-mission-list">
-                            {error && <div className="lb-error">❌ Error: {error}</div>}
-                            {!error && missions.length === 0 && <div className="lb-empty">No missions available yet 🌸</div>}
-                            {!error && missions.length > 0 && missions.map(m => (
-                                <div key={m.key} className={`d-mission-item ${m.current_count >= m.target_count ? 'completed' : ''}`}>
-                                    <div className="dm-icon">
-                                        {m.key === 'invite_bot' ? '🤖' : m.key === 'invite_friends' ? '🤝' : m.key === 'clear_guild' ? '🧹' : '🪄'}
-                                    </div>
-                                    <div className="dm-info">
-                                        <h4>{language === 'en' ? m.description_en : m.description_th}</h4>
-                                        <div className="dm-progress-meta">
-                                            <span>Progress: <strong>{m.current_count}/{m.target_count}</strong></span>
-                                            <span className="dm-xp">+{m.reward_xp} XP</span>
-                                        </div>
-                                        <div className="dm-progress-bar">
-                                            <div className="dm-progress-fill" style={{ width: `${Math.min(100, (m.current_count / m.target_count) * 100)}%` }}></div>
-                                        </div>
-                                    </div>
-                                    <div className="dm-action">
-                                        {m.is_claimed ? (
-                                            <span className="claimed-label">Success ✅</span>
-                                        ) : m.current_count >= m.target_count ? (
-                                            <button className="claim-btn-large" onClick={() => handleClaimReward(m.key)}>Claim Reward! 🎁</button>
-                                        ) : (
-                                            <span className="ongoing-label">Ongoing...</span>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+
+                        {error && <div className="lb-error">❌ Error: {error}</div>}
+
+                        <div className="categorized-missions">
+                            {renderMissionList(groupedMissions.daily, "Daily Missions", "🌅")}
+                            {renderMissionList(groupedMissions.weekly, "Weekly Missions", "✨")}
+                            {renderMissionList(groupedMissions.lifetime, "Lifetime Missions", "♾️")}
                         </div>
                     </section>
 
