@@ -21,7 +21,8 @@ const ConsoleModal = ({ show, onClose, guildId }) => {
     const fetchStats = async () => {
         setLoading(true);
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BOT_API_URL}/api/action`, {
+            // Use Proxy to avoid Mixed Content (HTTPS -> HTTP) on Vercel
+            const res = await fetch(`/api/proxy/action`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -52,7 +53,7 @@ const ConsoleModal = ({ show, onClose, guildId }) => {
 
     const handleBroadcast = async () => {
         try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_BOT_API_URL}/api/action`, {
+            const res = await fetch(`/api/proxy/action`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
