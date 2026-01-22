@@ -64,5 +64,10 @@ INSERT INTO missions (key, title, description, mission_type, target_count, rewar
 ('life_voice_100h', 'Voice Legend', 'Spend 100 hours in voice', 'lifetime', 6000, 2000, 0),
 ('life_shop_buy', 'Supporter', 'Buy first shop item', 'lifetime', 1, 300, 100),
 ('life_theme_1', 'Profile Decorator', 'Change profile theme', 'lifetime', 1, 200, 50),
-('life_quest_50', 'Quest Master', 'Complete 50 Daily Missions', 'lifetime', 50, 2500, 0)
+('life_quest_50', 'Quest Master', 'Complete 50 Daily Missions', 'lifetime', 50, 2500, 0),
+-- New System Missions 🌸
+('setup_template', 'Grand Architect', 'Setup server using a template', 'lifetime', 1, 500, 200),
+('invite_bot', 'Bot Welcomer', 'Invite An An to your server', 'lifetime', 1, 200, 100),
+('invite_friends', 'Social Recruiter', 'Invite friends to join the server', 'lifetime', 1, 100, 50),
+('clear_guild', 'Clean Slate', 'Perform a guild reset', 'lifetime', 1, 100, 50)
 ON CONFLICT (key) DO NOTHING;

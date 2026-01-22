@@ -3,11 +3,13 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { CrownIcon, ProBadge, TwitchIcon, YouTubeIcon } from "../../../components/Icons";
+import ConsoleModal from "./ConsoleModal";
 
 const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructure, onShowSelectiveModal, userPlan, onShowProWall }) => {
     const router = useRouter();
     const { data: session } = useSession();
     const isPapa = session?.user?.id === "956866340474478642" || session?.user?.uid === "956866340474478642";
+    const [showConsoleModal, setShowConsoleModal] = React.useState(false);
 
     const tabs = ["All Plugins", "Essentials", "Stream Alert", "Server Management", "Moderator", "Utilities"];
 
@@ -90,14 +92,14 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
         },
         {
             id: "terminal",
-            name: "anan-terminal",
-            icon: "💻",
+            name: "System Console",
+            icon: "🖥️",
             badge: <ProBadge />,
             badgeClass: "",
             category: "Utilities",
-            desc: "Exclusive command center for Papa and Server Owners only.",
-            action: () => checkPro("Bot Terminal", () => alert("Terminal Settings")),
-            btnText: "Settings",
+            desc: "Real-time health monitor and command center for Papa.",
+            action: () => checkPro("System Console", () => setShowConsoleModal(true)),
+            btnText: "Open Console",
             isActive: true
         },
         {
@@ -222,7 +224,17 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
                 ))}
             </div>
 
-        </div>
+
+            {
+                showConsoleModal && (
+                    <ConsoleModal
+                        show={showConsoleModal}
+                        onClose={() => setShowConsoleModal(false)}
+                        guildId={guildId}
+                    />
+                )
+            }
+        </div >
     );
 };
 
