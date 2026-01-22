@@ -3045,8 +3045,6 @@ async def sync_badges(inter: disnake.ApplicationCommandInteraction):
             
     await inter.edit_original_response(content=f"ซิงค์ยศเกียรติยศเรียบร้อยแล้วค่ะ! ✨\nตรวจพบคุณใน {success_count}/{total_guilds} เซิร์ฟเวอร์ และจัดการมอบยศให้ตามสถานะของคุญเรียบร้อยแล้วคะ 🌸🏅")
 
-@bot.slash_command(description="ดูสถิติของกิลด์นี้")
-
 @bot.slash_command(description="ตั้งค่า Log Center สำหรับกิลด์ที่ระบุ (เจ้าของเท่านั้น)")
 async def setup_log_guild(inter: disnake.ApplicationCommandInteraction, guild_id: str):
     if inter.guild.id != ANAN_LOG_CENTER_ID:
@@ -3067,6 +3065,7 @@ async def setup_log_guild(inter: disnake.ApplicationCommandInteraction, guild_id
     except Exception as e:
         await inter.edit_original_response(content=f"เกิดข้อผิดพลาด: {str(e)}")
 
+@bot.slash_command(description="ดูสถิติของกิลด์นี้")
 async def guild_stats(inter: disnake.ApplicationCommandInteraction):
     guild = inter.guild
     embed = disnake.Embed(title=f"📊 สถิติของ {guild.name}", color=disnake.Color.green())
