@@ -224,17 +224,14 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
                 ))}
             </div>
 
-
-            {
-                showConsoleModal && (
-                    <ConsoleModal
-                        show={showConsoleModal}
-                        onClose={() => setShowConsoleModal(false)}
-                        guildId={guildId}
-                    />
-                )
-            }
-        </div >
+            {showConsoleModal && (
+                <ConsoleModal
+                    show={showConsoleModal}
+                    onClose={() => setShowConsoleModal(false)}
+                    guildId={guildId}
+                />
+            )}
+        </div>
     );
 };
 
