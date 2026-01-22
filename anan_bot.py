@@ -23,7 +23,8 @@ from utils.supabase_client import (
     check_daily_ticket_limit,
     get_closed_tickets,
     activate_free_trial,
-    check_expiring_trials
+    check_expiring_trials,
+    update_user_plan
 )
 from utils.social_manager import SocialManager
 from utils.moderator_manager import ModeratorManager
@@ -1421,6 +1422,16 @@ class AnAnBot(commands.Bot):
                 settings = body.get("settings", {})
                 await save_guild_settings(guild_id, {"social_config": settings})
                 return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "update_premium_status":
+                user_id = body.get("user_id")
+                plan_type = body.get("plan_type")
+                # Optional: Add a security token check here
+                if not user_id or not plan_type:
+                    return web.json_response({"error": "Missing data"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                success = await update_user_plan(user_id, plan_type)
+                return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
 
             return web.json_response({"error": "Unknown action"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
             

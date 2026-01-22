@@ -5,6 +5,9 @@ import { useLanguage } from "../../../context/LanguageContext";
 import { useServer } from "../../../context/ServerContext";
 import ClaimTrialModal from "../../../components/ClaimTrialModal";
 import ResultModal from "../../../components/ResultModal";
+import { loadStripe } from "@stripe/stripe-js";
+
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
 const MiniProfileCard = ({ planType, level, tierName }) => {
     const { data: session } = useSession();
@@ -199,6 +202,25 @@ export default function PremiumPage() {
         }
     };
 
+    const handleCheckout = async (planType) => {
+        try {
+            const res = await fetch("/api/stripe/checkout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ planType, guildId })
+            });
+            const data = await res.json();
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                setModalState({ show: true, type: 'error', message: data.error || "Failed to start checkout." });
+            }
+        } catch (e) {
+            console.error(e);
+            setModalState({ show: true, type: 'error', message: "Stripe error occurred." });
+        }
+    };
+
     const isEligibleForTrial = userPlan?.plan_type === 'free' && !userPlan?.trial_claimed;
 
     return (
@@ -260,7 +282,7 @@ export default function PremiumPage() {
                             currentPlan={userPlan?.plan_type === 'pro'}
                             level={5}
                             planType="pro"
-                            onClick={isEligibleForTrial ? () => setShowClaimModal(true) : undefined}
+                            onClick={isEligibleForTrial ? () => setShowClaimModal(true) : () => handleCheckout("pro")}
                         />
                         <PricingCard
                             tier="PREMIUM ✨"
@@ -272,6 +294,7 @@ export default function PremiumPage() {
                             currentPlan={userPlan?.plan_type === 'premium'}
                             level={10}
                             planType="premium"
+                            onClick={() => handleCheckout("premium")}
                         />
                     </div>
                 </section>
