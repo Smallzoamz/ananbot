@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../../../context/LanguageContext";
+import Portal from "../../../components/Portal";
 import ResultModal from "../../../components/ResultModal";
 
 export default function ReactionRolesPage({ params }) {
@@ -122,6 +123,18 @@ export default function ReactionRolesPage({ params }) {
         setConfig({ ...config, mappings: m });
     };
 
+    // Emoji Picker position state
+    const [emojiPickerPos, setEmojiPickerPos] = useState({ top: 0, left: 0 });
+
+    const openEmojiPicker = (idx, event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        setEmojiPickerPos({
+            top: rect.bottom + window.scrollY + 5,
+            left: Math.min(rect.left + window.scrollX, window.innerWidth - 320)
+        });
+        setShowEmojiPicker(showEmojiPicker === idx ? null : idx);
+    };
+
     if (loading) return <div className="rr-loading">🔄 {isThai ? "กำลังโหลด..." : "Loading..."}</div>;
 
     return (
@@ -195,33 +208,8 @@ export default function ReactionRolesPage({ params }) {
                         ) : (
                             config.mappings.map((mapping, idx) => (
                                 <div key={idx} className="rr-mapping-card">
-                                    <div className="rr-mapping-emoji" onClick={() => setShowEmojiPicker(showEmojiPicker === idx ? null : idx)}>
+                                    <div className="rr-mapping-emoji" onClick={(e) => openEmojiPicker(idx, e)}>
                                         {mapping.emoji || '➕'}
-                                        {showEmojiPicker === idx && (
-                                            <div className="rr-emoji-picker" onClick={e => e.stopPropagation()}>
-                                                {emojis.length > 0 && (
-                                                    <div className="rr-emoji-section">
-                                                        <span className="rr-emoji-title">🎨 Server</span>
-                                                        <div className="rr-emoji-grid">
-                                                            {emojis.map(e => (
-                                                                <button key={e.id} onClick={() => { updateMapping(idx, 'emoji', `<:${e.name}:${e.id}>`); setShowEmojiPicker(null); }}>
-                                                                    <img src={e.url} alt={e.name} />
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                                <div className="rr-emoji-section">
-                                                    <span className="rr-emoji-title">✨ Default</span>
-                                                    <div className="rr-emoji-grid">
-                                                        {defaultEmojis.map((emoji, i) => (
-                                                            <button key={i} onClick={() => { updateMapping(idx, 'emoji', emoji); setShowEmojiPicker(null); }}>{emoji}</button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                                <button className="rr-emoji-clear" onClick={() => { updateMapping(idx, 'emoji', ''); setShowEmojiPicker(null); }}>❌ Clear</button>
-                                            </div>
-                                        )}
                                     </div>
 
                                     <div className="rr-mapping-fields">
@@ -239,6 +227,44 @@ export default function ReactionRolesPage({ params }) {
                     </div>
                 </div>
             </div>
+
+            {/* Emoji Picker Portal - Renders outside card */}
+            {showEmojiPicker !== null && (
+                <Portal>
+                    <div className="rr-emoji-overlay" onClick={() => setShowEmojiPicker(null)} />
+                    <div
+                        className="rr-emoji-picker-portal"
+                        style={{ top: emojiPickerPos.top, left: emojiPickerPos.left }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="rr-emoji-picker-header">
+                            <span>🎨 {isThai ? "เลือก Emoji" : "Pick Emoji"}</span>
+                            <button onClick={() => setShowEmojiPicker(null)}>✕</button>
+                        </div>
+                        {emojis.length > 0 && (
+                            <div className="rr-emoji-section">
+                                <span className="rr-emoji-title">🏠 Server</span>
+                                <div className="rr-emoji-grid">
+                                    {emojis.map(e => (
+                                        <button key={e.id} onClick={() => { updateMapping(showEmojiPicker, 'emoji', `<:${e.name}:${e.id}>`); setShowEmojiPicker(null); }}>
+                                            <img src={e.url} alt={e.name} />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        <div className="rr-emoji-section">
+                            <span className="rr-emoji-title">✨ Default</span>
+                            <div className="rr-emoji-grid">
+                                {defaultEmojis.map((emoji, i) => (
+                                    <button key={i} onClick={() => { updateMapping(showEmojiPicker, 'emoji', emoji); setShowEmojiPicker(null); }}>{emoji}</button>
+                                ))}
+                            </div>
+                        </div>
+                        <button className="rr-emoji-clear" onClick={() => { updateMapping(showEmojiPicker, 'emoji', ''); setShowEmojiPicker(null); }}>❌ {isThai ? "ไม่ใช้ Emoji" : "Clear"}</button>
+                    </div>
+                </Portal>
+            )}
 
             <style jsx>{`
                 .rr-page { padding: 20px; max-width: 1200px; margin: 0 auto; }
@@ -301,16 +327,21 @@ export default function ReactionRolesPage({ params }) {
                 .rr-mapping-delete { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: #fff5f5; border: none; border-radius: 10px; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
                 .rr-mapping-delete:hover { background: #ffe4e4; transform: scale(1.1); }
                 
-                /* Emoji Picker */
-                .rr-emoji-picker { position: absolute; top: 55px; left: 0; z-index: 100; width: 280px; max-height: 320px; overflow-y: auto; background: #fff; border-radius: 14px; border: 1.5px solid #ffccd5; box-shadow: 0 10px 40px rgba(255, 133, 163, 0.25); padding: 12px; }
-                .rr-emoji-section { margin-bottom: 12px; }
-                .rr-emoji-title { display: block; font-size: 0.7rem; color: #ff85a3; font-weight: 700; margin-bottom: 8px; }
-                .rr-emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
-                .rr-emoji-grid button { width: 28px; height: 28px; border: none; background: transparent; border-radius: 6px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-                .rr-emoji-grid button:hover { background: #ffe4f0; transform: scale(1.15); }
-                .rr-emoji-grid button img { width: 20px; height: 20px; }
-                .rr-emoji-clear { width: 100%; margin-top: 8px; padding: 6px; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; font-size: 0.75rem; color: #999; cursor: pointer; }
-                .rr-emoji-clear:hover { background: #ffe4e4; color: #ff6b6b; }
+                /* Emoji Picker Portal */
+                .rr-emoji-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3); z-index: 9998; }
+                .rr-emoji-picker-portal { position: absolute; z-index: 9999; width: 320px; max-height: 400px; overflow-y: auto; background: #fff; border-radius: 16px; border: 2px solid #ffb6c1; box-shadow: 0 15px 50px rgba(255, 133, 163, 0.35); }
+                .rr-emoji-picker-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: linear-gradient(135deg, #fff5f7, #ffe8ef); border-bottom: 1px solid #ffe4ec; border-radius: 14px 14px 0 0; }
+                .rr-emoji-picker-header span { font-weight: 700; color: #ff85a3; }
+                .rr-emoji-picker-header button { width: 24px; height: 24px; border: none; background: #fff; border-radius: 50%; cursor: pointer; font-size: 0.8rem; color: #999; }
+                .rr-emoji-picker-header button:hover { background: #ffe4e4; color: #ff6b6b; }
+                .rr-emoji-section { padding: 12px 15px; }
+                .rr-emoji-title { display: block; font-size: 0.7rem; color: #ff85a3; font-weight: 700; margin-bottom: 10px; }
+                .rr-emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
+                .rr-emoji-grid button { width: 32px; height: 32px; border: none; background: transparent; border-radius: 8px; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+                .rr-emoji-grid button:hover { background: #ffe4f0; transform: scale(1.2); }
+                .rr-emoji-grid button img { width: 24px; height: 24px; }
+                .rr-emoji-clear { width: calc(100% - 30px); margin: 10px 15px 15px; padding: 10px; background: #f9f9f9; border: 1.5px solid #eee; border-radius: 10px; font-size: 0.85rem; color: #888; cursor: pointer; font-weight: 500; }
+                .rr-emoji-clear:hover { background: #ffe4e4; color: #ff6b6b; border-color: #ffccd5; }
             `}</style>
 
             <ResultModal show={modalState.show} type={modalState.type} message={modalState.message} onClose={() => setModalState({ ...modalState, show: false })} />
