@@ -59,15 +59,30 @@ class ModeratorManager:
         if config.get("auto_mod_enabled", False):
             bad_words = config.get("bad_words", [])
             if bad_words:
-                # Optimized regex for bad words
-                pattern = re.compile("|".join(map(re.escape, bad_words)), re.IGNORECASE)
-                if pattern.search(message.content):
-                    try:
-                        await message.delete()
-                        await message.channel.send(f"❌ {message.author.mention} **รบกวนงดใช้คำไม่สุภาพในห้องแชทด้วยนะค๊าาา 🌸**", delete_after=5)
-                        await self.log_violation(message.guild, message.author, "Auto-Mod (Bad Word)", message.content)
-                        return
-                    except: pass
+                try:
+                    # Optimized regex for bad words
+                    # If the list is huge, regex might crash/hang. Use try-except.
+                    pattern = re.compile("|".join(map(re.escape, bad_words)), re.IGNORECASE)
+                    if pattern.search(message.content):
+                        try:
+                            await message.delete()
+                            await message.channel.send(f"❌ {message.author.mention} **รบกวนงดใช้คำไม่สุภาพในห้องแชทด้วยนะค๊าาา 🌸**", delete_after=5)
+                            await self.log_violation(message.guild, message.author, "Auto-Mod (Bad Word)", message.content)
+                            return
+                        except: pass
+                except Exception as e:
+                    # Fallback to simple string searching if regex fails
+                    print(f"Regex Compile Error for Bad Words: {e}")
+                    content_lower = message.content.lower()
+                    for word in bad_words:
+                        if word.lower() in content_lower:
+                            try:
+                                await message.delete()
+                                await message.channel.send(f"❌ {message.author.mention} **รบกวนงดใช้คำไม่สุภาพในห้องแชทด้วยนะค๊าาา 🌸** (Fallback Mode)", delete_after=5)
+                                await self.log_violation(message.guild, message.author, "Auto-Mod (Bad Word - Fallback)", message.content)
+                                return
+                            except: pass
+                            break
         
         # 3. Anti-Link (External)
         if config.get("anti_link_enabled", False):
