@@ -17,7 +17,7 @@ export async function POST(req) {
         // 🌸 Price IDs Mapping (Live Prices)
         const prices = {
             pro: "price_1SsBpIFfpRfjpLqwzoo9jcgK", // 199 THB Plan 💎
-            premium: "price_1SsBpIFfpRfjpLqwzoo9jcgK" // Based on Papa's screenshot tiers
+            premium: "price_1SsCWPFfpRfjpLqwuMQOs8wN" // 599 THB Plan (New ID from Papa) 👑
         };
 
         const priceId = prices[planType];
