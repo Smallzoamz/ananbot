@@ -241,6 +241,7 @@ export default function RankCardPage({ params }) {
                 </div>
             </div>
 
+
             <ResultModal show={modalState.show} type={modalState.type} message={modalState.message} onClose={() => setModalState({ ...modalState, show: false })} />
 
         </div>

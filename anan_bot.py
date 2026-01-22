@@ -20,11 +20,13 @@ from utils.supabase_client import (
     close_ticket_db, 
     update_ticket_activity,
     check_daily_ticket_limit,
-    check_daily_ticket_limit,
     get_closed_tickets,
     activate_free_trial,
     check_expiring_trials,
-    update_user_plan
+    update_user_plan,
+    rotate_daily_missions,
+    rotate_weekly_missions,
+    get_user_active_missions
 )
 from utils.social_manager import SocialManager
 from utils.moderator_manager import ModeratorManager
@@ -701,6 +703,7 @@ class AnAnBot(commands.Bot):
         self.sync_locks = set()
         self.update_stats_loop.start()
         self.check_trial_expiry_task.start()
+        self.mission_rotation_task.start()
         self.web_server_task = None
 
     async def start(self, *args, **kwargs):
@@ -748,6 +751,32 @@ class AnAnBot(commands.Bot):
     async def before_check_trial_expiry_task(self):
         await self.wait_until_ready()
 
+    # --- Mission Rotation System ---
+    @tasks.loop(hours=1)
+    async def mission_rotation_task(self):
+        if not self.db_ready: return
+        
+        now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=7))) # Thai Time
+        
+        # Check if it's roughly 06:00 AM (run once per day)
+        # We use a simple latch or just check if hour == 6
+        # To avoid multiple runs in 06:00-06:59 window, can use a DB flag or simpler approach:
+        # But for now, let's just rotate if current hour is 6.
+        # Ideally should check "last_rotation" in DB. 
+        # For simplicity in this iteration: We rely on manual triggers or improved logic later.
+        if now.hour == 6:
+            print("🔄 Auto-Rotating Daily Missions...")
+            await rotate_daily_missions()
+            
+            # If Monday
+            if now.weekday() == 0:
+                print("📅 Auto-Rotating Weekly Missions...")
+                await rotate_weekly_missions()
+
+    @mission_rotation_task.before_loop
+    async def before_mission_rotation_task(self):
+        await self.wait_until_ready()
+
     # --- Temporary Room System (Pro Plan) ---
     async def perform_temproom_setup(self, guild, user_id=None):
         # Check for Pro Plan
@@ -772,6 +801,22 @@ class AnAnBot(commands.Bot):
     # BUT since we are inside class, we use @commands.command/listener and self
 
     async def on_voice_state_update(self, member, before, after):
+        # --- Mission: Voice Tracking ---
+        # When LEAVING (or switching), calculate duration if we tracked start time
+        # This requires a global cache.
+        if before.channel and (not after.channel or before.channel.id != after.channel.id):
+             # Simple approximation: If user was in voice, we can't easily retrospective without cache.
+             # Plan B: Just give fixed points for 'Joining' for now (simpler MVP)
+             # OR: Use a cache. Let's use a simple cache.
+             pass
+        
+        if after.channel and (not before.channel or before.channel.id != after.channel.id):
+             # Joined a channel
+             # Mission: Voice Chatter (Join = 1 step? No, need duration)
+             # Let's pivot: Give points per MINUTE loop? That's heavy.
+             # Let's Stick to: "Joined Voice Channel" trigger for now to verify system, or use a loop check.
+             pass
+
         # 1. Check for Joining Hub
         if after.channel and after.channel.name == "｜・➕：CREATE ROOM":
             # Plan Check 🛡️
@@ -819,11 +864,83 @@ class AnAnBot(commands.Bot):
                 if len(before.channel.members) == 0:
                     await before.channel.delete()
 
+    # --- Mission Event Listeners ---
+    
+    async def on_message(self, message):
+        if message.author.bot: return
+        
+        # 1. Mission: Chatbox Star (Any message)
+        await update_mission_progress(str(message.author.id), "daily_msg_50", 1)
+        
+        # 2. Mission: Morning Greeting
+        content = message.content.lower()
+        if any(w in content for w in ["good morning", "morning", "สวัสดี", "อรุณสวัสดิ์", "มอนิ่ง"]):
+            # Check 05:00 - 10:00 AM (Thai Time UTC+7)
+            now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=7)))
+            if 5 <= now.hour <= 10:
+                await update_mission_progress(str(message.author.id), "daily_greet", 1)
+                
+        # 3. Mission: Night Owl (02:00 - 05:00)
+        now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=7)))
+        if 2 <= now.hour < 5:
+            await update_mission_progress(str(message.author.id), "daily_night_msg", 1)
+
+        # 4. Mission: Social Butterfly (Mentions)
+        if message.mentions:
+            # Count unique mentions (excluding bots)
+            humans = [u for u in message.mentions if not u.bot]
+            if len(humans) > 0:
+                await update_mission_progress(str(message.author.id), "weekly_mention_5", len(humans))
+                
+        # 5. Mission: Content Creator (Image in #media)
+        if message.attachments and "media" in message.channel.name.lower():
+             await update_mission_progress(str(message.author.id), "weekly_media_5", 1)
+
+        # Allow commands to process
+        await self.process_commands(message)
+
+    async def on_reaction_add(self, reaction, user):
+        if user.bot: return
+        # Mission: Emoji Lover
+        await update_mission_progress(str(user.id), "daily_react_10", 1)
+        
+        # Mission: Friendly Neighbor (Receiver gets point)
+        # Check if reactor != author
+        if reaction.message.author.id != user.id:
+             await update_mission_progress(str(reaction.message.author.id), "life_popular_100", 1)
+
+    async def handle_claim_reward(self, request):
+         try:
+             guild_id = request.match_info['guild_id']
+             data = await request.json()
+             user_id = data.get("user_id")
+             mission_key = data.get("mission_key")
+             
+             if not user_id or not mission_key:
+                 return web.json_response({"error": "Missing user_id or mission_key"}, status=400)
+                 
+             result = await claim_mission_reward(user_id, mission_key)
+             if result["success"]:
+                 return web.json_response(result)
+             else:
+                 return web.json_response(result, status=400)
+         except Exception as e:
+             return web.json_response({"error": str(e)}, status=500)
+
+    async def handle_user_missions(self, request):
+         try:
+             user_id = request.match_info['user_id']
+             missions = await get_user_active_missions(user_id)
+             return web.json_response(missions)
+         except Exception as e:
+             return web.json_response({"error": str(e)}, status=500)
+
     async def run_web_server(self):
         app = web.Application()
         app.router.add_get('/api/stats', self.handle_stats)
         app.router.add_get('/api/guilds', self.handle_guilds)
         app.router.add_get('/api/guild/{guild_id}/stats', self.handle_guild_stats)
+        app.router.add_get('/api/user/{user_id}/missions', self.handle_user_missions) # New Endpoint
         app.router.add_get('/api/discord-permissions', self.handle_discord_permissions)
         app.router.add_get('/api/guild/{guild_id}/structure', self.handle_guild_structure)
         app.router.add_get('/api/guild/{guild_id}/roles', self.handle_guild_roles)
@@ -836,6 +953,7 @@ class AnAnBot(commands.Bot):
         app.router.add_options('/api/action', self.handle_options)
         app.router.add_options('/api/stats', self.handle_options)
         app.router.add_options('/api/guilds', self.handle_options)
+        app.router.add_options('/api/user/{user_id}/missions', self.handle_options)
         app.router.add_options('/api/guild/{guild_id}/stats', self.handle_options)
         app.router.add_options('/api/guild/{guild_id}/structure', self.handle_options)
         app.router.add_options('/api/guild/{guild_id}/roles', self.handle_options)

@@ -388,6 +388,91 @@ async def get_rank_card_db(user_id: str, guild_id: str):
         print(f"Get Rank Card Error: {e}")
         return None
 
+async def get_active_missions(mission_type: str):
+    """
+    Get currently active missions of a specific type.
+    """
+    if not supabase: return []
+    res = supabase.table("missions").select("*").eq("mission_type", mission_type).eq("is_active", True).execute()
+    return res.data
+
+async def rotate_daily_missions():
+    """
+    Randomly select 4 daily missions to be active.
+    """
+    if not supabase: return
+    
+    # 1. Deactivate all daily missions
+    supabase.table("missions").update({"is_active": False}).eq("mission_type", "daily").execute()
+    
+    # 2. Get all daily missions
+    all_daily = supabase.table("missions").select("id").eq("mission_type", "daily").execute()
+    if not all_daily.data: return
+    
+    import random
+    selected = random.sample(all_daily.data, k=min(4, len(all_daily.data)))
+    selected_ids = [m["id"] for m in selected]
+    
+    # 3. Activate selected
+    supabase.table("missions").update({"is_active": True}).in_("id", selected_ids).execute()
+    print(f"Rotated Daily Missions: {selected_ids}")
+
+async def rotate_weekly_missions():
+    """
+    Randomly select 2 weekly missions to be active.
+    """
+    if not supabase: return
+    
+    # 1. Deactivate all weekly missions
+    supabase.table("missions").update({"is_active": False}).eq("mission_type", "weekly").execute()
+    
+    # 2. Get all weekly missions
+    all_weekly = supabase.table("missions").select("id").eq("mission_type", "weekly").execute()
+    if not all_weekly.data: return
+    
+    import random
+    selected = random.sample(all_weekly.data, k=min(2, len(all_weekly.data)))
+    selected_ids = [m["id"] for m in selected]
+    
+    # 3. Activate selected
+    supabase.table("missions").update({"is_active": True}).in_("id", selected_ids).execute()
+    print(f"Rotated Weekly Missions: {selected_ids}")
+
+async def get_user_active_missions(user_id: str):
+    """
+    Get user progress ONLY for currently active missions + lifetime.
+    """
+    if not supabase: return []
+    
+    # Get active daily/weekly + all lifetime
+    # Supabase doesn't support complex OR query clean in one go for mixed types easily alongside is_active
+    # So we fetch: (type=daily/weekly & active=true) OR (type=lifetime)
+    
+    res = supabase.table("missions").select("*").or_("mission_type.eq.lifetime,is_active.eq.true").execute()
+    active_missions = res.data
+    
+    # Get progress
+    progress_res = supabase.table("user_progress").select("*").eq("user_id", user_id).execute()
+    progress_dict = {p["mission_key"]: p for p in progress_res.data}
+    
+    combined = []
+    for m in active_missions:
+        # Check reset logic for daily/weekly
+        p = progress_dict.get(m["key"], {"current_count": 0, "is_claimed": False, "last_updated": None})
+        
+        # Reset Logic check
+        if m["mission_type"] == "daily" and is_reset_needed(p.get("last_updated")):
+             p = {"current_count": 0, "is_claimed": False}
+        # (Optional: Add weekly reset check logic here if stricter weekly tracking needed, but is_active handles rotation)
+        
+        combined.append({
+            **m,
+            "current_count": p["current_count"],
+            "is_claimed": p["is_claimed"]
+        })
+        
+    return combined
+
 async def update_user_plan(user_id: str, plan_type: str):
     """
     Updates user plan and sets expiry date (1 month).
