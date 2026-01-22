@@ -30,7 +30,7 @@ export async function POST(req) {
             line_items: [
                 {
                     price: priceId,
-                    quantity: planType === "premium" ? 2 : 1, // 🌸 Tiered Pricing: 1=Pro (199), 2=Premium (599)
+                    quantity: 1, // 🌸 Fixed: Always 1 unit (Price ID determines the cost)
                 },
             ],
             mode: "subscription",
