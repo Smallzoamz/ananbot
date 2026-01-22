@@ -729,6 +729,72 @@ async def close_ticket_logic(inter):
     except Exception as e:
         print(f"Close Ticket Error: {e}")
 
+class GlobalBanView(disnake.ui.View):
+    def __init__(self, user_id, guild_id, moderator_id, reason):
+        super().__init__(timeout=None)
+        self.user_id = user_id
+        self.guild_id = guild_id
+        self.moderator_id = moderator_id
+        self.reason = reason
+
+    @disnake.ui.button(label="Global Ban & Purge 🔥", style=disnake.ButtonStyle.danger, custom_id="global_ban_purge_btn")
+    async def ban_purge_btn(self, button: disnake.ui.Button, inter: disnake.MessageInteraction):
+        # Only Papa can use this
+        PAPA_ID = 956866340474478642
+        if inter.user.id != PAPA_ID:
+            return await inter.response.send_message("❌ เฉพาะ Papa เท่านั้นที่สามารถสั่งกวาดล้างได้ค่ะ! 🌸", ephemeral=True)
+        
+        await inter.response.defer()
+        
+        # Enforce Global Ban & Purge
+        success_count = 0
+        deleted_count = 0
+        
+        try:
+            target_user = await bot.fetch_user(int(self.user_id))
+        except:
+            return await inter.edit_original_response(content="❌ หาตัวตน User ไม่เจอค่ะ!")
+
+        # Sync Ban & Purge across all guilds with same owner
+        log_guild = bot.get_guild(int(self.guild_id))
+        owner_id = log_guild.owner_id if log_guild else None
+        
+        for g in bot.guilds:
+            if owner_id and g.owner_id == owner_id:
+                try:
+                    # 1. Ban (If not already banned)
+                    try:
+                        await g.ban(target_user, reason=f"Global Purge by Papa (Ref: {self.guild_id})")
+                        success_count += 1
+                    except disnake.Forbidden: pass # Missing perms or hierarchy
+                    except: pass
+                    
+                    # 2. Advanced Purge Logic (Loop through channels)
+                    for channel in g.text_channels:
+                        try:
+                            if channel.permissions_for(g.me).manage_messages:
+                                def is_target(m): return m.author.id == int(self.user_id)
+                                deleted = await channel.purge(limit=100, check=is_target)
+                                deleted_count += len(deleted)
+                        except: pass
+                except: pass
+        
+        await inter.edit_original_response(content=f"🔥 **จัดการกวาดล้างเรียบร้อยค่ะ!**\n- แบนข้ามเครือข่าย: {success_count} เซิร์ฟเวอร์\n- ลบข้อความที่ขัดหูขัดตา: {deleted_count} ข้อความ\n🌸 อันอันจัดการให้เกลี้ยงเลยค่ะ Papa!")
+        
+        # Update the original embed to show it was enforced
+        embed = inter.message.embeds[0]
+        embed.title = "🛡️ Global Ban & Purge: ENFORCED"
+        embed.color = disnake.Color.dark_gray()
+        embed.add_field(name="Status", value=f"✅ Enforced by Papa at {datetime.datetime.now().strftime('%H:%M')}", inline=False)
+        await inter.message.edit(embed=embed, view=None)
+
+    @disnake.ui.button(label="Ignore", style=disnake.ButtonStyle.secondary, custom_id="global_ban_ignore_btn")
+    async def ignore_btn(self, button: disnake.ui.Button, inter: disnake.MessageInteraction):
+        if inter.user.id != 956866340474478642:
+            return await inter.response.send_message("❌ เฉพาะ Papa เท่านั้นค่ะ! 🌸", ephemeral=True)
+            
+        await inter.message.delete()
+
 class AnAnBot(commands.Bot):
     def __init__(self):
         intents = disnake.Intents.default()
@@ -933,10 +999,10 @@ class AnAnBot(commands.Bot):
                 if len(before.channel.members) == 0:
                     await before.channel.delete()
 
-    async def send_anan_log(self, guild, channel_type, embed):
+    async def send_anan_log(self, guild, channel_type, embed, view=None):
         """
         Sends a log to the centralized Log Center.
-        channel_type: 'security', 'plan', 'system', 'access'
+        channel_type: 'security', 'plan', 'system', 'access', 'global_ban'
         """
         log_center = self.get_guild(ANAN_LOG_CENTER_ID)
         if not log_center: return
@@ -964,7 +1030,12 @@ class AnAnBot(commands.Bot):
         if channel:
             if not embed.footer.text:
                 embed.set_footer(text=f"Server: {guild.name} | ID: {guild.id}", icon_url=guild.icon.url if guild.icon else None)
-            await channel.send(embed=embed)
+            
+            # Categorize Security Watch by Zone in Title
+            if channel_type == "security":
+                embed.title = f"📡 Zone Watch: {guild.name}"
+                
+            await channel.send(embed=embed, view=view)
 
     async def on_guild_join(self, guild):
         return await self._setup_log_center(guild)
@@ -1056,14 +1127,15 @@ class AnAnBot(commands.Bot):
         from utils.supabase_client import add_global_ban
         await add_global_ban(str(user.id), str(guild.id), str(moderator.id) if not isinstance(moderator, str) else "0", reason)
         
-        # Log to Log Center
+        # Log to Log Center with Interactive View
         embed = disnake.Embed(
             title="🚫 Global Ban Enforced",
             description=f"**User:** {user.mention} ({user.id})\n**Source Server:** {guild.name}\n**Moderator:** {moderator}\n**Reason:** {reason}",
             color=disnake.Color.dark_red(),
             timestamp=datetime.datetime.now()
         )
-        await self.send_anan_log(guild, "global_ban", embed)
+        view = GlobalBanView(str(user.id), str(guild.id), str(moderator.id) if not isinstance(moderator, str) else "0", reason)
+        await self.send_anan_log(guild, "global_ban", embed, view=view)
         
         # Sync to other guilds owned by the same owner
         for g in self.guilds:
@@ -3160,7 +3232,7 @@ async def setup_log_guild(inter: disnake.ApplicationCommandInteraction, guild_id
     if inter.guild.id != ANAN_LOG_CENTER_ID:
         return await inter.response.send_message("❌ ขอโทษนะคะ Papa! คำสั่งนี้สามารถใช้งานได้เฉพาะใน Log Center ของเราเท่านั้นค่ะ ✨", ephemeral=True)
     
-    await inter.response.send_message(f"กำลังค้นหาและสร้างห้อง Log สำหรับ `{guild_id}` ให้นะคะ... 🕵️‍♀️", ephemeral=True)
+    await inter.response.send_message(f"กำลังค้นหาและสร้างห้อง Log สำหรับเซิร์ฟเวอร์ที่คุณเลือกนะนะคะ... 🕵️‍♀️", ephemeral=True)
     
     try:
         target_guild = bot.get_guild(int(guild_id))
@@ -3177,6 +3249,31 @@ async def setup_log_guild(inter: disnake.ApplicationCommandInteraction, guild_id
         await inter.edit_original_response(content="❌ รบกวนระบุ Guild ID เป็นตัวเลขให้ถูกต้องด้วยนะคะ Papa!")
     except Exception as e:
         await inter.edit_original_response(content=f"เกิดข้อผิดพลาด: {str(e)}")
+
+@setup_log_guild.autocomplete("guild_id")
+async def setup_log_guild_autocomp(inter: disnake.ApplicationCommandInteraction, string: str):
+    # Only show guilds owned by the trigger user or Papa
+    PAPA_ID = 956866340474478642
+    guilds = []
+    
+    # Check current Log Center categories to see which guilds are already setup
+    log_center = bot.get_guild(ANAN_LOG_CENTER_ID)
+    existing_ids = []
+    if log_center:
+        for cat in log_center.categories:
+            # Extract ID from "📁 Name (ID)"
+            if "(" in cat.name and cat.name.endswith(")"):
+                try:
+                    gid = cat.name.split("(")[-1][:-1]
+                    existing_ids.append(gid)
+                except: pass
+
+    for g in bot.guilds:
+        if (g.owner_id == inter.author.id or inter.author.id == PAPA_ID) and str(g.id) not in existing_ids:
+            if string.lower() in g.name.lower():
+                guilds.append(disnake.OptionChoice(name=f"🏰 {g.name}", value=str(g.id)))
+    
+    return guilds[:25]
 
 @bot.slash_command(description="ดูสถิติของกิลด์นี้")
 async def guild_stats(inter: disnake.ApplicationCommandInteraction):
