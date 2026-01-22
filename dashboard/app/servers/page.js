@@ -136,6 +136,14 @@ export default function ServerSelection() {
         };
 
         fetchData();
+
+        // Auto-refresh when coming back from Invite Popup 🔄
+        const onFocus = () => {
+            console.log("Window focused: Refreshing guild data...");
+            fetchData();
+        };
+        window.addEventListener("focus", onFocus);
+        return () => window.removeEventListener("focus", onFocus);
     }, [authStatus, session, router]);
 
     if (loading) return <div className="loader">🌸 {t.selection.loading}</div>;
