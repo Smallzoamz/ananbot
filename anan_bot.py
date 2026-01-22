@@ -806,7 +806,7 @@ class AnAnBot(commands.Bot):
 
                     embed_st = disnake.Embed(
                         title="📊 Periodic Plan Status Update",
-                        description=f"Current Plan: **{plan_type}**\nDuration: `{duration_str}`",
+                        description=f"Current Plan: **{plan_type}**\nDuration: `{duration_str}`\nOwner: **{guild.owner}** ({guild.owner_id})",
                         color=disnake.Color.purple() if plan_type != "FREE" else disnake.Color.light_gray(),
                         timestamp=datetime.datetime.now()
                     )
@@ -1020,7 +1020,7 @@ class AnAnBot(commands.Bot):
                 plan_type = plan.get("plan_type", "free").upper()
                 embed_plan = disnake.Embed(
                     title="📊 Initial Plan Status",
-                    description=f"Current Plan: **{plan_type}**\nStatus: `Initialized`",
+                    description=f"Current Plan: **{plan_type}**\nStatus: `Initialized`\nOwner: **{guild.owner}** ({guild.owner_id})",
                     color=disnake.Color.purple(),
                     timestamp=datetime.datetime.now()
                 )
