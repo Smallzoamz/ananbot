@@ -42,8 +42,8 @@ def is_reset_needed(last_updated_str):
 async def update_mission_progress(user_id: str, mission_key: str, increment: int = 1):
     if not supabase: return
     
-    # 1. Get current progress
-    res = supabase.table("user_progress").select("*").eq("user_id", user_id).eq("mission_key", mission_key).execute()
+    # 1. We still need to check current progress to handle Increment + Reset logic
+    res = supabase.table("user_progress").select("id, current_count, last_updated, is_claimed").eq("user_id", user_id).eq("mission_key", mission_key).execute()
     
     if not res.data:
         # Create new entry
@@ -61,13 +61,13 @@ async def update_mission_progress(user_id: str, mission_key: str, increment: int
                 "current_count": increment,
                 "is_claimed": False,
                 "last_updated": "now()"
-            }).eq("user_id", user_id).eq("mission_key", mission_key).execute()
+            }).eq("id", current["id"]).execute() # Use ID for faster update
         elif not current["is_claimed"]:
             new_count = current["current_count"] + increment
             supabase.table("user_progress").update({
                 "current_count": new_count,
                 "last_updated": "now()"
-            }).eq("user_id", user_id).eq("mission_key", mission_key).execute()
+            }).eq("id", current["id"]).execute()
 
 async def get_user_missions(user_id: str):
     if not supabase: return []
@@ -441,29 +441,32 @@ async def rotate_weekly_missions():
 async def get_user_active_missions(user_id: str):
     """
     Get user progress ONLY for currently active missions + lifetime.
+    Optimized to fetch only relevant progress rows.
     """
     if not supabase: return []
     
-    # Get active daily/weekly + all lifetime
-    # Supabase doesn't support complex OR query clean in one go for mixed types easily alongside is_active
-    # So we fetch: (type=daily/weekly & active=true) OR (type=lifetime)
+    # 1. Get active daily/weekly + all lifetime missions
+    m_res = supabase.table("missions").select("*").or_("mission_type.eq.lifetime,is_active.eq.true").execute()
+    active_missions = m_res.data
+    if not active_missions: return []
+
+    active_keys = [m["key"] for m in active_missions]
     
-    res = supabase.table("missions").select("*").or_("mission_type.eq.lifetime,is_active.eq.true").execute()
-    active_missions = res.data
-    
-    # Get progress
-    progress_res = supabase.table("user_progress").select("*").eq("user_id", user_id).execute()
+    # 2. Get progress ONLY for these active keys
+    progress_res = supabase.table("user_progress").select("mission_key, current_count, is_claimed, last_updated")\
+        .eq("user_id", user_id)\
+        .in_("mission_key", active_keys)\
+        .execute()
+        
     progress_dict = {p["mission_key"]: p for p in progress_res.data}
     
     combined = []
     for m in active_missions:
-        # Check reset logic for daily/weekly
         p = progress_dict.get(m["key"], {"current_count": 0, "is_claimed": False, "last_updated": None})
         
-        # Reset Logic check
+        # Reset Logic check for daily missions
         if m["mission_type"] == "daily" and is_reset_needed(p.get("last_updated")):
              p = {"current_count": 0, "is_claimed": False}
-        # (Optional: Add weekly reset check logic here if stricter weekly tracking needed, but is_active handles rotation)
         
         combined.append({
             **m,

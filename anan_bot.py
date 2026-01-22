@@ -1213,9 +1213,14 @@ class AnAnBot(commands.Bot):
             if action == "get_missions":
                 user_id = body.get("user_id")
                 if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
-                missions = await get_user_missions(user_id)
-                stats = await get_user_stats(user_id)
-                plan = await get_user_plan(user_id)
+                
+                # Parallel fetching! 🚀
+                import asyncio
+                missions, stats, plan = await asyncio.gather(
+                    get_user_active_missions(user_id),
+                    get_user_stats(user_id),
+                    get_user_plan(user_id)
+                )
                 
                 # Calculate Level (Max 10)
                 xp_balance = stats.get("xp_balance", 0)
@@ -1232,6 +1237,7 @@ class AnAnBot(commands.Bot):
                     xp_for_next = 2500 * (level + 1) * level
                     current_level_xp = total_xp - xp_for_current
                     xp_needed_for_next = xp_for_next - xp_for_current
+                    level = max(1, level) # Safety
                     return level, current_level_xp, xp_needed_for_next
 
                 level, current_xp, next_xp = get_level_info(xp_balance)
