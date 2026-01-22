@@ -30,6 +30,7 @@ from utils.supabase_client import (
 )
 from utils.social_manager import SocialManager
 from utils.moderator_manager import ModeratorManager
+import dateutil.parser
 
 load_dotenv() # Load variables from .env
 
@@ -43,6 +44,10 @@ ROLLBACK_MEMORY = {}
 
 # Global memory for statistics caching (Guild ID -> {data, timestamp})
 STATS_CACHE = {}
+
+# --- Discord Log Center Configuration ---
+ANAN_LOG_CENTER_ID = 1257086834962596041
+# ----------------------------------------
 
 # Core Logic for Guild Setup
 def get_game_genre(game_name):
@@ -781,6 +786,33 @@ class AnAnBot(commands.Bot):
             for guild in self.guilds:
                 await self.ensure_management_system(guild)
                 
+                # --- Log Center: Plan Status Periodic Update ---
+                try:
+                    plan = await get_user_plan(str(guild.owner_id))
+                    plan_type = plan.get("plan_type", "free").upper()
+                    expires_at = plan.get("expires_at")
+                    
+                    if expires_at:
+                        if isinstance(expires_at, str):
+                            import dateutil.parser
+                            exp_date = dateutil.parser.isoparse(expires_at)
+                        else: exp_date = expires_at
+                        
+                        delta = exp_date - datetime.datetime.now(datetime.timezone.utc)
+                        days_left = max(0, delta.days)
+                        duration_str = f"{days_left} Days Remaining"
+                    else:
+                        duration_str = "Permanent" if plan_type != "FREE" else "N/A"
+
+                    embed_st = disnake.Embed(
+                        title="📊 Periodic Plan Status Update",
+                        description=f"Current Plan: **{plan_type}**\nDuration: `{duration_str}`",
+                        color=disnake.Color.purple() if plan_type != "FREE" else disnake.Color.light_gray(),
+                        timestamp=datetime.datetime.now()
+                    )
+                    await self.send_anan_log(guild, "plan", embed_st)
+                except: pass
+                
         except Exception as e:
             print(f"Error in check_trial_expiry_task: {e}")
 
@@ -901,8 +933,198 @@ class AnAnBot(commands.Bot):
                 if len(before.channel.members) == 0:
                     await before.channel.delete()
 
-    # --- Mission Event Listeners ---
-    
+    async def send_anan_log(self, guild, channel_type, embed):
+        """
+        Sends a log to the centralized Log Center.
+        channel_type: 'security', 'plan', 'system', 'access'
+        """
+        log_center = self.get_guild(ANAN_LOG_CENTER_ID)
+        if not log_center: return
+        
+        # Find category for this guild
+        cat_name = f"📁 {guild.name[:20]} ({guild.id})"
+        category = disnake.utils.get(log_center.categories, name=cat_name)
+        if not category:
+            category = next((c for c in log_center.categories if str(guild.id) in c.name), None)
+        
+        if not category: return
+        
+        type_map = {
+            "security": "🛡️-security-logs",
+            "plan": "💎-plan-status",
+            "system": "⚙️-system-logs",
+            "access": "📡-access-logs"
+        }
+        
+        target_name = type_map.get(channel_type)
+        if not target_name: return
+        
+        channel = disnake.utils.get(category.text_channels, name=target_name)
+        if channel:
+            if not embed.footer.text:
+                embed.set_footer(text=f"Server: {guild.name} | ID: {guild.id}", icon_url=guild.icon.url if guild.icon else None)
+            await channel.send(embed=embed)
+
+    async def on_guild_join(self, guild):
+        # 1. Automatic Category Creation in Log Center
+        log_center = self.get_guild(ANAN_LOG_CENTER_ID)
+        if log_center:
+            try:
+                # Limit name length and sanitize
+                safe_name = guild.name[:20]
+                
+                # Check if category already exists
+                existing_cat = disnake.utils.get(log_center.categories, name=f"📁 {safe_name} ({guild.id})")
+                if existing_cat: return
+
+                # Create Category
+                cat_name = f"📁 {safe_name} ({guild.id})"
+                category = await log_center.create_category(name=cat_name)
+                
+                # Channels to create
+                channels = [
+                    ("🛡️-security-logs", "แจ้งเตือนการจัดการห้อง/ยศ/การบุกรุก"),
+                    ("💎-plan-status", "รายงานแพลนปัจจุบันและจำนวนวันที่เหลือ (Plan | Duration)"),
+                    ("⚙️-system-logs", "รายงานสถานะบอทและ Error ต่างๆ"),
+                    ("📡-access-logs", "รายงานการเข้า/ออก และกิจกรรมสมาชิก")
+                ]
+                
+                for ch_name, ch_desc in channels:
+                    new_ch = await log_center.create_text_channel(name=ch_name, category=category, topic=ch_desc)
+                    # Initial Greeting
+                    embed = disnake.Embed(
+                        title=f"📡 Log System Initialized",
+                        description=f"ระบบบันทึกข้อมูลสำหรับ **{guild.name}** เริ่มทำงานแล้วค่ะ! ✨\nหมวดหมู่: `{ch_name}`",
+                        color=disnake.Color.from_rgb(255, 182, 193),
+                        timestamp=datetime.datetime.now()
+                    )
+                    embed.set_footer(text=f"Server ID: {guild.id}")
+                    await new_ch.send(embed=embed)
+                
+                print(f"✅ Created Log Category and Channels for {guild.name} in Log Center")
+                
+                # Send Initial Plan Status
+                try:
+                    plan = await get_user_plan(str(guild.owner_id))
+                    plan_type = plan.get("plan_type", "free").upper()
+                    embed_plan = disnake.Embed(
+                        title="📊 Initial Plan Status",
+                        description=f"Current Plan: **{plan_type}**\nStatus: `Initialized`",
+                        color=disnake.Color.purple(),
+                        timestamp=datetime.datetime.now()
+                    )
+                    await self.send_anan_log(guild, "plan", embed_plan)
+                except: pass
+
+            except Exception as e:
+                print(f"❌ Error creating log channels for guild {guild.id}: {e}")
+
+    async def on_member_join(self, member):
+        # 1. Access Log
+        embed = disnake.Embed(
+            title="📥 Member Joined",
+            description=f"คุณ **{member.name}** ({member.mention}) เข้าร่วมเซิร์ฟเวอร์แล้วค่ะ!",
+            color=disnake.Color.green(),
+            timestamp=datetime.datetime.now()
+        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+        embed.add_field(name="Account Created", value=member.created_at.strftime('%Y-%m-%d %H:%M'), inline=True)
+        embed.add_field(name="Member Count", value=str(member.guild.member_count), inline=True)
+        await self.send_anan_log(member.guild, "access", embed)
+        
+        # 2. Existing Welcome Logic (Call helper)
+        from utils.supabase_client import get_guild_settings
+        settings = await get_guild_settings(str(member.guild.id))
+        await send_welcome_message(member, settings=settings)
+
+    async def on_member_remove(self, member):
+        # 1. Access Log
+        embed = disnake.Embed(
+            title="📤 Member Left",
+            description=f"คุณ **{member.name}** ({member.mention}) ออกจากเซิร์ฟเวอร์แล้วค่ะ...",
+            color=disnake.Color.red(),
+            timestamp=datetime.datetime.now()
+        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+        embed.add_field(name="Member Count", value=str(member.guild.member_count), inline=True)
+        await self.send_anan_log(member.guild, "access", embed)
+        
+        # 2. Existing Goodbye Logic (Call helper)
+        from utils.supabase_client import get_guild_settings
+        settings = await get_guild_settings(str(member.guild.id))
+        await send_goodbye_message(member, settings=settings)
+
+    # --- Security Log Events ---
+    async def on_guild_channel_create(self, channel):
+        embed = disnake.Embed(
+            title="🆕 Channel Created",
+            description=f"ห้องใหม่ถูกสร้างขึ้น: {channel.mention} (`{channel.name}`)",
+            color=disnake.Color.blue(),
+            timestamp=datetime.datetime.now()
+        )
+        embed.add_field(name="Type", value=str(channel.type), inline=True)
+        embed.add_field(name="Category", value=channel.category.name if channel.category else "None", inline=True)
+        await self.send_anan_log(channel.guild, "security", embed)
+
+    async def on_guild_channel_delete(self, channel):
+        embed = disnake.Embed(
+            title="🗑️ Channel Deleted",
+            description=f"ห้องถูกลบออก: `{channel.name}`",
+            color=disnake.Color.orange(),
+            timestamp=datetime.datetime.now()
+        )
+        embed.add_field(name="Type", value=str(channel.type), inline=True)
+        await self.send_anan_log(channel.guild, "security", embed)
+
+    async def on_guild_role_create(self, role):
+        embed = disnake.Embed(
+            title="🆕 Role Created",
+            description=f"ยศใหม่ถูกสร้างขึ้น: {role.mention} (`{role.name}`)",
+            color=disnake.Color.blue(),
+            timestamp=datetime.datetime.now()
+        )
+        await self.send_anan_log(role.guild, "security", embed)
+
+    async def on_guild_role_delete(self, role):
+        embed = disnake.Embed(
+            title="🗑️ Role Deleted",
+            description=f"ยศถูกลบออก: `{role.name}`",
+            color=disnake.Color.orange(),
+            timestamp=datetime.datetime.now()
+        )
+        await self.send_anan_log(role.guild, "security", embed)
+
+    async def on_error(self, event, *args, **kwargs):
+        # Log to System Logs
+        embed = disnake.Embed(
+            title="⚠️ System Error",
+            description=f"Event: `{event}`\nAn error occurred in the bot's core logic.",
+            color=disnake.Color.red(),
+            timestamp=datetime.datetime.now()
+        )
+        
+        guild = None
+        for arg in args:
+            if hasattr(arg, "guild"): guild = arg.guild; break
+            elif isinstance(arg, disnake.Guild): guild = arg; break
+        
+        if guild:
+            await self.send_anan_log(guild, "system", embed)
+        
+        await super().on_error(event, *args, **kwargs)
+
+    async def on_slash_command_error(self, inter, error):
+        embed = disnake.Embed(
+            title="❌ Command Error",
+            description=f"Command: `{inter.data.name}`\nError: `{str(error)}`",
+            color=disnake.Color.red(),
+            timestamp=datetime.datetime.now()
+        )
+        if inter.guild:
+            await self.send_anan_log(inter.guild, "system", embed)
+        
+        await super().on_slash_command_error(inter, error)
+
     async def on_message(self, message):
         if message.author.bot: return
         
@@ -2824,6 +3046,26 @@ async def sync_badges(inter: disnake.ApplicationCommandInteraction):
     await inter.edit_original_response(content=f"ซิงค์ยศเกียรติยศเรียบร้อยแล้วค่ะ! ✨\nตรวจพบคุณใน {success_count}/{total_guilds} เซิร์ฟเวอร์ และจัดการมอบยศให้ตามสถานะของคุญเรียบร้อยแล้วคะ 🌸🏅")
 
 @bot.slash_command(description="ดูสถิติของกิลด์นี้")
+
+@bot.slash_command(description="ตั้งค่า Log Center สำหรับกิลด์ที่ระบุ (เจ้าของเท่านั้น)")
+async def setup_log_guild(inter: disnake.ApplicationCommandInteraction, guild_id: str):
+    if inter.guild.id != ANAN_LOG_CENTER_ID:
+        return await inter.response.send_message("❌ ขอโทษนะคะ Papa! คำสั่งนี้สามารถใช้งานได้เฉพาะใน Log Center ของเราเท่านั้นค่ะ ✨", ephemeral=True)
+    
+    await inter.response.send_message(f"กำลังค้นหาและสร้างห้อง Log สำหรับ `{guild_id}` ให้นะคะ... 🕵️‍♀️", ephemeral=True)
+    
+    try:
+        target_guild = bot.get_guild(int(guild_id))
+        if not target_guild:
+            return await inter.edit_original_response(content="❌ An An หาเซิร์ฟเวอร์นี้ไม่เจอเลยค่ะ บอทได้อยู่ในเซิร์ฟเวอร์นั้นหรือเปล่าคะ? 🥺")
+        
+        # Manually trigger the join logic
+        await bot.on_guild_join(target_guild)
+        await inter.edit_original_response(content=f"✅ จัดการสร้างหมวดหมู่ Log สำหรับ **{target_guild.name}** ในเซิร์ฟเวอร์นี้เรียบร้อยแล้วค่ะ! 🌸🛡️")
+    except ValueError:
+        await inter.edit_original_response(content="❌ รบกวนระบุ Guild ID เป็นตัวเลขให้ถูกต้องด้วยนะคะ Papa!")
+    except Exception as e:
+        await inter.edit_original_response(content=f"เกิดข้อผิดพลาด: {str(e)}")
 
 async def guild_stats(inter: disnake.ApplicationCommandInteraction):
     guild = inter.guild
