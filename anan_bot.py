@@ -1608,44 +1608,6 @@ class AnAnBot(commands.Bot):
                 await save_guild_settings(guild_id, {"ticket_config": settings})
                 return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
 
-    async def handle_guild_settings(self, request):
-        guild_id = request.match_info.get('guild_id')
-        settings = await get_guild_settings(guild_id) or {}
-        
-        # Ensure we return clean data structure
-        response_data = {
-           "welcome": {
-               "enabled": settings.get("welcome_enabled", False),
-               "channel_id": settings.get("welcome_channel_id"),
-               "message": settings.get("welcome_message"),
-               "image_url": settings.get("welcome_image_url")
-           },
-           "goodbye": {
-               "enabled": settings.get("goodbye_enabled", False),
-               "channel_id": settings.get("goodbye_channel_id"),
-               "message": settings.get("goodbye_message"),
-               "image_url": settings.get("goodbye_image_url")
-           },
-           "ticket": settings.get("ticket_config", {}),
-           "social": settings.get("social_config", {}),
-           "reaction_roles": settings.get("reaction_roles_config", {}),
-           "moderator": settings.get("moderator_config", {}),
-           "personalizer": {
-               "nickname": settings.get("bot_nickname"),
-               "bio": settings.get("bot_bio"),
-               "activity_type": settings.get("activity_type"),
-               "status_text": settings.get("status_text"),
-               "avatar_url": settings.get("avatar_url"),
-               "banner_color": settings.get("banner_color")
-           },
-           "verification": {
-               "enabled": settings.get("verification_enabled", False),
-               "role_id": settings.get("verification_role_id"),
-               "channel_id": settings.get("verification_channel_id")
-           }
-        }
-        return web.json_response(response_data, headers={"Access-Control-Allow-Origin": "*"})
-
             elif action == "send_ticket_panel":
                 user_id = body.get("user_id")
                 settings = body.get("settings", {})
