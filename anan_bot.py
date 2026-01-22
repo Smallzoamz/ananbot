@@ -1661,16 +1661,24 @@ class AnAnBot(commands.Bot):
                     return web.json_response({"error": "Guild not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
                 
                 term_ch = disnake.utils.get(guild.text_channels, name="anan-terminal")
-                if term_ch:
-                    embed = disnake.Embed(
-                        title="🖥️ System Console Test",
-                        description=f"Hello Papa! verification received from Dashboard at `{datetime.datetime.now().strftime('%H:%M:%S')}`\n\n**Status:** Online 🟢\n**Latency:** {round(self.latency * 1000)}ms",
-                        color=disnake.Color.teal()
-                    )
-                    await term_ch.send(embed=embed)
-                    return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
-                else:
-                    return web.json_response({"error": "Terminal channel not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+                if not term_ch:
+                    # Self-Healing: Create it if missing 🛠️
+                    try:
+                        overwrites = {
+                            guild.default_role: disnake.PermissionOverwrite(view_channel=False),
+                            guild.me: disnake.PermissionOverwrite(view_channel=True, send_messages=True)
+                        }
+                        term_ch = await guild.create_text_channel("anan-terminal", overwrites=overwrites, topic="🔒 Private Terminal for Papa & An An")
+                    except Exception as e:
+                        return web.json_response({"error": f"Failed to create terminal: {str(e)}"}, status=500, headers={"Access-Control-Allow-Origin": "*"})
+
+                embed = disnake.Embed(
+                    title="🖥️ System Console Test",
+                    description=f"Hello Papa! verification received from Dashboard at `{datetime.datetime.now().strftime('%H:%M:%S')}`\n\n**Status:** Online 🟢\n**Latency:** {round(self.latency * 1000)}ms",
+                    color=disnake.Color.teal()
+                )
+                await term_ch.send(embed=embed)
+                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
 
             return web.json_response({"error": "Unknown action"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
             
