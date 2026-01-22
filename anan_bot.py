@@ -1431,6 +1431,15 @@ class AnAnBot(commands.Bot):
                     return web.json_response({"error": "Missing data"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
                 
                 success = await update_user_plan(user_id, plan_type)
+                
+                # Instant Role Sync ⚡
+                if success:
+                    print(f"Triggering instant badge sync for {user_id}...")
+                    for guild in self.guilds:
+                        member = guild.get_member(int(user_id))
+                        if member:
+                            asyncio.create_task(self.ensure_global_badges(member))
+
                 return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
 
             return web.json_response({"error": "Unknown action"}, status=400, headers={"Access-Control-Allow-Origin": "*"})

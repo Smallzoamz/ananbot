@@ -388,3 +388,30 @@ async def get_rank_card_db(user_id: str, guild_id: str):
         print(f"Get Rank Card Error: {e}")
         return None
 
+async def update_user_plan(user_id: str, plan_type: str):
+    """
+    Updates user plan and sets expiry date (1 month).
+    """
+    if not supabase: return False
+    
+    # 1 Month = 31 days just to be safe
+    expires_at = (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=31)).isoformat()
+    
+    data = {
+        "plan_type": plan_type,
+        "expires_at": expires_at,
+        "trial_claimed": True, # Upgrading counts as trial used
+        "notification_sent": False
+    }
+    
+    try:
+        res = supabase.table("user_stats").select("*").eq("user_id", str(user_id)).execute()
+        if res.data:
+            supabase.table("user_stats").update(data).eq("user_id", str(user_id)).execute()
+        else:
+            data["user_id"] = str(user_id)
+            supabase.table("user_stats").insert(data).execute()
+        return True
+    except Exception as e:
+        print(f"Update User Plan Error: {e}")
+        return False
