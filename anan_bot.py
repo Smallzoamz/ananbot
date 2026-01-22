@@ -1660,7 +1660,9 @@ class AnAnBot(commands.Bot):
                 if not guild:
                     return web.json_response({"error": "Guild not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
                 
-                term_ch = disnake.utils.get(guild.text_channels, name="anan-terminal")
+                # Improved Lookup: Find by substring because of decorative names 🌸
+                term_ch = next((ch for ch in guild.text_channels if "anan-terminal" in ch.name), None)
+                
                 if not term_ch:
                     # Self-Healing: Create it if missing 🛠️
                     try:
@@ -1668,7 +1670,7 @@ class AnAnBot(commands.Bot):
                             guild.default_role: disnake.PermissionOverwrite(view_channel=False),
                             guild.me: disnake.PermissionOverwrite(view_channel=True, send_messages=True)
                         }
-                        term_ch = await guild.create_text_channel("anan-terminal", overwrites=overwrites, topic="🔒 Private Terminal for Papa & An An")
+                        term_ch = await guild.create_text_channel("｜ - 💬 : anan-terminal", overwrites=overwrites, topic="🔒 Private Terminal for Papa & An An")
                     except Exception as e:
                         return web.json_response({"error": f"Failed to create terminal: {str(e)}"}, status=500, headers={"Access-Control-Allow-Origin": "*"})
 
@@ -2007,8 +2009,8 @@ class AnAnBot(commands.Bot):
                 # Fallback to broader keyword if icon match fails (very unlikely)
                 if not matches:
                     matches = [c for c in all_raw if "MEMBERS" in c.name.upper() or "LATEST" in c.name.upper() or "TERMINAL" in c.name.upper()]
-                    # Filter by icon in case unrelated channels have these keywords
-                    matches = [c for c in matches if my_icon and my_icon in c.name]
+                    # Filter by icon, BUT allow 'anan-terminal' to pass even without icon (to fix/adopt plain channels)
+                    matches = [c for c in matches if (my_icon and my_icon in c.name) or "anan-terminal" in c.name.lower()]
 
                 if not matches:
                     try:
