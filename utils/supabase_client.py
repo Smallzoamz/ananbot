@@ -43,11 +43,11 @@ async def update_mission_progress(user_id: str, mission_key: str, increment: int
     if not supabase: return
     
     # 1. We still need to check current progress to handle Increment + Reset logic
-    res = supabase.table("user_progress").select("id, current_count, last_updated, is_claimed").eq("user_id", user_id).eq("mission_key", mission_key).execute()
+    res = supabase.table("user_missions").select("id, current_count, last_updated, is_claimed").eq("user_id", user_id).eq("mission_key", mission_key).execute()
     
     if not res.data:
         # Create new entry
-        supabase.table("user_progress").insert({
+        supabase.table("user_missions").insert({
             "user_id": user_id,
             "mission_key": mission_key,
             "current_count": increment,
@@ -57,14 +57,14 @@ async def update_mission_progress(user_id: str, mission_key: str, increment: int
         current = res.data[0]
         # Check if reset needed
         if is_reset_needed(current.get("last_updated")):
-            supabase.table("user_progress").update({
+            supabase.table("user_missions").update({
                 "current_count": increment,
                 "is_claimed": False,
                 "last_updated": "now()"
             }).eq("id", current["id"]).execute() # Use ID for faster update
         elif not current["is_claimed"]:
             new_count = current["current_count"] + increment
-            supabase.table("user_progress").update({
+            supabase.table("user_missions").update({
                 "current_count": new_count,
                 "last_updated": "now()"
             }).eq("id", current["id"]).execute()
@@ -453,7 +453,7 @@ async def get_user_active_missions(user_id: str):
     active_keys = [m["key"] for m in active_missions]
     
     # 2. Get progress ONLY for these active keys
-    progress_res = supabase.table("user_progress").select("mission_key, current_count, is_claimed, last_updated")\
+    progress_res = supabase.table("user_missions").select("mission_key, current_count, is_claimed, last_updated")\
         .eq("user_id", user_id)\
         .in_("mission_key", active_keys)\
         .execute()
