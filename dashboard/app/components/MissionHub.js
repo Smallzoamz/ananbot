@@ -1,152 +1,115 @@
 "use client";
-import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import React, { useState } from 'react';
+
+// MOCK DATA - No API calls needed!
+const MOCK_MISSIONS = {
+    daily: [
+        { key: 'daily_chat', name: '💬 Send 10 Messages', description: 'Chat with the community!', xp_reward: 50, progress: 7, goal: 10, claimed: false },
+        { key: 'daily_voice', name: '🎤 Join Voice 5 mins', description: 'Hang out in voice chat', xp_reward: 100, progress: 5, goal: 5, claimed: true },
+        { key: 'daily_react', name: '❤️ React to 5 Messages', description: 'Show some love!', xp_reward: 30, progress: 2, goal: 5, claimed: false },
+    ],
+    weekly: [
+        { key: 'weekly_chat', name: '💬 Send 100 Messages', description: 'Be an active member!', xp_reward: 500, progress: 45, goal: 100, claimed: false },
+        { key: 'weekly_voice', name: '🎤 Voice for 1 Hour', description: 'Quality time with friends', xp_reward: 800, progress: 60, goal: 60, claimed: true },
+        { key: 'weekly_invite', name: '📨 Invite 3 Friends', description: 'Grow the community!', xp_reward: 1000, progress: 1, goal: 3, claimed: false },
+    ],
+    lifetime: [
+        { key: 'lifetime_messages', name: '🏆 Send 1,000 Messages', description: 'Legendary chatter!', xp_reward: 2000, progress: 456, goal: 1000, claimed: false },
+        { key: 'lifetime_level', name: '⭐ Reach Level 10', description: 'Master of XP', xp_reward: 2500, progress: 7, goal: 10, claimed: false },
+        { key: 'lifetime_streak', name: '🔥 7-Day Streak', description: 'Active every day!', xp_reward: 300, progress: 4, goal: 7, claimed: false },
+    ]
+};
 
 export default function MissionHub() {
-    const { data: session } = useSession();
-    const [missions, setMissions] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState('daily'); // daily, weekly, lifetime
-    const [claiming, setClaiming] = useState(null);
+    const [activeTab, setActiveTab] = useState('daily');
+    const missions = MOCK_MISSIONS[activeTab] || [];
 
-    useEffect(() => {
-        if (session?.user?.id) {
-            fetchMissions();
-        }
-    }, [session]);
-
-    const fetchMissions = async () => {
-        try {
-            const res = await fetch(`/api/proxy/user/${session.user.id}/missions`);
-            const data = await res.json();
-            if (Array.isArray(data)) {
-                setMissions(data);
-            }
-        } catch (error) {
-            console.error("Failed to fetch missions:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleClaim = async (mission) => {
-        setClaiming(mission.key);
-        try {
-            // Using global claim endpoint (we can use 'global' as guild_id since logic ignores it)
-            const res = await fetch(`/api/proxy/guild/global/claim-reward`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    user_id: session.user.id,
-                    mission_key: mission.key
-                })
-            });
-            const result = await res.json();
-            if (result.success) {
-                // Refresh missions to update UI
-                fetchMissions();
-                // Optionally trigger a confetti or toast here
-            } else {
-                alert(result.error || "Claim failed");
-            }
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setClaiming(null);
-        }
-    };
-
-    const visibleMissions = missions.filter(m => m.mission_type === activeTab);
-
-    if (loading) return <div className="text-center p-4">🌸 Loading Missions...</div>;
+    const completedCount = missions.filter(m => m.progress >= m.goal).length;
 
     return (
         <div className="mission-hub glass p-6 rounded-2xl">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-700 flex items-center gap-2">
-                    🎯 Mission Center
+                    🎯 Active Missions
                 </h2>
-                <div className="flex gap-2 bg-white/50 p-1 rounded-xl">
-                    {['daily', 'weekly', 'lifetime'].map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === tab
-                                    ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-md'
-                                    : 'text-gray-500 hover:bg-white/80'
-                                }`}
-                        >
-                            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                        </button>
-                    ))}
-                </div>
+                <span className="text-sm text-pink-500 font-bold">{completedCount}/{missions.length} Done</span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {visibleMissions.map(m => (
-                    <MissionCard
-                        key={m.key}
-                        mission={m}
-                        onClaim={() => handleClaim(m)}
-                        isClaiming={claiming === m.key}
-                    />
+            {/* Tab Buttons */}
+            <div className="flex gap-2 bg-white/50 p-1 rounded-xl mb-6">
+                {['daily', 'weekly', 'lifetime'].map(tab => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === tab
+                            ? 'bg-gradient-to-r from-pink-400 to-rose-400 text-white shadow-md'
+                            : 'text-gray-500 hover:bg-white/80'
+                            }`}
+                    >
+                        {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
                 ))}
             </div>
 
-            {visibleMissions.length === 0 && (
-                <div className="text-center py-10 opacity-50">
-                    No active {activeTab} missions right now. 💤
-                </div>
-            )}
-        </div>
-    );
-}
+            {/* Mission Cards */}
+            <div className="space-y-4">
+                {missions.map(mission => {
+                    const isComplete = mission.progress >= mission.goal;
+                    const progressPercent = Math.min((mission.progress / mission.goal) * 100, 100);
 
-function MissionCard({ mission, onClaim, isClaiming }) {
-    const percent = Math.min(100, Math.round((mission.current_count / mission.target_count) * 100));
-    const isCompleted = mission.current_count >= mission.target_count;
-    const canClaim = isCompleted && !mission.is_claimed;
+                    return (
+                        <div
+                            key={mission.key}
+                            className={`relative p-4 rounded-xl border-2 transition-all ${isComplete
+                                ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200'
+                                : 'bg-white/60 border-pink-100 hover:border-pink-300'
+                                }`}
+                        >
+                            <div className="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 className="font-bold text-gray-700">{mission.name}</h3>
+                                    <p className="text-sm text-gray-500">{mission.description}</p>
+                                </div>
+                                <span className={`text-sm font-bold ${isComplete ? 'text-green-500' : 'text-pink-500'}`}>
+                                    +{mission.xp_reward} XP
+                                </span>
+                            </div>
 
-    return (
-        <div className="bg-white/60 p-4 rounded-xl border border-white/50 shadow-sm relative overflow-hidden group">
-            <div className="flex justify-between items-start mb-2">
-                <div>
-                    <h3 className="font-bold text-gray-800">{mission.title}</h3>
-                    <p className="text-xs text-gray-500">{mission.description}</p>
-                </div>
-                <div className="text-xs font-bold px-2 py-1 bg-yellow-100 text-yellow-600 rounded-full flex items-center gap-1">
-                    ✨ {mission.reward_xp} XP
-                </div>
+                            {/* Progress Bar */}
+                            <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-2">
+                                <div
+                                    className={`h-full rounded-full transition-all duration-500 ${isComplete
+                                        ? 'bg-gradient-to-r from-green-400 to-emerald-500'
+                                        : 'bg-gradient-to-r from-pink-400 to-rose-400'
+                                        }`}
+                                    style={{ width: `${progressPercent}%` }}
+                                />
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                                <span className="text-xs text-gray-500">
+                                    {mission.progress}/{mission.goal}
+                                </span>
+                                {isComplete && !mission.claimed && (
+                                    <button className="px-3 py-1 bg-gradient-to-r from-pink-400 to-rose-400 text-white text-xs font-bold rounded-lg hover:scale-105 transition-transform">
+                                        Claim ✨
+                                    </button>
+                                )}
+                                {mission.claimed && (
+                                    <span className="text-xs text-green-500 font-bold">✓ Claimed</span>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
-            <div className="mt-4">
-                <div className="flex justify-between text-xs mb-1 font-semibold text-gray-500">
-                    <span>Progress</span>
-                    <span>{mission.current_count} / {mission.target_count}</span>
-                </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                        className={`h-full transition-all duration-500 ${isCompleted ? 'bg-green-400' : 'bg-pink-400'}`}
-                        style={{ width: `${percent}%` }}
-                    />
-                </div>
-            </div>
-
-            {canClaim && (
-                <button
-                    onClick={onClaim}
-                    disabled={isClaiming}
-                    className="absolute right-4 bottom-4 px-4 py-1.5 bg-green-500 text-white text-xs font-bold rounded-lg shadow-lg hover:scale-105 transition-all animate-pulse"
-                >
-                    {isClaiming ? '...' : 'CLAIM'}
+            {/* Leaderboard Button */}
+            <div className="mt-6 text-center">
+                <button className="px-6 py-3 bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all">
+                    🏆 Leaderboard
                 </button>
-            )}
-
-            {mission.is_claimed && (
-                <div className="absolute right-4 bottom-4 text-xs font-bold text-green-600 bg-green-100 px-3 py-1 rounded-lg">
-                    ✅ CLAIMED
-                </div>
-            )}
+            </div>
         </div>
     );
 }

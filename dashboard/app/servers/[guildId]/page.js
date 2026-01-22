@@ -135,7 +135,6 @@ export default function Dashboard({ params }) {
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    if (data.missions) setMissions(data.missions);
                     if (data.plan) setUserPlan(data.plan);
                     if (data.stats && !stats.total_members) {
                         setStats(prev => ({ ...prev, ...data.stats }));
@@ -144,9 +143,20 @@ export default function Dashboard({ params }) {
             } catch (e) { console.error("Failed to fetch missions/plan", e); }
         };
 
+        // MOCK MISSIONS FOR DASHBOARD - 4 items as requested!
+        const dashboardMocks = [
+            { key: 'm1', description_en: '💬 Send 10 Messages', description_th: '💬 ส่ง 10 ข้อความ', reward_xp: 100, current_count: 7, target_count: 10, is_claimed: false },
+            { key: 'm2', description_en: '🎤 Voice for 5 mins', description_th: '🎤 ห้องเสียง 5 นาที', reward_xp: 200, current_count: 5, target_count: 5, is_claimed: false },
+            { key: 'm3', description_en: '🤝 Invite 1 Friend', description_th: '🤝 เชิญเพื่อน 1 คน', reward_xp: 500, current_count: 0, target_count: 1, is_claimed: false },
+            { key: 'm4', description_en: '✨ React to 5 Posts', description_th: '✨ กดหัวใจ 5 ข้อความ', reward_xp: 50, current_count: 2, target_count: 5, is_claimed: false }
+        ];
+
+        setMissions(dashboardMocks);
         fetchStats();
         fetchMissions();
     }, [guildId, user]);
+
+
 
     // Actions
     const handleAction = async (action, template = selectedTemplate) => {
@@ -222,6 +232,13 @@ export default function Dashboard({ params }) {
     };
 
     const handleClaimReward = async (missionKey) => {
+        // Handle Mockup Claims locally for speed!
+        if (['m1', 'm2', 'm3', 'm4'].includes(missionKey)) {
+            setMissions(prev => prev.map(m => m.key === missionKey ? { ...m, is_claimed: true } : m));
+            setModalState({ show: true, type: 'success', message: "Reward claimed! (Mockup) 🌸✨" });
+            return;
+        }
+
         const res = await fetch(`/api/proxy/guild/${guildId}/claim-reward`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -233,6 +250,7 @@ export default function Dashboard({ params }) {
             setMissions(prev => prev.map(m => m.key === missionKey ? { ...m, is_claimed: true } : m));
         }
     };
+
 
     const handleClaimTrial = async () => {
         setIsClaimingTrial(true);
