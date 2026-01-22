@@ -153,6 +153,33 @@ export default function ReactionRolesPage({ params }) {
         setConfig({ ...config, mappings: newMappings });
     };
 
+    // Emoji Picker State
+    const [showEmojiPicker, setShowEmojiPicker] = useState(null); // index of mapping being edited
+
+    // Default Emoji List - Comprehensive!
+    const defaultEmojis = [
+        // Hearts & Love
+        '❤️', '💖', '💕', '💗', '💓', '💝', '💘', '🩷', '🩵', '🩶',
+        // Stars & Sparkles  
+        '✨', '⭐', '🌟', '💫', '🔥', '⚡', '🎇', '🎆', '✴️', '🌠',
+        // Nature & Flowers
+        '🌸', '🌷', '🌹', '🌺', '🌻', '🌼', '🍀', '🍁', '🍂', '🌿',
+        // Animals Cute
+        '🐱', '🐶', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐸',
+        // Gaming & Fun
+        '🎮', '🎯', '🎲', '🎪', '🎨', '🎭', '🎬', '🎤', '🎵', '🎶',
+        // Symbols & Shapes
+        '🛡️', '⚔️', '🏷️', '🔘', '🔷', '🔶', '🔹', '🔸', '💠', '🔰',
+        // Objects
+        '👑', '💎', '🏆', '🎖️', '🥇', '🥈', '🥉', '🎗️', '📌', '📍',
+        // Hands & Gestures
+        '👍', '👎', '👏', '🙌', '🤝', '✌️', '🤞', '🤟', '👋', '✋',
+        // Faces
+        '😊', '😎', '🥳', '😇', '🤩', '😍', '🥰', '😘', '🤗', '🙂',
+        // Food
+        '🍕', '🍔', '🍟', '🌮', '🍦', '🍰', '🧁', '🍩', '🍪', '☕'
+    ];
+
     if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>{isThai ? "กำลังโหลดข้อมูล..." : "Loading data..."}</div>;
 
     return (
@@ -213,19 +240,129 @@ export default function ReactionRolesPage({ params }) {
                                     <button onClick={() => removeMapping(idx)} style={{ position: 'absolute', top: '10px', right: '10px', color: '#ff4d4f', border: 'none', background: 'transparent', cursor: 'pointer' }}>✖</button>
 
                                     <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                                        <div style={{ flex: 1 }}>
+                                        <div style={{ flex: 1, position: 'relative' }}>
                                             <label style={{ fontSize: '0.8rem', color: '#888' }}>{isThai ? "รูปที่ต้องการ (Emoji)" : "Emoji"}</label>
-                                            <select className="input-mini" value={mapping.emoji} onChange={(e) => updateMapping(idx, 'emoji', e.target.value)}>
-                                                <option value="">{isThai ? "ไม่มี" : "None"}</option>
-                                                {emojis.map(e => (
-                                                    <option key={e.id} value={e.name}>{e.name} (Custom)</option>
-                                                ))}
-                                                <option value="✨">✨ (Sparkle)</option>
-                                                <option value="🌸">🌸 (Cherry Blossom)</option>
-                                                <option value="🛡️">🛡️ (Shield)</option>
-                                                <option value="🏷️">🏷️ (Tag)</option>
-                                                <option value="🔘">🔘 (Button)</option>
-                                            </select>
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowEmojiPicker(showEmojiPicker === idx ? null : idx)}
+                                                className="emoji-picker-trigger"
+                                                style={{
+                                                    width: '100%',
+                                                    padding: '8px 12px',
+                                                    borderRadius: '8px',
+                                                    border: '1.5px solid #ffb6c1',
+                                                    background: 'linear-gradient(135deg, #fff5f7 0%, #ffffff 100%)',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    fontSize: '1rem',
+                                                    transition: 'all 0.2s'
+                                                }}
+                                            >
+                                                <span style={{ fontSize: '1.3rem' }}>{mapping.emoji || '➕'}</span>
+                                                <span style={{ fontSize: '0.7rem', color: '#999' }}>▼</span>
+                                            </button>
+
+                                            {/* Emoji Grid Picker Popup */}
+                                            {showEmojiPicker === idx && (
+                                                <div className="emoji-grid-popup" style={{
+                                                    position: 'absolute',
+                                                    top: '100%',
+                                                    left: 0,
+                                                    zIndex: 1000,
+                                                    width: '280px',
+                                                    maxHeight: '300px',
+                                                    overflowY: 'auto',
+                                                    background: 'white',
+                                                    borderRadius: '12px',
+                                                    boxShadow: '0 8px 30px rgba(255, 182, 193, 0.3)',
+                                                    border: '1.5px solid #ffb6c1',
+                                                    padding: '10px',
+                                                    marginTop: '5px'
+                                                }}>
+                                                    {/* Server Custom Emojis */}
+                                                    {emojis.length > 0 && (
+                                                        <>
+                                                            <div style={{ fontSize: '0.7rem', color: '#ff85c1', fontWeight: '700', marginBottom: '6px', padding: '0 4px' }}>
+                                                                🎨 {isThai ? "อิโมจิของเซิร์ฟเวอร์" : "Server Emojis"}
+                                                            </div>
+                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '4px', marginBottom: '10px' }}>
+                                                                {emojis.map(e => (
+                                                                    <button
+                                                                        key={e.id}
+                                                                        type="button"
+                                                                        onClick={() => { updateMapping(idx, 'emoji', `<:${e.name}:${e.id}>`); setShowEmojiPicker(null); }}
+                                                                        style={{
+                                                                            width: '30px',
+                                                                            height: '30px',
+                                                                            border: 'none',
+                                                                            borderRadius: '6px',
+                                                                            background: mapping.emoji === `<:${e.name}:${e.id}>` ? '#ffe4f0' : 'transparent',
+                                                                            cursor: 'pointer',
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            justifyContent: 'center',
+                                                                            transition: 'all 0.15s'
+                                                                        }}
+                                                                        title={e.name}
+                                                                    >
+                                                                        <img src={e.url} alt={e.name} style={{ width: '22px', height: '22px' }} />
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </>
+                                                    )}
+
+                                                    {/* Default Emojis */}
+                                                    <div style={{ fontSize: '0.7rem', color: '#ff85c1', fontWeight: '700', marginBottom: '6px', padding: '0 4px' }}>
+                                                        ✨ {isThai ? "อิโมจิพื้นฐาน" : "Default Emojis"}
+                                                    </div>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '3px' }}>
+                                                        {defaultEmojis.map((emoji, i) => (
+                                                            <button
+                                                                key={i}
+                                                                type="button"
+                                                                onClick={() => { updateMapping(idx, 'emoji', emoji); setShowEmojiPicker(null); }}
+                                                                style={{
+                                                                    width: '30px',
+                                                                    height: '30px',
+                                                                    border: 'none',
+                                                                    borderRadius: '6px',
+                                                                    background: mapping.emoji === emoji ? '#ffe4f0' : 'transparent',
+                                                                    cursor: 'pointer',
+                                                                    fontSize: '1.1rem',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    transition: 'all 0.15s'
+                                                                }}
+                                                            >
+                                                                {emoji}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+
+                                                    {/* Clear Button */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => { updateMapping(idx, 'emoji', ''); setShowEmojiPicker(null); }}
+                                                        style={{
+                                                            width: '100%',
+                                                            marginTop: '10px',
+                                                            padding: '6px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #eee',
+                                                            background: '#f9f9f9',
+                                                            cursor: 'pointer',
+                                                            fontSize: '0.75rem',
+                                                            color: '#999'
+                                                        }}
+                                                    >
+                                                        {isThai ? "❌ ไม่ใช้อิโมจิ" : "❌ No Emoji"}
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                         <div style={{ flex: 2 }}>
                                             <label style={{ fontSize: '0.8rem', color: '#888' }}>{isThai ? "ชื่อบนปุ่ม (Button Label)" : "Button Label"}</label>
