@@ -1007,7 +1007,18 @@ class AnAnBot(commands.Bot):
         log_center = self.get_guild(ANAN_LOG_CENTER_ID)
         if not log_center: return
         
-        # Find category for this guild
+        # --- Handle Centralized Global Bans ---
+        if channel_type == "global_ban":
+            # Master Central Management Category
+            master_cat = disnake.utils.get(log_center.categories, name="🛡️ CENTRAL MANAGEMENT")
+            if master_cat:
+                ch = disnake.utils.get(master_cat.text_channels, name="📡-global-bans")
+                if ch:
+                    if not embed.footer.text:
+                        embed.set_footer(text=f"Origin: {guild.name} | ID: {guild.id}", icon_url=guild.icon.url if guild.icon else None)
+                    return await ch.send(embed=embed, view=view)
+
+        # --- Handle Guild-Specific Logs ---
         cat_name = f"📁 {guild.name[:20]} ({guild.id})"
         category = disnake.utils.get(log_center.categories, name=cat_name)
         if not category:
@@ -1020,7 +1031,7 @@ class AnAnBot(commands.Bot):
             "plan": "💎-plan-status",
             "system": "⚙️-system-logs",
             "access": "📡-access-logs",
-            "global_ban": "📡-global-bans"
+            "global_ban": "📡-global-bans" # Fallback if Master Room is missing
         }
         
         target_name = type_map.get(channel_type)
@@ -1043,36 +1054,32 @@ class AnAnBot(commands.Bot):
     async def _setup_log_center(self, guild):
         # 1. Automatic Category Creation in Log Center
         log_center = self.get_guild(ANAN_LOG_CENTER_ID)
-        if not log_center:
-            print(f"❌ Log Center Server ({ANAN_LOG_CENTER_ID}) not found in cache.")
-            return f"หาเซิร์ฟเวอร์ Log Center (ID: {ANAN_LOG_CENTER_ID}) ไม่เจอในฐานข้อมูลบอทค่ะ"
-
-        # Check Bot Permissions in Log Center Server
-        me = log_center.me
-        if not me.guild_permissions.manage_channels:
-            print(f"❌ Missing Manage Channels permission in Log Center Server.")
-            return "อันอันไม่มีสิทธิ 'จัดการห้อง' (Manage Channels) ในเซิร์ฟเวอร์ Log Center ค่ะ Papa! รบกวนตรวจสอบด้วยนะคะ"
+        if not log_center: return f"Log Center Not Found"
 
         try:
-            # Limit name length and sanitize
+            # 0. Ensure Central Management exists
+            master_cat = disnake.utils.get(log_center.categories, name="🛡️ CENTRAL MANAGEMENT")
+            if not master_cat:
+                master_cat = await log_center.create_category(name="🛡️ CENTRAL MANAGEMENT", position=0)
+                await log_center.create_text_channel(name="📡-global-bans", category=master_cat, topic="ศูนย์กลางรายงานการแบนเครือข่ายสำหรับทุกเซิร์ฟเวอร์")
+
+            # 1. Logic for Specific Guild
             safe_name = guild.name[:20]
             cat_name = f"📁 {safe_name} ({guild.id})"
             
             # Check if category already exists
             existing_cat = disnake.utils.get(log_center.categories, name=cat_name)
-            if existing_cat:
-                return f"หมวดหมู่ `{cat_name}` มีอยู่แล้วค่ะ (ไม่ต้องห่วงนะคะ น้องจะไม่สร้างซ้ำให้เลอะเทอะค่ะ!)"
+            if existing_cat: return True # Already setup
 
             # Create Category
             category = await log_center.create_category(name=cat_name)
             
-            # Channels to create
+            # Channels to create (Removed global-bans from per-guild categories)
             channels = [
                 ("🛡️-security-logs", "แจ้งเตือนการจัดการห้อง/ยศ/การบุกรุก"),
                 ("💎-plan-status", "รายงานแพลนปัจจุบันและจำนวนวันที่เหลือ (Plan | Duration)"),
                 ("⚙️-system-logs", "รายงานสถานะบอทและ Error ต่างๆ"),
-                ("📡-access-logs", "รายงานการเข้า/ออก และกิจกรรมสมาชิก"),
-                ("📡-global-bans", "รายงานการแบนเครือข่าย Global Ban (Sync Across Network)")
+                ("📡-access-logs", "รายงานการเข้า/ออก และกิจกรรมสมาชิก")
             ]
             
             for ch_name, ch_desc in channels:
@@ -1084,7 +1091,6 @@ class AnAnBot(commands.Bot):
                     color=disnake.Color.from_rgb(255, 182, 193),
                     timestamp=datetime.datetime.now()
                 )
-                embed.set_footer(text=f"Server ID: {guild.id}")
                 await new_ch.send(embed=embed)
             
             # Send Initial Plan Status
@@ -1100,13 +1106,10 @@ class AnAnBot(commands.Bot):
                 await self.send_anan_log(guild, "plan", embed_plan)
             except: pass
 
-            print(f"✅ Created Log Category and Channels for {guild.name} in Log Center")
-            return True # Success
-        except disnake.Forbidden:
-            return "อันอันถูกปฏิเสธการเข้าถึง (Forbidden) ขณะพยายามสร้างห้องค่ะ! รบกวนเช็คสิทธิ์ Administrator ของบอทใน Log Center หน่อยนะค๊าา"
+            return True 
         except Exception as e:
-            print(f"❌ Error creating log channels for guild {guild.id}: {e}")
-            return f"เกิดข้อผิดพลาดรุนแรง: {str(e)}"
+            print(f"Log Setup Error for {guild.id}: {e}")
+            return str(e)
 
     async def on_member_ban(self, guild, user):
         # 1. Logic to sync ban across network (same owner)
@@ -3227,53 +3230,57 @@ async def sync_badges(inter: disnake.ApplicationCommandInteraction):
             
     await inter.edit_original_response(content=f"ซิงค์ยศเกียรติยศเรียบร้อยแล้วค่ะ! ✨\nตรวจพบคุณใน {success_count}/{total_guilds} เซิร์ฟเวอร์ และจัดการมอบยศให้ตามสถานะของคุญเรียบร้อยแล้วคะ 🌸🏅")
 
-@bot.slash_command(description="ตั้งค่า Log Center สำหรับกิลด์ที่ระบุ (เจ้าของเท่านั้น)")
-async def setup_log_guild(inter: disnake.ApplicationCommandInteraction, guild_id: str):
+@bot.slash_command(description="ตั้งค่า Log Center สำหรับกิลด์ทั้งหมดที่คุณเป็นเจ้าของ (Zero-Click Batch Setup) 🚀")
+async def setup_log_guild(inter: disnake.ApplicationCommandInteraction):
     if inter.guild.id != ANAN_LOG_CENTER_ID:
         return await inter.response.send_message("❌ ขอโทษนะคะ Papa! คำสั่งนี้สามารถใช้งานได้เฉพาะใน Log Center ของเราเท่านั้นค่ะ ✨", ephemeral=True)
     
-    await inter.response.send_message(f"กำลังค้นหาและสร้างห้อง Log สำหรับเซิร์ฟเวอร์ที่คุณเลือกนะนะคะ... 🕵️‍♀️", ephemeral=True)
+    await inter.response.send_message(f"🕵️‍♀️ กำลังเริ่มระบบตรวจจับและตั้งค่า Log อัตโนมัติให้ Papa นะคะ...", ephemeral=True)
     
-    try:
-        target_guild = bot.get_guild(int(guild_id))
-        if not target_guild:
-            return await inter.edit_original_response(content="❌ An An หาเซิร์ฟเวอร์นี้ไม่เจอเลยค่ะ บอทได้อยู่ในเซิร์ฟเวอร์นั้นหรือเปล่าคะ? 🥺")
-        
-        # Manually trigger the join logic
-        result = await bot._setup_log_center(target_guild)
-        if result is True:
-            await inter.edit_original_response(content=f"✅ จัดการสร้างหมวดหมู่ Log สำหรับ **{target_guild.name}** ในเซิร์ฟเวอร์นี้เรียบร้อยแล้วค่ะ! 🌸🛡️")
-        else:
-            await inter.edit_original_response(content=f"❌ อุ๊ย! เกิดปัญหาขึ้นค่ะ: {result}")
-    except ValueError:
-        await inter.edit_original_response(content="❌ รบกวนระบุ Guild ID เป็นตัวเลขให้ถูกต้องด้วยนะคะ Papa!")
-    except Exception as e:
-        await inter.edit_original_response(content=f"เกิดข้อผิดพลาด: {str(e)}")
-
-@setup_log_guild.autocomplete("guild_id")
-async def setup_log_guild_autocomp(inter: disnake.ApplicationCommandInteraction, string: str):
-    # Only show guilds owned by the trigger user or Papa
+    # Configuration
     PAPA_ID = 956866340474478642
-    guilds = []
-    
-    # Check current Log Center categories to see which guilds are already setup
+    success_guilds = []
+    skipped_guilds = []
+    error_guilds = []
+
+    # Get already setup IDs
     log_center = bot.get_guild(ANAN_LOG_CENTER_ID)
     existing_ids = []
     if log_center:
         for cat in log_center.categories:
-            # Extract ID from "📁 Name (ID)"
             if "(" in cat.name and cat.name.endswith(")"):
                 try:
                     gid = cat.name.split("(")[-1][:-1]
                     existing_ids.append(gid)
                 except: pass
 
+    # Batch Process
     for g in bot.guilds:
-        if (g.owner_id == inter.author.id or inter.author.id == PAPA_ID) and str(g.id) not in existing_ids:
-            if string.lower() in g.name.lower():
-                guilds.append(disnake.OptionChoice(name=f"🏰 {g.name}", value=str(g.id)))
+        # Check ownership: User id OR Papa ID
+        if g.owner_id == inter.author.id or inter.author.id == PAPA_ID:
+            if str(g.id) in existing_ids:
+                skipped_guilds.append(g.name)
+                continue
+            
+            result = await bot._setup_log_center(g)
+            if result is True:
+                success_guilds.append(g.name)
+            else:
+                error_guilds.append(f"{g.name} ({result})")
+
+    # Final Report
+    status_msg = "✅ **ตั้งค่า Log Center เรียบร้อยแล้วค่ะ!** 🚀✨\n"
+    if success_guilds:
+        status_msg += f"- สำเร็จ: **{', '.join(success_guilds)}** 🌸\n"
+    if skipped_guilds:
+        status_msg += f"- ข้าม (มีอยู่แล้ว): {len(skipped_guilds)} เซิร์ฟเวอร์\n"
+    if error_guilds:
+        status_msg += f"❌ พบปัญหาบางจุด: {', '.join(error_guilds)}"
     
-    return guilds[:25]
+    if not success_guilds and not error_guilds and not skipped_guilds:
+        status_msg = "❌ อุ๊ย! An An ไม่เห็นเซิร์ฟเวอร์อื่นที่ Papa เป็นเจ้าของเลยค่ะ รบกวนตรวจสอบอีกทีนะคะ 🥺"
+
+    await inter.edit_original_response(content=status_msg)
 
 @bot.slash_command(description="ดูสถิติของกิลด์นี้")
 async def guild_stats(inter: disnake.ApplicationCommandInteraction):
