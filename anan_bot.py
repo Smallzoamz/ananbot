@@ -1485,18 +1485,64 @@ class AnAnBot(commands.Bot):
                 config = body.get("config", {}) # {enabled, role_id, channel_id}
                 
                 # Validate Role
-                if config.get("verification_role_id"):
-                    r = guild.get_role(int(config["verification_role_id"]))
+                role_id = config.get("role_id")
+                if role_id:
+                    r = guild.get_role(int(role_id))
                     if not r: return web.json_response({"error": "Role not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
                 
                 update_data = {
                     "verification_enabled": config.get("enabled", False),
-                    "verification_role_id": config.get("role_id"),
-                    # Add message content config later if needed
+                    "verification_role_id": role_id,
                 }
                 if "channel_id" in config: update_data["verification_channel_id"] = config["channel_id"]
                 
                 await save_guild_settings(guild_id, update_data)
+                
+                # Send beautiful verification Embed when enabled
+                if config.get("enabled"):
+                    # Find or create verification channel
+                    verify_ch = next((ch for ch in guild.text_channels if "verify" in ch.name.lower() or "ยืนยัน" in ch.name), None)
+                    
+                    # If no channel found, try to find a welcome or general channel
+                    if not verify_ch:
+                        verify_ch = next((ch for ch in guild.text_channels if "welcome" in ch.name.lower() or "ต้อนรับ" in ch.name), None)
+                    if not verify_ch:
+                        verify_ch = next((ch for ch in guild.text_channels if ch.permissions_for(guild.me).send_messages), None)
+                    
+                    if verify_ch:
+                        # Create beautiful Embed
+                        embed = disnake.Embed(
+                            title="🌸 ยืนยันตัวตน | Verification",
+                            description=(
+                                "**สวัสดีค่ะ ยินดีต้อนรับสู่เซิร์ฟเวอร์ของเรา!** 💕\n\n"
+                                "เพื่อความปลอดภัยของสมาชิกทุกคน กรุณายืนยันตัวตนก่อนเข้าถึงห้องต่างๆ นะคะ\n\n"
+                                "**🛡️ ขั้นตอน:**\n"
+                                "1️⃣ กดปุ่ม **เข้าสู่ประตู** ด้านล่าง\n"
+                                "2️⃣ เชื่อมต่อบัญชี Discord\n"
+                                "3️⃣ รับ Role และเริ่มสนุกได้เลย!\n\n"
+                                "*ขอบคุณที่เลือกเราค่ะ~* 🌷"
+                            ),
+                            color=disnake.Color.from_rgb(255, 182, 193)
+                        )
+                        embed.set_thumbnail(url=guild.icon.url if guild.icon else None)
+                        embed.set_footer(text="An An Gatekeeper 🛡️ | Powered by ananbot.xyz", icon_url=self.user.avatar.url if self.user.avatar else None)
+                        embed.timestamp = datetime.datetime.now()
+                        
+                        # Create verify link button
+                        verify_url = f"https://ananbot.xyz/verify/{guild_id}"
+                        
+                        view = disnake.ui.View(timeout=None)
+                        view.add_item(disnake.ui.Button(
+                            label="🏰 เข้าสู่ประตู",
+                            url=verify_url,
+                            style=disnake.ButtonStyle.link
+                        ))
+                        
+                        try:
+                            await verify_ch.send(embed=embed, view=view)
+                        except Exception as e:
+                            print(f"Failed to send verify embed: {e}")
+                
                 return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
 
             elif action == "get_roles":

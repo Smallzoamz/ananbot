@@ -33,8 +33,11 @@ const VerificationModal = ({ show, onClose, guildId, user }) => {
         fetchData();
     }, [show, guildId, user]);
 
+    const [isSaving, setIsSaving] = useState(false);
+
     const handleSave = async () => {
-        setStatusMsg("Saving...");
+        setIsSaving(true);
+        setStatusMsg("🔄 Synchronizing...");
         try {
             const res = await fetch(`/api/proxy/action`, {
                 method: 'POST',
@@ -48,12 +51,14 @@ const VerificationModal = ({ show, onClose, guildId, user }) => {
             });
             const data = await res.json();
             if (data.success) {
-                setStatusMsg("✅ Saved!");
-                setTimeout(() => setStatusMsg(""), 2000);
+                setStatusMsg("✅ Synced!");
+                setTimeout(() => setStatusMsg(""), 3000);
             }
-            else setStatusMsg("❌ Error");
+            else setStatusMsg("❌ " + (data.error || "Error"));
         } catch (e) {
             setStatusMsg("❌ Network Error");
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -63,6 +68,8 @@ const VerificationModal = ({ show, onClose, guildId, user }) => {
 
     const getStatusClass = () => {
         if (statusMsg.includes('Error')) return 'error';
+        if (statusMsg.includes('Synced')) return 'success';
+        if (statusMsg.includes('Synchronizing')) return 'syncing';
         if (statusMsg) return 'success';
         return '';
     };
@@ -152,7 +159,13 @@ const VerificationModal = ({ show, onClose, guildId, user }) => {
                         </div>
                         <div className="gk-actions">
                             <button onClick={onClose} className="gk-btn gk-btn-cancel">Cancel</button>
-                            <button onClick={handleSave} className="gk-btn gk-btn-save">Save Changes</button>
+                            <button
+                                onClick={handleSave}
+                                className="gk-btn gk-btn-save"
+                                disabled={isSaving}
+                            >
+                                {isSaving ? '🔄 Syncing...' : 'Save Changes'}
+                            </button>
                         </div>
                     </div>
 
