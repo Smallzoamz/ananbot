@@ -704,6 +704,7 @@ class AnAnBot(commands.Bot):
         self.moderator = ModeratorManager(self)
         
         self.sync_locks = set()
+        self.start_time = datetime.datetime.now() # Track Uptime
         self.update_stats_loop.start()
         self.check_trial_expiry_task.start()
         self.mission_rotation_task.start()
@@ -1607,6 +1608,69 @@ class AnAnBot(commands.Bot):
                             asyncio.create_task(self.ensure_global_badges(member))
 
                 return web.json_response({"success": success}, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "get_system_stats":
+                # Papa Access Check 👑
+                if str(body.get("user_id")) != "956866340474478642":
+                    return web.json_response({"error": "Unauthorized"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+                
+                # Calculate Uptime
+                uptime = datetime.datetime.now() - self.start_time
+                days = uptime.days
+                hours, remainder = divmod(uptime.seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                uptime_str = f"{days}d {hours}h {minutes}m"
+                
+                # Memory Usage (requires psutil, but we'll try basic approach or mock if not available)
+                # Since we might not have psutil installed in the environment, we can omit it or use a simple placeholder
+                ram_usage = "N/A"
+                try:
+                    import psutil
+                    process = psutil.Process(os.getpid())
+                    ram_usage = f"{process.memory_info().rss / 1024 / 1024:.1f} MB"
+                except: pass
+
+                stats = {
+                    "ping": f"{round(self.latency * 1000)}ms",
+                    "uptime": uptime_str,
+                    "guilds": len(self.guilds),
+                    "users": sum(g.member_count for g in self.guilds),
+                    "ram": ram_usage,
+                    "version": "v4.1 Hybrid Precision"
+                }
+                return web.json_response(stats, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "send_terminal_broadcast":
+                # Papa Access Check 👑
+                if str(body.get("user_id")) != "956866340474478642":
+                    return web.json_response({"error": "Unauthorized"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+                
+                guild_id = body.get("target_guild_id") # Optional: broadcast to specific or current context
+                
+                # Current Logic: Broadcast to ALL connected guilds' terminal channels
+                # Or just the one the dashboard is viewing. Dashboard sends 'guild_id' in body usually?
+                # The request body for /api/action usually contains 'guild_id' if we structured it that way, 
+                # but let's assume we pass 'guild_id' explicitly as target.
+                
+                target_gid = body.get("guild_id")
+                if not target_gid:
+                     return web.json_response({"error": "Missing guild_id"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                guild = self.get_guild(int(target_gid))
+                if not guild:
+                    return web.json_response({"error": "Guild not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+                
+                term_ch = disnake.utils.get(guild.text_channels, name="anan-terminal")
+                if term_ch:
+                    embed = disnake.Embed(
+                        title="🖥️ System Console Test",
+                        description=f"Hello Papa! verification received from Dashboard at `{datetime.datetime.now().strftime('%H:%M:%S')}`\n\n**Status:** Online 🟢\n**Latency:** {round(self.latency * 1000)}ms",
+                        color=disnake.Color.teal()
+                    )
+                    await term_ch.send(embed=embed)
+                    return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+                else:
+                    return web.json_response({"error": "Terminal channel not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
 
             return web.json_response({"error": "Unknown action"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
             
