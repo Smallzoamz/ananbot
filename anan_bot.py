@@ -966,58 +966,74 @@ class AnAnBot(commands.Bot):
             await channel.send(embed=embed)
 
     async def on_guild_join(self, guild):
+        return await self._setup_log_center(guild)
+
+    async def _setup_log_center(self, guild):
         # 1. Automatic Category Creation in Log Center
         log_center = self.get_guild(ANAN_LOG_CENTER_ID)
-        if log_center:
+        if not log_center:
+            print(f"❌ Log Center Server ({ANAN_LOG_CENTER_ID}) not found in cache.")
+            return f"หาเซิร์ฟเวอร์ Log Center (ID: {ANAN_LOG_CENTER_ID}) ไม่เจอในฐานข้อมูลบอทค่ะ"
+
+        # Check Bot Permissions in Log Center Server
+        me = log_center.me
+        if not me.guild_permissions.manage_channels:
+            print(f"❌ Missing Manage Channels permission in Log Center Server.")
+            return "อันอันไม่มีสิทธิ 'จัดการห้อง' (Manage Channels) ในเซิร์ฟเวอร์ Log Center ค่ะ Papa! รบกวนตรวจสอบด้วยนะคะ"
+
+        try:
+            # Limit name length and sanitize
+            safe_name = guild.name[:20]
+            cat_name = f"📁 {safe_name} ({guild.id})"
+            
+            # Check if category already exists
+            existing_cat = disnake.utils.get(log_center.categories, name=cat_name)
+            if existing_cat:
+                return f"หมวดหมู่ `{cat_name}` มีอยู่แล้วค่ะ (ไม่ต้องห่วงนะคะ น้องจะไม่สร้างซ้ำให้เลอะเทอะค่ะ!)"
+
+            # Create Category
+            category = await log_center.create_category(name=cat_name)
+            
+            # Channels to create
+            channels = [
+                ("🛡️-security-logs", "แจ้งเตือนการจัดการห้อง/ยศ/การบุกรุก"),
+                ("💎-plan-status", "รายงานแพลนปัจจุบันและจำนวนวันที่เหลือ (Plan | Duration)"),
+                ("⚙️-system-logs", "รายงานสถานะบอทและ Error ต่างๆ"),
+                ("📡-access-logs", "รายงานการเข้า/ออก และกิจกรรมสมาชิก")
+            ]
+            
+            for ch_name, ch_desc in channels:
+                new_ch = await log_center.create_text_channel(name=ch_name, category=category, topic=ch_desc)
+                # Initial Greeting
+                embed = disnake.Embed(
+                    title=f"📡 Log System Initialized",
+                    description=f"ระบบบันทึกข้อมูลสำหรับ **{guild.name}** เริ่มทำงานแล้วค่ะ! ✨\nหมวดหมู่: `{ch_name}`",
+                    color=disnake.Color.from_rgb(255, 182, 193),
+                    timestamp=datetime.datetime.now()
+                )
+                embed.set_footer(text=f"Server ID: {guild.id}")
+                await new_ch.send(embed=embed)
+            
+            # Send Initial Plan Status
             try:
-                # Limit name length and sanitize
-                safe_name = guild.name[:20]
-                
-                # Check if category already exists
-                existing_cat = disnake.utils.get(log_center.categories, name=f"📁 {safe_name} ({guild.id})")
-                if existing_cat: return
+                plan = await get_user_plan(str(guild.owner_id))
+                plan_type = plan.get("plan_type", "free").upper()
+                embed_plan = disnake.Embed(
+                    title="📊 Initial Plan Status",
+                    description=f"Current Plan: **{plan_type}**\nStatus: `Initialized`",
+                    color=disnake.Color.purple(),
+                    timestamp=datetime.datetime.now()
+                )
+                await self.send_anan_log(guild, "plan", embed_plan)
+            except: pass
 
-                # Create Category
-                cat_name = f"📁 {safe_name} ({guild.id})"
-                category = await log_center.create_category(name=cat_name)
-                
-                # Channels to create
-                channels = [
-                    ("🛡️-security-logs", "แจ้งเตือนการจัดการห้อง/ยศ/การบุกรุก"),
-                    ("💎-plan-status", "รายงานแพลนปัจจุบันและจำนวนวันที่เหลือ (Plan | Duration)"),
-                    ("⚙️-system-logs", "รายงานสถานะบอทและ Error ต่างๆ"),
-                    ("📡-access-logs", "รายงานการเข้า/ออก และกิจกรรมสมาชิก")
-                ]
-                
-                for ch_name, ch_desc in channels:
-                    new_ch = await log_center.create_text_channel(name=ch_name, category=category, topic=ch_desc)
-                    # Initial Greeting
-                    embed = disnake.Embed(
-                        title=f"📡 Log System Initialized",
-                        description=f"ระบบบันทึกข้อมูลสำหรับ **{guild.name}** เริ่มทำงานแล้วค่ะ! ✨\nหมวดหมู่: `{ch_name}`",
-                        color=disnake.Color.from_rgb(255, 182, 193),
-                        timestamp=datetime.datetime.now()
-                    )
-                    embed.set_footer(text=f"Server ID: {guild.id}")
-                    await new_ch.send(embed=embed)
-                
-                print(f"✅ Created Log Category and Channels for {guild.name} in Log Center")
-                
-                # Send Initial Plan Status
-                try:
-                    plan = await get_user_plan(str(guild.owner_id))
-                    plan_type = plan.get("plan_type", "free").upper()
-                    embed_plan = disnake.Embed(
-                        title="📊 Initial Plan Status",
-                        description=f"Current Plan: **{plan_type}**\nStatus: `Initialized`",
-                        color=disnake.Color.purple(),
-                        timestamp=datetime.datetime.now()
-                    )
-                    await self.send_anan_log(guild, "plan", embed_plan)
-                except: pass
-
-            except Exception as e:
-                print(f"❌ Error creating log channels for guild {guild.id}: {e}")
+            print(f"✅ Created Log Category and Channels for {guild.name} in Log Center")
+            return True # Success
+        except disnake.Forbidden:
+            return "อันอันถูกปฏิเสธการเข้าถึง (Forbidden) ขณะพยายามสร้างห้องค่ะ! รบกวนเช็คสิทธิ์ Administrator ของบอทใน Log Center หน่อยนะค๊าา"
+        except Exception as e:
+            print(f"❌ Error creating log channels for guild {guild.id}: {e}")
+            return f"เกิดข้อผิดพลาดรุนแรง: {str(e)}"
 
     async def on_member_join(self, member):
         # 1. Access Log
@@ -3058,8 +3074,11 @@ async def setup_log_guild(inter: disnake.ApplicationCommandInteraction, guild_id
             return await inter.edit_original_response(content="❌ An An หาเซิร์ฟเวอร์นี้ไม่เจอเลยค่ะ บอทได้อยู่ในเซิร์ฟเวอร์นั้นหรือเปล่าคะ? 🥺")
         
         # Manually trigger the join logic
-        await bot.on_guild_join(target_guild)
-        await inter.edit_original_response(content=f"✅ จัดการสร้างหมวดหมู่ Log สำหรับ **{target_guild.name}** ในเซิร์ฟเวอร์นี้เรียบร้อยแล้วค่ะ! 🌸🛡️")
+        result = await bot._setup_log_center(target_guild)
+        if result is True:
+            await inter.edit_original_response(content=f"✅ จัดการสร้างหมวดหมู่ Log สำหรับ **{target_guild.name}** ในเซิร์ฟเวอร์นี้เรียบร้อยแล้วค่ะ! 🌸🛡️")
+        else:
+            await inter.edit_original_response(content=f"❌ อุ๊ย! เกิดปัญหาขึ้นค่ะ: {result}")
     except ValueError:
         await inter.edit_original_response(content="❌ รบกวนระบุ Guild ID เป็นตัวเลขให้ถูกต้องด้วยนะคะ Papa!")
     except Exception as e:
