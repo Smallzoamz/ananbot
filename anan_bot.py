@@ -500,6 +500,39 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
         
         await verify_ch.send(embed=embed, view=VerificationView(member_role_name))
 
+    # 4.1 Save Verification Role ID to DB (Unified Strategy) 🛡️
+    target_role_id = None
+    
+    # Standard Templates: Auto-detect
+    if template_name in ["Shop", "Community", "Fanclub"]:
+        if member_role_name:
+             # Find role object
+             role_obj = disnake.utils.get(guild.roles, name=member_role_name)
+             if role_obj: target_role_id = str(role_obj.id)
+             
+    # Custom Template: Use index from extra_data
+    elif template_name == "Custom" and "verification_role_index" in extra_data:
+        try:
+            idx = int(extra_data["verification_role_index"])
+            # dynamic_roles is created in step 1. We need to access the created role object.
+            # We can use the name from dynamic_roles[idx] to find in roles_map
+            if 0 <= idx < len(dynamic_roles):
+                role_name_to_find = dynamic_roles[idx]["name"]
+                if role_name_to_find in roles_map:
+                    target_role_id = str(roles_map[role_name_to_find].id)
+        except Exception as e:
+            print(f"Error finding verification role: {e}")
+
+    # Save to DB if found
+    if target_role_id:
+        # Default enable if set up
+        await save_guild_settings(guild.id, {
+            "verification_role_id": target_role_id,
+            "verification_enabled": True,
+            "verification_channel_id": str(verify_ch.id) if verify_ch else None
+        })
+        print(f"✅ Auto-configured Verification Role: {target_role_id}")
+
 
     # If it's a game community, post role selection in "รับยศผู้เล่น"
     if template_name == "Community" and "games" in extra_data:
@@ -1416,6 +1449,56 @@ class AnAnBot(commands.Bot):
                 emojis = [{"id": str(e.id), "name": e.name, "url": e.url, "animated": e.animated} for e in guild.emojis]
                 return web.json_response({"emojis": emojis}, headers={"Access-Control-Allow-Origin": "*"})
 
+            elif action == "verify_execute":
+                user_id = body.get("user_id")
+                if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                # Check DB for settings
+                settings = await get_guild_settings(guild_id)
+                if not settings or not settings.get("verification_enabled"):
+                     return web.json_response({"error": "Verification is disabled on this server."}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                role_id = settings.get("verification_role_id")
+                if not role_id:
+                     return web.json_response({"error": "Verification Role not configured."}, status=400, headers={"Access-Control-Allow-Origin": "*"})
+                
+                member = guild.get_member(int(user_id))
+                if not member:
+                     return web.json_response({"error": "Member not found in Discord."}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+                
+                role = guild.get_role(int(role_id))
+                if not role:
+                     return web.json_response({"error": "Configured Role not found on server."}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+                
+                try:
+                    await member.add_roles(role)
+                    return web.json_response({"success": True, "message": f"Verified! Assigned role {role.name}"}, headers={"Access-Control-Allow-Origin": "*"})
+                except Exception as e:
+                    return web.json_response({"error": f"Failed to assign role: {str(e)}"}, status=500, headers={"Access-Control-Allow-Origin": "*"})
+
+            elif action == "save_verification_config":
+                user_id = body.get("user_id")
+                plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
+                if plan.get("plan_type") == "free":
+                    return web.json_response({"error": "Pro Plan required"}, status=403, headers={"Access-Control-Allow-Origin": "*"})
+                
+                config = body.get("config", {}) # {enabled, role_id, channel_id}
+                
+                # Validate Role
+                if config.get("verification_role_id"):
+                    r = guild.get_role(int(config["verification_role_id"]))
+                    if not r: return web.json_response({"error": "Role not found"}, status=404, headers={"Access-Control-Allow-Origin": "*"})
+                
+                update_data = {
+                    "verification_enabled": config.get("enabled", False),
+                    "verification_role_id": config.get("role_id"),
+                    # Add message content config later if needed
+                }
+                if "channel_id" in config: update_data["verification_channel_id"] = config["channel_id"]
+                
+                await save_guild_settings(guild_id, update_data)
+                return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+
             elif action == "get_roles":
                 user_id = body.get("user_id")
                 plan = await get_user_plan(user_id) if user_id else {"plan_type": "free"}
@@ -1524,6 +1607,44 @@ class AnAnBot(commands.Bot):
                     settings["counts"] = current_ticket["counts"]
                 await save_guild_settings(guild_id, {"ticket_config": settings})
                 return web.json_response({"success": True}, headers={"Access-Control-Allow-Origin": "*"})
+
+    async def handle_guild_settings(self, request):
+        guild_id = request.match_info.get('guild_id')
+        settings = await get_guild_settings(guild_id) or {}
+        
+        # Ensure we return clean data structure
+        response_data = {
+           "welcome": {
+               "enabled": settings.get("welcome_enabled", False),
+               "channel_id": settings.get("welcome_channel_id"),
+               "message": settings.get("welcome_message"),
+               "image_url": settings.get("welcome_image_url")
+           },
+           "goodbye": {
+               "enabled": settings.get("goodbye_enabled", False),
+               "channel_id": settings.get("goodbye_channel_id"),
+               "message": settings.get("goodbye_message"),
+               "image_url": settings.get("goodbye_image_url")
+           },
+           "ticket": settings.get("ticket_config", {}),
+           "social": settings.get("social_config", {}),
+           "reaction_roles": settings.get("reaction_roles_config", {}),
+           "moderator": settings.get("moderator_config", {}),
+           "personalizer": {
+               "nickname": settings.get("bot_nickname"),
+               "bio": settings.get("bot_bio"),
+               "activity_type": settings.get("activity_type"),
+               "status_text": settings.get("status_text"),
+               "avatar_url": settings.get("avatar_url"),
+               "banner_color": settings.get("banner_color")
+           },
+           "verification": {
+               "enabled": settings.get("verification_enabled", False),
+               "role_id": settings.get("verification_role_id"),
+               "channel_id": settings.get("verification_channel_id")
+           }
+        }
+        return web.json_response(response_data, headers={"Access-Control-Allow-Origin": "*"})
 
             elif action == "send_ticket_panel":
                 user_id = body.get("user_id")

@@ -227,19 +227,50 @@ const SetupModal = ({
                                                         }}
                                                         style={{ width: '32px', height: '32px', borderRadius: '4px', border: 'none', cursor: 'pointer', flexShrink: 0 }}
                                                     />
-                                                    <input
-                                                        type="text"
-                                                        value={role.name || ""}
-                                                        onChange={(e) => {
-                                                            const newRoles = [...customRoles];
-                                                            const roleIdx = customRoles.indexOf(role);
-                                                            newRoles[roleIdx].name = e.target.value;
-                                                            setCustomRoles(newRoles);
-                                                        }}
-                                                        className="bare-input"
-                                                        placeholder="Role Name"
-                                                        style={{ flex: 1, fontSize: '14px', fontWeight: '600' }}
-                                                    />
+                                                    <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                                                        <input
+                                                            type="text"
+                                                            value={role.name || ""}
+                                                            onChange={(e) => {
+                                                                const newRoles = [...customRoles];
+                                                                const roleIdx = customRoles.indexOf(role);
+                                                                newRoles[roleIdx].name = e.target.value;
+                                                                setCustomRoles(newRoles);
+                                                            }}
+                                                            className="bare-input"
+                                                            placeholder="Role Name"
+                                                            style={{ width: '100%', fontSize: '14px', fontWeight: '600', paddingRight: '40px' }}
+                                                        />
+
+                                                        {/* Shield Icon Toggle (Inside Input) */}
+                                                        <button
+                                                            className={`sn-shield-btn ${role.isVerified ? 'verified' : ''}`}
+                                                            style={{
+                                                                position: 'absolute',
+                                                                right: '5px',
+                                                                background: 'none',
+                                                                border: 'none',
+                                                                cursor: 'pointer',
+                                                                fontSize: '18px',
+                                                                opacity: role.isVerified ? 1 : 0.3,
+                                                                transition: 'all 0.2s',
+                                                                zIndex: 5
+                                                            }}
+                                                            onClick={() => {
+                                                                const newRoles = customRoles.map((r, idx) => ({
+                                                                    ...r,
+                                                                    isVerified: idx === customRoles.indexOf(role) ? !r.isVerified : false
+                                                                }));
+                                                                setCustomRoles(newRoles);
+                                                            }}
+                                                            title={role.isVerified ? "Verified Role Active" : "Click to set as Verification Role"}
+                                                        >
+                                                            🛡️
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Mascot Tip Removed (Moved to Footer) */}
+
                                                     <button className="sn-button-ghost" style={{ flexShrink: 0 }} onClick={() => onShowPermissions(customRoles.indexOf(role))} title="Permissions">⚙️</button>
                                                     <button className="sn-button-ghost" style={{ flexShrink: 0 }} onClick={() => setCustomRoles(customRoles.filter(r => r !== role))} title="Delete">🗑️</button>
                                                 </div>
@@ -409,7 +440,27 @@ const SetupModal = ({
                         </div>
                     )}
 
-                    <div className="setup-footer" style={{ marginTop: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '20px' }}>
+                    <div className="setup-footer" style={{ marginTop: '20px', borderTop: '1px solid #f1f5f9', paddingTop: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+
+                        {/* Mascot Tip (Dynamic) 🌸 */}
+                        {isCustomMode && (
+                            <div className="mascot-footer-tip animate-pop" style={{ display: 'flex', alignItems: 'center', gap: '12px', background: '#fff0f5', padding: '10px 16px', borderRadius: '12px', border: '1px dashed #f9a8d4' }}>
+                                <img
+                                    src={customRoles.some(r => r.isVerified) ? "/images/anan_kimono_2.png" : "/images/anan_kimono_1.jpg"}
+                                    alt="An An"
+                                    style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '50%', border: '2px solid #ec4899' }}
+                                />
+                                <div style={{ flex: 1 }}>
+                                    <p style={{ fontSize: '13px', color: '#831843', fontWeight: 'bold', margin: 0 }}>
+                                        {customRoles.some(r => r.isVerified)
+                                            ? `Perfect! "${customRoles.find(r => r.isVerified)?.name}" will be the Citizen Role! 🛡️`
+                                            : "Tip: Don't forget to click the Shield 🛡️ on a role to enable Verification!"
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
                         <button className="modal-btn primary-long" onClick={onDeploy} disabled={isDeploying}>
                             {isDeploying ? "Deploying..." : (isCustomMode ? "Finalize & Magic Deploy 🚀" : "Magic Deploy 🪄")}
                         </button>

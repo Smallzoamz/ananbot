@@ -4,12 +4,14 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { CrownIcon, ProBadge, TwitchIcon, YouTubeIcon } from "../../../components/Icons";
 import ConsoleModal from "./ConsoleModal";
+import VerificationModal from "./VerificationModal";
 
 const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructure, onShowSelectiveModal, userPlan, onShowProWall }) => {
     const router = useRouter();
     const { data: session } = useSession();
     const isPapa = session?.user?.id === "956866340474478642" || session?.user?.uid === "956866340474478642";
     const [showConsoleModal, setShowConsoleModal] = React.useState(false);
+    const [showVerificationModal, setShowVerificationModal] = React.useState(false);
 
     const tabs = ["All Plugins", "Essentials", "Stream Alert", "Server Management", "Moderator", "Utilities"];
 
@@ -112,6 +114,18 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
             desc: "Advanced auto-mod, audit logs, and security tools to keep your server safe.",
             action: () => checkPro("Moderator", () => router.push(`/servers/${guildId}/moderator`)),
             btnText: "Configure"
+        },
+        {
+            id: "verification",
+            name: "Gatekeeper System",
+            icon: "⛩️",
+            badge: "NEW",
+            badgeClass: "p-badge animate-pulse bg-pink-500",
+            category: "Moderator",
+            desc: "Anime-style Web Verification (Anti-Raid). Protect your server with the Gatekeeper Protocol.",
+            action: () => setShowVerificationModal(true),
+            btnText: "Configure",
+            isActive: true
         },
         {
             id: "temproom",
@@ -231,6 +245,13 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
                     guildId={guildId}
                 />
             )}
+
+            <VerificationModal
+                show={showVerificationModal}
+                onClose={() => setShowVerificationModal(false)}
+                guildId={guildId}
+                user={session?.user}
+            />
         </div>
     );
 };

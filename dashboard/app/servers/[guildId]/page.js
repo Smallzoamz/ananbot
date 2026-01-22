@@ -189,7 +189,6 @@ export default function Dashboard({ params }) {
             if (setupFlavor === "Friend") finalExtra = {};
         } else if (selectedTemplate === "Fanclub") {
             finalExtra = { platforms: extraDataInput.split(",").map(s => s.trim()) };
-        } else if (selectedTemplate === "Custom") {
             finalExtra = {
                 custom_roles: customRoles.map(r => ({
                     name: r.name,
@@ -197,7 +196,8 @@ export default function Dashboard({ params }) {
                     permissions: r.permissions,
                     permissions_bitmask: r.permissions_bitmask
                 })),
-                custom_zones: customZones
+                custom_zones: customZones,
+                verification_role_index: customRoles.findIndex(r => r.isVerified) // Send index of the verified role
             };
         }
 
