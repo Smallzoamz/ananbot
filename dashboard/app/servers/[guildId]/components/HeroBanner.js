@@ -8,13 +8,9 @@ const HeroBanner = ({ guildId, missions, stats, language, onClaimReward }) => {
     return (
         <div className="hero-banner mission-center">
             <div className="hero-bg-anime">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(lvl => (
-                    <div
-                        key={lvl}
-                        className={`hero-bg-icon lvl-${lvl}`}
-                        style={{ backgroundImage: `url('/assets/levels/LV${lvl}.png')` }}
-                    ></div>
-                ))}
+                <div className="mesh-blob blob-1"></div>
+                <div className="mesh-blob blob-2"></div>
+                <div className="mesh-blob blob-3"></div>
             </div>
             <div className="hero-text">
                 <h1>Grow your server with <span>Missions</span></h1>

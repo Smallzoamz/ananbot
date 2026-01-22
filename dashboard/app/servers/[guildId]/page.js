@@ -307,7 +307,7 @@ export default function Dashboard({ params }) {
     };
 
     return (
-        <div className="dashboard-container blur-in">
+        <div className="dashboard-container">
             <HeroBanner
                 guildId={guildId}
                 missions={missions}

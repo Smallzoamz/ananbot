@@ -10,16 +10,22 @@ export default function MascotWrapper() {
     const [isPaused, setIsPaused] = useState(false);
 
     useEffect(() => {
-        // Simple observer to check if any modal overlay is present in the DOM
+        let timeoutId;
         const checkModals = () => {
-            const hasOverlay = !!document.querySelector('.fixed-overlay');
-            setIsPaused(hasOverlay);
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+                const hasOverlay = !!document.querySelector('.fixed-overlay');
+                setIsPaused(hasOverlay);
+            }, 100); // 100ms debounce 🌸
         };
 
         const observer = new MutationObserver(checkModals);
         observer.observe(document.body, { childList: true, subtree: true });
 
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+            clearTimeout(timeoutId);
+        };
     }, []);
 
     return <Mascot isPaused={isPaused} />;

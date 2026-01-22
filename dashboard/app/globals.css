@@ -64,19 +64,19 @@ body {
 }
 
 .blur-in {
-  animation: blurFadeIn 0.3s ease-out forwards;
-  will-change: backdrop-filter, background;
+  /* Animation simplified for performance ⚡ */
+  animation: fadeIn 0.3s ease-out forwards;
 }
 
-@keyframes blurFadeIn {
+@keyframes fadeIn {
   from {
-    backdrop-filter: blur(0px);
-    background: rgba(255, 241, 242, 0);
+    opacity: 0;
+    transform: translateY(10px);
   }
 
   to {
-    backdrop-filter: blur(6px);
-    background: rgba(255, 241, 242, 0.35);
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -553,12 +553,10 @@ h3 {
   align-items: center;
   justify-content: flex-start;
 
-  background: rgba(255, 241, 242, 0.3);
-  backdrop-filter: blur(6px);
-  /* Balanced for performance */
+  background: rgba(255, 241, 242, 0.4);
+  /* Removed global backdrop-filter for performance ⚡ */
   padding: 30px 20px;
   overflow-y: auto;
-  will-change: backdrop-filter;
 }
 
 /* Safe Centering for Modal Cards */
@@ -1625,6 +1623,12 @@ h3 {
   overflow: visible;
 }
 
+.hero-text {
+  position: relative;
+  z-index: 10;
+  /* Ensure text is above blobs 🌸 */
+}
+
 .hero-text h1 {
   font-size: 38px;
   margin-bottom: 30px;
@@ -1677,17 +1681,63 @@ h3 {
   z-index: 0;
   overflow: hidden;
   border-radius: 40px;
+  background: linear-gradient(135deg, #fff5f8 0%, #fdf4ff 50%, #f5f3ff 100%);
 }
 
-.hero-bg-icon {
+/* Mesh Gradient Blobs 🌈 - Optimized for Performance ⚡ */
+.mesh-blob {
   position: absolute;
-  width: 70px;
-  height: 70px;
-  background-size: contain;
-  background-repeat: no-repeat;
-  opacity: 0.12;
-  filter: blur(1px) grayscale(0.2);
-  transition: opacity 0.5s;
+  filter: blur(60px);
+  opacity: 0.4;
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.blob-1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(255, 133, 193, 0.4) 0%, transparent 70%);
+  top: -100px;
+  left: -100px;
+  animation-duration: 25s;
+}
+
+.blob-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(192, 132, 252, 0.3) 0%, transparent 70%);
+  bottom: -50px;
+  right: -50px;
+  animation-duration: 30s;
+  animation-delay: -5s;
+}
+
+.blob-3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255, 183, 226, 0.3) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  animation-duration: 22s;
+  animation-delay: -10s;
+}
+
+@keyframes mesh-move {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+
+  100% {
+    transform: translate(10px, -10px) scale(1.05);
+  }
 }
 
 .mission-card-wrapper {
@@ -1725,11 +1775,13 @@ h3 {
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow: 0 25px 60px -12px rgba(255, 183, 226, 0.35);
-  backdrop-filter: blur(30px);
+  backdrop-filter: blur(10px);
+  /* Reduced from 30px to fix Modal lag ⚡ */
   transform: rotate(-3deg);
   transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   position: relative;
   overflow: hidden;
+  will-change: transform, backdrop-filter;
 }
 
 .mission-card-wrapper:hover .mission-card {
@@ -1880,29 +1932,24 @@ h3 {
   margin-top: 8px;
 }
 
-@keyframes bounce-x {
+@keyframes float {
 
   0%,
   100% {
-    left: 0%;
+    transform: translateY(0) rotate(0deg);
   }
 
   50% {
-    left: calc(100% - 70px);
+    transform: translateY(-20px) rotate(2deg);
   }
 }
 
-@keyframes bounce-y {
-
-  0%,
-  100% {
-    top: 0%;
-  }
-
-  50% {
-    top: calc(100% - 70px);
-  }
+.animate-float {
+  animation: float 6s ease-in-out infinite;
 }
+
+
+/* --- Mascot styles removed for cleaner design 🌸 --- */
 
 .lvl-1 {
   animation: bounce-x 20s linear infinite, bounce-y 12s linear infinite;
