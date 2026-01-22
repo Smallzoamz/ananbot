@@ -74,7 +74,7 @@ async def get_user_missions(user_id: str):
     
     # Get all missions and user progress
     missions_res = supabase.table("missions").select("*").execute()
-    progress_res = supabase.table("user_progress").select("*").eq("user_id", user_id).execute()
+    progress_res = supabase.table("user_missions").select("*").eq("user_id", user_id).execute()
     
     progress_dict = {}
     for p in progress_res.data:
@@ -201,7 +201,7 @@ async def claim_mission_reward(user_id: str, mission_key: str):
     
     # 1. Check if mission is complete and not yet claimed
     m_res = supabase.table("missions").select("*").eq("key", mission_key).execute()
-    p_res = supabase.table("user_progress").select("*").eq("user_id", user_id).eq("mission_key", mission_key).execute()
+    p_res = supabase.table("user_missions").select("*").eq("user_id", user_id).eq("mission_key", mission_key).execute()
     
     if not m_res.data or not p_res.data:
         return {"success": False, "error": "Mission or progress not found"}
@@ -216,7 +216,7 @@ async def claim_mission_reward(user_id: str, mission_key: str):
         return {"success": False, "error": "Mission not yet completed"}
     
     # 2. Mark as claimed
-    supabase.table("user_progress").update({"is_claimed": True}).eq("user_id", user_id).eq("mission_key", mission_key).execute()
+    supabase.table("user_missions").update({"is_claimed": True}).eq("user_id", user_id).eq("mission_key", mission_key).execute()
     
     # 3. Add XP to user_stats
     stats_res = supabase.table("user_stats").select("*").eq("user_id", user_id).execute()
