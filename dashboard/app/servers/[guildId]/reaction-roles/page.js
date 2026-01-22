@@ -3,9 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useLanguage } from "../../../context/LanguageContext";
-import Portal from "../../../components/Portal";
 import ResultModal from "../../../components/ResultModal";
-import { CrownIcon } from "../../../components/Icons";
 
 export default function ReactionRolesPage({ params }) {
     const { guildId } = React.use(params);
@@ -14,7 +12,7 @@ export default function ReactionRolesPage({ params }) {
     const { language } = useLanguage();
 
     const [config, setConfig] = useState({
-        title: "✨ เลือกรับยศที่ต้องการ (Reaction Roles)",
+        title: "✨ เลือกรับยศที่ต้องการ",
         description: "กดปุ่มด้านล่างเพื่อรับยศหรือถอดยศได้ตามต้องการเลยค่ะ! 🌸",
         channel_id: "",
         mappings: []
@@ -24,59 +22,61 @@ export default function ReactionRolesPage({ params }) {
     const [emojis, setEmojis] = useState([]);
     const [loading, setLoading] = useState(true);
     const [modalState, setModalState] = useState({ show: false, type: 'success', message: '' });
+    const [showEmojiPicker, setShowEmojiPicker] = useState(null);
 
     const isThai = language === 'th';
+
+    // Default Emoji List
+    const defaultEmojis = [
+        '❤️', '💖', '💕', '💗', '💓', '💝', '🩷', '🩵',
+        '✨', '⭐', '🌟', '💫', '🔥', '⚡', '🎇', '🌠',
+        '🌸', '🌷', '🌹', '🌺', '🌻', '🌼', '🍀', '🌿',
+        '🐱', '🐶', '🐰', '🦊', '🐻', '🐼', '🦁', '🐸',
+        '🎮', '🎯', '🎲', '🎨', '🎭', '🎤', '🎵', '🎶',
+        '🛡️', '⚔️', '🏷️', '🔷', '🔶', '💠', '🔰', '🔘',
+        '👑', '💎', '🏆', '🥇', '🥈', '🥉', '🎖️', '📌',
+        '👍', '👏', '🙌', '🤝', '✌️', '🤞', '👋', '✋',
+        '😊', '😎', '🥳', '🤩', '😍', '🥰', '🤗', '🙂'
+    ];
 
     useEffect(() => {
         const fetchData = async () => {
             if (!session?.user) return;
             setLoading(true);
             try {
-                // 1. Fetch current settings
                 const resSettings = await fetch(`/api/proxy/guild/${guildId}/settings`);
                 if (resSettings.ok) {
                     const settingsData = await resSettings.json();
-
-                    // Pro check
                     if (settingsData.plan_type === 'free') {
                         router.push(`/servers/${guildId}`);
                         return;
                     }
-
                     if (settingsData.reaction_roles_config) {
                         setConfig(settingsData.reaction_roles_config);
                     }
                 }
 
-                // 2. Fetch Channels
-                const resCh = await fetch(`/api/proxy/guild/${guildId}/action`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'get_channels', user_id: session.user.id || session.user.uid })
-                });
-                const dataCh = await resCh.json();
+                const [resCh, resRoles, resEmojis] = await Promise.all([
+                    fetch(`/api/proxy/guild/${guildId}/action`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'get_channels', user_id: session.user.id })
+                    }),
+                    fetch(`/api/proxy/guild/${guildId}/action`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'get_roles', user_id: session.user.id })
+                    }),
+                    fetch(`/api/proxy/guild/${guildId}/action`, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'get_server_emojis', user_id: session.user.id })
+                    })
+                ]);
+
+                const [dataCh, dataRoles, dataEmojis] = await Promise.all([resCh.json(), resRoles.json(), resEmojis.json()]);
                 if (dataCh.channels) setChannels(dataCh.channels);
-
-                // 3. Fetch Roles
-                const resRoles = await fetch(`/api/proxy/guild/${guildId}/action`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'get_roles', user_id: session.user.id || session.user.uid })
-                });
-                const dataRoles = await resRoles.json();
                 if (dataRoles.roles) setRoles(dataRoles.roles);
-
-                // 4. Fetch Emojis
-                const resEmojis = await fetch(`/api/proxy/guild/${guildId}/action`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'get_server_emojis', user_id: session.user.id || session.user.uid })
-                });
-                const dataEmojis = await resEmojis.json();
                 if (dataEmojis.emojis) setEmojis(dataEmojis.emojis);
-
             } catch (e) {
-                console.error("Failed to fetch reaction roles data", e);
+                console.error(e);
             } finally {
                 setLoading(false);
             }
@@ -84,307 +84,155 @@ export default function ReactionRolesPage({ params }) {
         fetchData();
     }, [guildId, session]);
 
-    const handleSaveConfig = async (currentConfig = config) => {
+    const handleSaveConfig = async () => {
         try {
-            const res = await fetch(`/api/proxy/guild/${guildId}/action`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'save_reaction_role_config',
-                    user_id: session?.user?.id || session?.user?.uid,
-                    config: currentConfig
-                })
+            await fetch(`/api/proxy/guild/${guildId}/action`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'save_reaction_role_config', user_id: session?.user?.id, config })
             });
-            return res.ok;
+            setModalState({ show: true, type: 'success', message: isThai ? '✅ บันทึกแล้ว!' : '✅ Saved!' });
         } catch (e) {
-            console.error(e);
-            return false;
+            setModalState({ show: true, type: 'error', message: 'Error' });
         }
     };
 
     const handleDeploy = async () => {
         if (!config.channel_id) {
-            setModalState({ show: true, type: 'error', message: isThai ? "กรุณาเลือกห้องที่จะส่งก่อนนะคะ! 🌸" : "Please select target channel first! 🌸" });
+            setModalState({ show: true, type: 'error', message: isThai ? "กรุณาเลือกห้องก่อนนะคะ!" : "Select a channel first!" });
             return;
         }
         if (config.mappings.length === 0) {
-            setModalState({ show: true, type: 'error', message: isThai ? "รบกวนเพิ่มยศอย่างน้อย 1 ยศนะคะ! ✨" : "Please add at least one role mapping! ✨" });
+            setModalState({ show: true, type: 'error', message: isThai ? "เพิ่มยศอย่างน้อย 1 ยศนะคะ!" : "Add at least 1 role!" });
             return;
         }
-
-        try {
-            // Auto save before deploy
-            await handleSaveConfig();
-
-            const res = await fetch(`/api/proxy/guild/${guildId}/action`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    action: 'post_reaction_role',
-                    user_id: session?.user?.id || session?.user?.uid,
-                    config: config
-                })
-            });
-            const data = await res.json();
-            if (data.success) {
-                setModalState({ show: true, type: 'success', message: isThai ? "ส่งระบบ Reaction Roles เข้าห้องเรียบร้อยแล้วค่ะ! 💖" : "Reaction Roles message deployed successfully! 💖" });
-            } else {
-                setModalState({ show: true, type: 'error', message: data.error || "Failed to deploy" });
-            }
-        } catch (e) {
-            console.error(e);
-            setModalState({ show: true, type: 'error', message: "Connection Error" });
-        }
+        await handleSaveConfig();
+        const res = await fetch(`/api/proxy/guild/${guildId}/action`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'post_reaction_role', user_id: session?.user?.id, config })
+        });
+        const data = await res.json();
+        setModalState({ show: true, type: data.success ? 'success' : 'error', message: data.success ? (isThai ? '🚀 ส่งเข้า Discord แล้ว!' : '🚀 Deployed!') : (data.error || 'Error') });
     };
 
-    const addMapping = () => {
-        const newMappings = [...config.mappings, { role_id: '', emoji: '', label: '', desc: '' }];
-        setConfig({ ...config, mappings: newMappings });
+    const addMapping = () => setConfig({ ...config, mappings: [...config.mappings, { role_id: '', emoji: '', label: '', desc: '' }] });
+    const removeMapping = (i) => setConfig({ ...config, mappings: config.mappings.filter((_, idx) => idx !== i) });
+    const updateMapping = (i, field, val) => {
+        const m = [...config.mappings];
+        m[i][field] = val;
+        setConfig({ ...config, mappings: m });
     };
 
-    const removeMapping = (index) => {
-        const newMappings = config.mappings.filter((_, i) => i !== index);
-        setConfig({ ...config, mappings: newMappings });
-    };
-
-    const updateMapping = (index, field, value) => {
-        const newMappings = [...config.mappings];
-        newMappings[index][field] = value;
-        setConfig({ ...config, mappings: newMappings });
-    };
-
-    // Emoji Picker State
-    const [showEmojiPicker, setShowEmojiPicker] = useState(null); // index of mapping being edited
-
-    // Default Emoji List - Comprehensive!
-    const defaultEmojis = [
-        // Hearts & Love
-        '❤️', '💖', '💕', '💗', '💓', '💝', '💘', '🩷', '🩵', '🩶',
-        // Stars & Sparkles  
-        '✨', '⭐', '🌟', '💫', '🔥', '⚡', '🎇', '🎆', '✴️', '🌠',
-        // Nature & Flowers
-        '🌸', '🌷', '🌹', '🌺', '🌻', '🌼', '🍀', '🍁', '🍂', '🌿',
-        // Animals Cute
-        '🐱', '🐶', '🐰', '🦊', '🐻', '🐼', '🐨', '🦁', '🐯', '🐸',
-        // Gaming & Fun
-        '🎮', '🎯', '🎲', '🎪', '🎨', '🎭', '🎬', '🎤', '🎵', '🎶',
-        // Symbols & Shapes
-        '🛡️', '⚔️', '🏷️', '🔘', '🔷', '🔶', '🔹', '🔸', '💠', '🔰',
-        // Objects
-        '👑', '💎', '🏆', '🎖️', '🥇', '🥈', '🥉', '🎗️', '📌', '📍',
-        // Hands & Gestures
-        '👍', '👎', '👏', '🙌', '🤝', '✌️', '🤞', '🤟', '👋', '✋',
-        // Faces
-        '😊', '😎', '🥳', '😇', '🤩', '😍', '🥰', '😘', '🤗', '🙂',
-        // Food
-        '🍕', '🍔', '🍟', '🌮', '🍦', '🍰', '🧁', '🍩', '🍪', '☕'
-    ];
-
-    if (loading) return <div style={{ padding: '40px', textAlign: 'center' }}>{isThai ? "กำลังโหลดข้อมูล..." : "Loading data..."}</div>;
+    if (loading) return <div className="rr-loading">🔄 {isThai ? "กำลังโหลด..." : "Loading..."}</div>;
 
     return (
-        <div className="reaction-roles-container blur-in" style={{ padding: '20px' }}>
-            <div className="section-header" style={{ marginBottom: '30px' }}>
-                <h1 style={{ fontSize: '2rem', color: '#ffb6c1', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    🏷️ {isThai ? "ระบบ Reaction Roles" : "Reaction Roles System"}
-                </h1>
-                <p style={{ color: '#666' }}>{isThai ? "สร้างเมนูปุ่มกดรับยศแบบมืออาชีพ สวยงามและรวดเร็วค๊าาา" : "Create professional role assignment buttons with a beautiful embed."}</p>
+        <div className="rr-page">
+            {/* Header */}
+            <div className="rr-header">
+                <div className="rr-header-content">
+                    <h1>🏷️ Reaction Roles</h1>
+                    <p>{isThai ? "สร้างปุ่มกดรับยศสวยๆ ให้สมาชิกเลือกรับยศเอง" : "Create beautiful role selection buttons"}</p>
+                </div>
+                <div className="rr-header-actions">
+                    <button className="rr-btn rr-btn-save" onClick={handleSaveConfig}>💾 {isThai ? "บันทึก" : "Save"}</button>
+                    <button className="rr-btn rr-btn-deploy" onClick={handleDeploy}>🚀 {isThai ? "ส่งเข้า Discord" : "Deploy"}</button>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Embed Configuration */}
-                <div className="config-card glass" style={{ padding: '25px', borderRadius: '25px', background: 'white', border: '1.5px solid #fcefff' }}>
-                    <h2 style={{ fontSize: '1.3rem', marginBottom: '20px', color: '#333', borderBottom: '1px solid #eee', paddingBottom: '10px' }}>🖥️ {isThai ? "การตั้งค่า Embed" : "Embed Preview Settings"}</h2>
+            {/* Main Content */}
+            <div className="rr-content">
+                {/* Left: Embed Settings + Preview */}
+                <div className="rr-panel rr-settings-panel">
+                    <h3>📝 {isThai ? "ตั้งค่า Embed" : "Embed Settings"}</h3>
 
-                    <div style={{ marginBottom: '15px' }}>
-                        <label className="label-text">{isThai ? "หัวข้อ (Title)" : "Embed Title"}</label>
-                        <input className="input-field" type="text" value={config.title} onChange={(e) => setConfig({ ...config, title: e.target.value })} placeholder="Embed Title" />
+                    <div className="rr-form-row">
+                        <label>{isThai ? "หัวข้อ" : "Title"}</label>
+                        <input value={config.title} onChange={e => setConfig({ ...config, title: e.target.value })} placeholder="Embed title..." />
                     </div>
 
-                    <div style={{ marginBottom: '15px' }}>
-                        <label className="label-text">{isThai ? "คำอธิบาย (Description)" : "Embed Description"}</label>
-                        <textarea className="input-field" rows={4} value={config.description} onChange={(e) => setConfig({ ...config, description: e.target.value })} placeholder="Click buttons below..." />
+                    <div className="rr-form-row">
+                        <label>{isThai ? "คำอธิบาย" : "Description"}</label>
+                        <textarea rows={3} value={config.description} onChange={e => setConfig({ ...config, description: e.target.value })} placeholder="Description..." />
                     </div>
 
-                    <div style={{ marginBottom: '15px' }}>
-                        <label className="label-text">{isThai ? "ห้องที่ต้องการส่ง (Target Channel)" : "Target Discord Channel"}</label>
-                        <select className="select-field" value={config.channel_id} onChange={(e) => setConfig({ ...config, channel_id: e.target.value })}>
-                            <option value="">-- {isThai ? "เลือกห้องทางดิสคอร์ส" : "Select Discord Channel"} --</option>
-                            {channels.map(ch => (
-                                <option key={ch.id} value={ch.id}># {ch.name}</option>
-                            ))}
+                    <div className="rr-form-row">
+                        <label>{isThai ? "ส่งไปห้อง" : "Target Channel"}</label>
+                        <select value={config.channel_id} onChange={e => setConfig({ ...config, channel_id: e.target.value })}>
+                            <option value="">-- {isThai ? "เลือกห้อง" : "Select Channel"} --</option>
+                            {channels.map(ch => <option key={ch.id} value={ch.id}># {ch.name}</option>)}
                         </select>
                     </div>
 
-                    <button onClick={handleDeploy} style={{ width: '100%', marginTop: '20px', padding: '15px', borderRadius: '15px', background: 'linear-gradient(135deg, #ffb6c1, #ffc0cb)', color: 'white', fontWeight: 'bold', border: 'none', cursor: 'pointer', boxShadow: '0 5px 15px rgba(255, 182, 193, 0.4)', fontSize: '1.1rem' }}>
-                        🚀 {isThai ? "ส่งเข้าดิสคอร์สเลย!" : "Deploy to Discord!"}
-                    </button>
-                    <button onClick={() => { handleSaveConfig(); setModalState({ show: true, type: 'success', message: 'Saved!' }) }} style={{ width: '100%', marginTop: '10px', padding: '10px', borderRadius: '10px', background: 'transparent', color: '#ffb6c1', fontWeight: '600', border: '1px solid #ffb6c1', cursor: 'pointer' }}>
-                        {isThai ? "บันทึกการตั้งค่า" : "Save Settings"}
-                    </button>
+                    {/* Live Preview */}
+                    <div className="rr-preview">
+                        <div className="rr-preview-label">👁️ {isThai ? "ตัวอย่าง" : "Preview"}</div>
+                        <div className="rr-preview-embed">
+                            <div className="rr-preview-title">{config.title || "Title"}</div>
+                            <div className="rr-preview-desc">{config.description || "Description..."}</div>
+                            <div className="rr-preview-buttons">
+                                {config.mappings.slice(0, 5).map((m, i) => (
+                                    <span key={i} className="rr-preview-btn">{m.emoji} {m.label || "Button"}</span>
+                                ))}
+                                {config.mappings.length > 5 && <span className="rr-preview-btn">+{config.mappings.length - 5}</span>}
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Role Mappings */}
-                <div className="mappings-card glass" style={{ padding: '25px', borderRadius: '25px', background: 'white', border: '1.5px solid #fcefff' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <h2 style={{ fontSize: '1.3rem', color: '#333' }}>🛡️ {isThai ? "การจัดการปุ่มและยศ" : "Role Button Mappings"}</h2>
-                        <button onClick={addMapping} style={{ padding: '8px 15px', borderRadius: '10px', background: '#e1f5fe', color: '#03a9f4', border: 'none', cursor: 'pointer', fontWeight: '600' }}>+ {isThai ? "เพิ่ม" : "Add"}</button>
+                {/* Right: Role Mappings */}
+                <div className="rr-panel rr-mappings-panel">
+                    <div className="rr-mappings-header">
+                        <h3>🛡️ {isThai ? "ปุ่มรับยศ" : "Role Buttons"} ({config.mappings.length})</h3>
+                        <button className="rr-btn-add" onClick={addMapping}>+ {isThai ? "เพิ่ม" : "Add"}</button>
                     </div>
 
-                    <div className="mapping-list" style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '10px' }}>
+                    <div className="rr-mappings-list">
                         {config.mappings.length === 0 ? (
-                            <div style={{ textAlign: 'center', color: '#ccc', padding: '50px' }}>{isThai ? "ยังไม่ได้กำหนดปุ่มรับยศเลยค่ะ" : "No mappings added yet."}</div>
+                            <div className="rr-empty">
+                                <span>🎯</span>
+                                <p>{isThai ? "ยังไม่มีปุ่มรับยศ" : "No role buttons yet"}</p>
+                                <button onClick={addMapping}>+ {isThai ? "เพิ่มปุ่มแรก" : "Add first button"}</button>
+                            </div>
                         ) : (
                             config.mappings.map((mapping, idx) => (
-                                <div key={idx} className="mapping-item shadow-sm" style={{ marginBottom: '15px', padding: '15px', border: '1px solid #eee', borderRadius: '15px', background: '#fafafa', position: 'relative' }}>
-                                    <button onClick={() => removeMapping(idx)} style={{ position: 'absolute', top: '10px', right: '10px', color: '#ff4d4f', border: 'none', background: 'transparent', cursor: 'pointer' }}>✖</button>
-
-                                    <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-                                        <div style={{ flex: 1, position: 'relative' }}>
-                                            <label style={{ fontSize: '0.8rem', color: '#888' }}>{isThai ? "รูปที่ต้องการ (Emoji)" : "Emoji"}</label>
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowEmojiPicker(showEmojiPicker === idx ? null : idx)}
-                                                className="emoji-picker-trigger"
-                                                style={{
-                                                    width: '100%',
-                                                    padding: '8px 12px',
-                                                    borderRadius: '8px',
-                                                    border: '1.5px solid #ffb6c1',
-                                                    background: 'linear-gradient(135deg, #fff5f7 0%, #ffffff 100%)',
-                                                    cursor: 'pointer',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    fontSize: '1rem',
-                                                    transition: 'all 0.2s'
-                                                }}
-                                            >
-                                                <span style={{ fontSize: '1.3rem' }}>{mapping.emoji || '➕'}</span>
-                                                <span style={{ fontSize: '0.7rem', color: '#999' }}>▼</span>
-                                            </button>
-
-                                            {/* Emoji Grid Picker Popup */}
-                                            {showEmojiPicker === idx && (
-                                                <div className="emoji-grid-popup" style={{
-                                                    position: 'absolute',
-                                                    top: '100%',
-                                                    left: 0,
-                                                    zIndex: 1000,
-                                                    width: '280px',
-                                                    maxHeight: '300px',
-                                                    overflowY: 'auto',
-                                                    background: 'white',
-                                                    borderRadius: '12px',
-                                                    boxShadow: '0 8px 30px rgba(255, 182, 193, 0.3)',
-                                                    border: '1.5px solid #ffb6c1',
-                                                    padding: '10px',
-                                                    marginTop: '5px'
-                                                }}>
-                                                    {/* Server Custom Emojis */}
-                                                    {emojis.length > 0 && (
-                                                        <>
-                                                            <div style={{ fontSize: '0.7rem', color: '#ff85c1', fontWeight: '700', marginBottom: '6px', padding: '0 4px' }}>
-                                                                🎨 {isThai ? "อิโมจิของเซิร์ฟเวอร์" : "Server Emojis"}
-                                                            </div>
-                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '4px', marginBottom: '10px' }}>
-                                                                {emojis.map(e => (
-                                                                    <button
-                                                                        key={e.id}
-                                                                        type="button"
-                                                                        onClick={() => { updateMapping(idx, 'emoji', `<:${e.name}:${e.id}>`); setShowEmojiPicker(null); }}
-                                                                        style={{
-                                                                            width: '30px',
-                                                                            height: '30px',
-                                                                            border: 'none',
-                                                                            borderRadius: '6px',
-                                                                            background: mapping.emoji === `<:${e.name}:${e.id}>` ? '#ffe4f0' : 'transparent',
-                                                                            cursor: 'pointer',
-                                                                            display: 'flex',
-                                                                            alignItems: 'center',
-                                                                            justifyContent: 'center',
-                                                                            transition: 'all 0.15s'
-                                                                        }}
-                                                                        title={e.name}
-                                                                    >
-                                                                        <img src={e.url} alt={e.name} style={{ width: '22px', height: '22px' }} />
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        </>
-                                                    )}
-
-                                                    {/* Default Emojis */}
-                                                    <div style={{ fontSize: '0.7rem', color: '#ff85c1', fontWeight: '700', marginBottom: '6px', padding: '0 4px' }}>
-                                                        ✨ {isThai ? "อิโมจิพื้นฐาน" : "Default Emojis"}
+                                <div key={idx} className="rr-mapping-card">
+                                    <div className="rr-mapping-emoji" onClick={() => setShowEmojiPicker(showEmojiPicker === idx ? null : idx)}>
+                                        {mapping.emoji || '➕'}
+                                        {showEmojiPicker === idx && (
+                                            <div className="rr-emoji-picker" onClick={e => e.stopPropagation()}>
+                                                {emojis.length > 0 && (
+                                                    <div className="rr-emoji-section">
+                                                        <span className="rr-emoji-title">🎨 Server</span>
+                                                        <div className="rr-emoji-grid">
+                                                            {emojis.map(e => (
+                                                                <button key={e.id} onClick={() => { updateMapping(idx, 'emoji', `<:${e.name}:${e.id}>`); setShowEmojiPicker(null); }}>
+                                                                    <img src={e.url} alt={e.name} />
+                                                                </button>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '3px' }}>
+                                                )}
+                                                <div className="rr-emoji-section">
+                                                    <span className="rr-emoji-title">✨ Default</span>
+                                                    <div className="rr-emoji-grid">
                                                         {defaultEmojis.map((emoji, i) => (
-                                                            <button
-                                                                key={i}
-                                                                type="button"
-                                                                onClick={() => { updateMapping(idx, 'emoji', emoji); setShowEmojiPicker(null); }}
-                                                                style={{
-                                                                    width: '30px',
-                                                                    height: '30px',
-                                                                    border: 'none',
-                                                                    borderRadius: '6px',
-                                                                    background: mapping.emoji === emoji ? '#ffe4f0' : 'transparent',
-                                                                    cursor: 'pointer',
-                                                                    fontSize: '1.1rem',
-                                                                    display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    justifyContent: 'center',
-                                                                    transition: 'all 0.15s'
-                                                                }}
-                                                            >
-                                                                {emoji}
-                                                            </button>
+                                                            <button key={i} onClick={() => { updateMapping(idx, 'emoji', emoji); setShowEmojiPicker(null); }}>{emoji}</button>
                                                         ))}
                                                     </div>
-
-                                                    {/* Clear Button */}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => { updateMapping(idx, 'emoji', ''); setShowEmojiPicker(null); }}
-                                                        style={{
-                                                            width: '100%',
-                                                            marginTop: '10px',
-                                                            padding: '6px',
-                                                            borderRadius: '6px',
-                                                            border: '1px solid #eee',
-                                                            background: '#f9f9f9',
-                                                            cursor: 'pointer',
-                                                            fontSize: '0.75rem',
-                                                            color: '#999'
-                                                        }}
-                                                    >
-                                                        {isThai ? "❌ ไม่ใช้อิโมจิ" : "❌ No Emoji"}
-                                                    </button>
                                                 </div>
-                                            )}
-                                        </div>
-                                        <div style={{ flex: 2 }}>
-                                            <label style={{ fontSize: '0.8rem', color: '#888' }}>{isThai ? "ชื่อบนปุ่ม (Button Label)" : "Button Label"}</label>
-                                            <input className="input-mini" value={mapping.label} onChange={(e) => updateMapping(idx, 'label', e.target.value)} placeholder="e.g. Member Role" />
-                                        </div>
+                                                <button className="rr-emoji-clear" onClick={() => { updateMapping(idx, 'emoji', ''); setShowEmojiPicker(null); }}>❌ Clear</button>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    <div style={{ display: 'flex', gap: '10px' }}>
-                                        <div style={{ flex: 2 }}>
-                                            <label style={{ fontSize: '0.8rem', color: '#888' }}>{isThai ? "ยศที่คนกดจะได้รับ (Role)" : "Discord Role"}</label>
-                                            <select className="input-mini" value={mapping.role_id} onChange={(e) => updateMapping(idx, 'role_id', e.target.value)}>
-                                                <option value="">-- {isThai ? "เลือกยศ" : "Select Role"} --</option>
-                                                {roles.map(r => (
-                                                    <option key={r.id} value={r.id}>{r.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div style={{ flex: 2 }}>
-                                            <label style={{ fontSize: '0.8rem', color: '#888' }}>{isThai ? "คำอธิบายเพิ่ม (Optional)" : "Description"}</label>
-                                            <input className="input-mini" value={mapping.desc} onChange={(e) => updateMapping(idx, 'desc', e.target.value)} placeholder="รับยศสำหรับ..." />
-                                        </div>
+                                    <div className="rr-mapping-fields">
+                                        <input placeholder={isThai ? "ชื่อปุ่ม" : "Button Label"} value={mapping.label} onChange={e => updateMapping(idx, 'label', e.target.value)} />
+                                        <select value={mapping.role_id} onChange={e => updateMapping(idx, 'role_id', e.target.value)}>
+                                            <option value="">-- {isThai ? "เลือกยศ" : "Select Role"} --</option>
+                                            {roles.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                                        </select>
                                     </div>
+
+                                    <button className="rr-mapping-delete" onClick={() => removeMapping(idx)}>🗑️</button>
                                 </div>
                             ))
                         )}
@@ -393,13 +241,76 @@ export default function ReactionRolesPage({ params }) {
             </div>
 
             <style jsx>{`
-                .label-text { display: block; margin-bottom: 5px; font-weight: 600; color: #555; font-size: 0.9rem; }
-                .input-field { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid #eee; background: #fff; transition: all 0.3s; }
-                .input-field:focus { border-color: #ffb6c1; outline: none; box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.1); }
-                .select-field { width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid #eee; background: #fff; cursor: pointer; }
-                .input-mini { width: 100%; padding: 8px; border-radius: 8px; border: 1.2px solid #ddd; background: #fff; font-size: 0.85rem; }
-                .mapping-item { transition: transform 0.2s ease-in-out; }
-                .mapping-item:hover { transform: translateY(-3px); border-color: #ffb6c1; }
+                .rr-page { padding: 20px; max-width: 1200px; margin: 0 auto; }
+                .rr-loading { text-align: center; padding: 60px; color: #999; font-size: 1.2rem; }
+                
+                /* Header */
+                .rr-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding: 20px 25px; background: linear-gradient(135deg, #fff5f7, #fef0f5); border-radius: 20px; border: 1.5px solid #ffe4ec; }
+                .rr-header h1 { margin: 0; font-size: 1.6rem; color: #ff85a3; }
+                .rr-header p { margin: 5px 0 0; font-size: 0.9rem; color: #999; }
+                .rr-header-actions { display: flex; gap: 10px; }
+                .rr-btn { padding: 10px 20px; border-radius: 12px; border: none; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: all 0.2s; }
+                .rr-btn-save { background: #fff; border: 1.5px solid #ffb6c1; color: #ff85a3; }
+                .rr-btn-save:hover { background: #fff5f7; }
+                .rr-btn-deploy { background: linear-gradient(135deg, #ff85a3, #ffb6c1); color: #fff; box-shadow: 0 4px 15px rgba(255, 133, 163, 0.35); }
+                .rr-btn-deploy:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255, 133, 163, 0.45); }
+                
+                /* Content Grid */
+                .rr-content { display: grid; grid-template-columns: 340px 1fr; gap: 20px; }
+                @media (max-width: 900px) { .rr-content { grid-template-columns: 1fr; } }
+                
+                /* Panels */
+                .rr-panel { background: #fff; border-radius: 20px; border: 1.5px solid #ffe4ec; padding: 20px; }
+                .rr-panel h3 { margin: 0 0 18px; font-size: 1.1rem; color: #333; }
+                
+                /* Form */
+                .rr-form-row { margin-bottom: 15px; }
+                .rr-form-row label { display: block; font-size: 0.8rem; font-weight: 600; color: #888; margin-bottom: 6px; }
+                .rr-form-row input, .rr-form-row textarea, .rr-form-row select { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid #eee; font-size: 0.9rem; transition: all 0.2s; }
+                .rr-form-row input:focus, .rr-form-row textarea:focus, .rr-form-row select:focus { border-color: #ffb6c1; outline: none; box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.15); }
+                
+                /* Preview */
+                .rr-preview { margin-top: 20px; padding: 15px; background: #2f3136; border-radius: 12px; }
+                .rr-preview-label { font-size: 0.7rem; color: #72767d; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+                .rr-preview-embed { background: #36393f; border-left: 4px solid #ffb6c1; border-radius: 6px; padding: 12px; }
+                .rr-preview-title { color: #fff; font-weight: 600; font-size: 0.95rem; margin-bottom: 6px; }
+                .rr-preview-desc { color: #dcddde; font-size: 0.85rem; line-height: 1.4; margin-bottom: 10px; }
+                .rr-preview-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+                .rr-preview-btn { background: #5865F2; color: #fff; padding: 4px 12px; border-radius: 4px; font-size: 0.75rem; }
+                
+                /* Mappings */
+                .rr-mappings-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+                .rr-btn-add { padding: 8px 16px; background: #e8f5e9; color: #4caf50; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; }
+                .rr-btn-add:hover { background: #c8e6c9; }
+                .rr-mappings-list { display: flex; flex-direction: column; gap: 10px; max-height: 500px; overflow-y: auto; }
+                
+                /* Empty State */
+                .rr-empty { text-align: center; padding: 40px 20px; color: #ccc; }
+                .rr-empty span { font-size: 3rem; display: block; margin-bottom: 10px; }
+                .rr-empty p { margin: 0 0 15px; }
+                .rr-empty button { padding: 10px 20px; background: #ffb6c1; color: #fff; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; }
+                
+                /* Mapping Card */
+                .rr-mapping-card { display: flex; align-items: center; gap: 12px; padding: 12px; background: #fafafa; border: 1.5px solid #f0f0f0; border-radius: 14px; transition: all 0.2s; }
+                .rr-mapping-card:hover { border-color: #ffccd5; background: #fff; }
+                .rr-mapping-emoji { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #fff5f7, #fff); border: 2px solid #ffccd5; border-radius: 12px; font-size: 1.5rem; cursor: pointer; position: relative; transition: all 0.2s; }
+                .rr-mapping-emoji:hover { transform: scale(1.05); border-color: #ff85a3; }
+                .rr-mapping-fields { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+                .rr-mapping-fields input, .rr-mapping-fields select { padding: 8px 10px; border-radius: 8px; border: 1.5px solid #eee; font-size: 0.85rem; }
+                .rr-mapping-fields input:focus, .rr-mapping-fields select:focus { border-color: #ffb6c1; outline: none; }
+                .rr-mapping-delete { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: #fff5f5; border: none; border-radius: 10px; cursor: pointer; font-size: 1rem; transition: all 0.2s; }
+                .rr-mapping-delete:hover { background: #ffe4e4; transform: scale(1.1); }
+                
+                /* Emoji Picker */
+                .rr-emoji-picker { position: absolute; top: 55px; left: 0; z-index: 100; width: 280px; max-height: 320px; overflow-y: auto; background: #fff; border-radius: 14px; border: 1.5px solid #ffccd5; box-shadow: 0 10px 40px rgba(255, 133, 163, 0.25); padding: 12px; }
+                .rr-emoji-section { margin-bottom: 12px; }
+                .rr-emoji-title { display: block; font-size: 0.7rem; color: #ff85a3; font-weight: 700; margin-bottom: 8px; }
+                .rr-emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
+                .rr-emoji-grid button { width: 28px; height: 28px; border: none; background: transparent; border-radius: 6px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+                .rr-emoji-grid button:hover { background: #ffe4f0; transform: scale(1.15); }
+                .rr-emoji-grid button img { width: 20px; height: 20px; }
+                .rr-emoji-clear { width: 100%; margin-top: 8px; padding: 6px; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; font-size: 0.75rem; color: #999; cursor: pointer; }
+                .rr-emoji-clear:hover { background: #ffe4e4; color: #ff6b6b; }
             `}</style>
 
             <ResultModal show={modalState.show} type={modalState.type} message={modalState.message} onClose={() => setModalState({ ...modalState, show: false })} />
