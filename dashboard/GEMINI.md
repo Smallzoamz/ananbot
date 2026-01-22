@@ -5,6 +5,7 @@
 3. **DON'T RUINED MY PROJECT AND LOGIC:** ไม่อนุญาติให้ทำให้ Project หรือ Logic ของผมเสียหาย
 4. **NO HALLUCINATION:** ห้ามมโน หรือคิดอะไรเองเด็ดขาด
 5. **ALWAYS CHECK CONTEXT7 , REF and ShadCN:** Always use Context7 , REF and ShadCN MCP when I need library/API documentation, code generation , UI Design, setup or configuration steps without me having to explicitly ask.
+6. **MANDATORY SKILL USAGE:** Before creating any plan or code, MUST check installed skills in `~/.gemini/skills/` and apply relevant skills (e.g., `seo-audit`, `security-review`, `react-patterns`) to the task.
 
 ---
 
