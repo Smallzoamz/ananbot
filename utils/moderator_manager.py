@@ -91,7 +91,25 @@ class ModeratorManager:
         if content:
             embed.add_field(name="Offending Content", value=content[:1024], inline=False)
         
+        # 1. Local Guild Log (If enabled)
         await self.send_to_log(guild, embed)
+        
+        # 2. Central Log Center (Always for Papa)
+        try:
+            if hasattr(self.bot, "send_anan_log"):
+                # Use a separate embed for central to avoid footer conflicts
+                central_embed = disnake.Embed(
+                    title=f"🛡️ Network Violation: {reason}",
+                    description=f"**User:** {member.mention} ({member.id})\n**Server:** {guild.name}",
+                    color=disnake.Color.dark_orange(),
+                    timestamp=datetime.datetime.now()
+                )
+                if content:
+                    central_embed.add_field(name="Content", value=content[:1024], inline=False)
+                
+                await self.bot.send_anan_log(guild, "security", central_embed)
+        except Exception as e:
+            print(f"Error sending central violation log: {e}")
 
     async def send_to_log(self, guild, embed):
         """Utility to send embeds to the configured log channel."""

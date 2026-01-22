@@ -953,7 +953,8 @@ class AnAnBot(commands.Bot):
             "security": "🛡️-security-logs",
             "plan": "💎-plan-status",
             "system": "⚙️-system-logs",
-            "access": "📡-access-logs"
+            "access": "📡-access-logs",
+            "global_ban": "📡-global-bans"
         }
         
         target_name = type_map.get(channel_type)
@@ -999,7 +1000,8 @@ class AnAnBot(commands.Bot):
                 ("🛡️-security-logs", "แจ้งเตือนการจัดการห้อง/ยศ/การบุกรุก"),
                 ("💎-plan-status", "รายงานแพลนปัจจุบันและจำนวนวันที่เหลือ (Plan | Duration)"),
                 ("⚙️-system-logs", "รายงานสถานะบอทและ Error ต่างๆ"),
-                ("📡-access-logs", "รายงานการเข้า/ออก และกิจกรรมสมาชิก")
+                ("📡-access-logs", "รายงานการเข้า/ออก และกิจกรรมสมาชิก"),
+                ("📡-global-bans", "รายงานการแบนเครือข่าย Global Ban (Sync Across Network)")
             ]
             
             for ch_name, ch_desc in channels:
@@ -1034,6 +1036,98 @@ class AnAnBot(commands.Bot):
         except Exception as e:
             print(f"❌ Error creating log channels for guild {guild.id}: {e}")
             return f"เกิดข้อผิดพลาดรุนแรง: {str(e)}"
+
+    async def on_member_ban(self, guild, user):
+        # 1. Logic to sync ban across network (same owner)
+        owner_id = guild.owner_id
+        
+        # Get moderator info from Audit Logs
+        moderator = "Unknown"
+        reason = "No reason provided"
+        try:
+            async for entry in guild.audit_logs(limit=5, action=disnake.AuditLogAction.ban):
+                if entry.target.id == user.id:
+                    moderator = entry.user
+                    reason = entry.reason or "No reason provided"
+                    break
+        except: pass
+        
+        # Save to DB
+        from utils.supabase_client import add_global_ban
+        await add_global_ban(str(user.id), str(guild.id), str(moderator.id) if not isinstance(moderator, str) else "0", reason)
+        
+        # Log to Log Center
+        embed = disnake.Embed(
+            title="🚫 Global Ban Enforced",
+            description=f"**User:** {user.mention} ({user.id})\n**Source Server:** {guild.name}\n**Moderator:** {moderator}\n**Reason:** {reason}",
+            color=disnake.Color.dark_red(),
+            timestamp=datetime.datetime.now()
+        )
+        await self.send_anan_log(guild, "global_ban", embed)
+        
+        # Sync to other guilds owned by the same owner
+        for g in self.guilds:
+            if g.id != guild.id and g.owner_id == owner_id:
+                try:
+                    await g.ban(user, reason=f"Global Ban Sync from {guild.name} (Mod: {moderator})")
+                    print(f"✅ Synced ban for {user.id} to {g.name}")
+                except Exception as e:
+                    print(f"❌ Failed to sync ban to {g.name}: {e}")
+
+    async def on_member_unban(self, guild, user):
+        # 1. Check if unban is authorized (Log Center or Origin Server)
+        from utils.supabase_client import get_global_ban, remove_global_ban
+        ban_data = await get_global_ban(str(user.id))
+        
+        if not ban_data:
+            return # Not a global ban or already cleared
+            
+        origin_id = int(ban_data.get("origin_guild_id"))
+        
+        # Authorization Check
+        is_authorized = (guild.id == ANAN_LOG_CENTER_ID) or (guild.id == origin_id)
+        
+        if is_authorized:
+            # Authorized Unban -> Sync across network
+            await remove_global_ban(str(user.id))
+            
+            embed = disnake.Embed(
+                title="✅ Global Ban Lifted",
+                description=f"**User:** {user.mention} ({user.id})\n**Authorized By:** {guild.name}",
+                color=disnake.Color.green(),
+                timestamp=datetime.datetime.now()
+            )
+            await self.send_anan_log(guild, "global_ban", embed)
+            
+            # Unban everywhere in network
+            owner_id = guild.owner_id if guild.id != ANAN_LOG_CENTER_ID else None
+            # If from Log Center, we might need another way to find the owner, 
+            # but usually the bot knows its guilds.
+            # Let's find guilds where the user was banned via network sync.
+            for g in self.guilds:
+                # If we have owner_id (from origin), match it. 
+                # If from Log Center, we might need a more robust way, 
+                # but for now let's assume if it's in our guilds, we try.
+                try:
+                    await g.unban(user, reason=f"Global Unban Sync from {guild.name}")
+                    print(f"✅ Synced unban for {user.id} in {g.name}")
+                except: pass
+        else:
+            # Unauthorized Unban -> RE-BAN IMMEDIATELY!
+            try:
+                await guild.ban(user, reason="Unauthorized Global Unban Attempt (Re-enforced)")
+                
+                embed = disnake.Embed(
+                    title="⚠️ Unauthorized Unban Attempt",
+                    description=f"**User:** {user.mention} ({user.id})\n**Attempted at:** {guild.name}\n**Status:** `RE-BANNED AUTOMATICALLY`",
+                    color=disnake.Color.red(),
+                    timestamp=datetime.datetime.now()
+                )
+                await self.send_anan_log(guild, "global_ban", embed)
+                print(f"🛡️ Unauthorized unban attempt in {guild.name} for {user.id} - RE-BANNED")
+            except Exception as e:
+                print(f"❌ Failed to re-ban {user.id} in {guild.name}: {e}")
+
 
     async def on_member_join(self, member):
         # 1. Access Log

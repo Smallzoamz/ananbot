@@ -503,3 +503,31 @@ async def update_user_plan(user_id: str, plan_type: str):
     except Exception as e:
         print(f"Update User Plan Error: {e}")
         return False
+
+async def add_global_ban(user_id: str, origin_guild_id: str, moderator_id: str, reason: str = None):
+    if not supabase: return False
+    try:
+        supabase.table("global_bans").upsert({
+            "user_id": str(user_id),
+            "origin_guild_id": str(origin_guild_id),
+            "moderator_id": str(moderator_id),
+            "reason": reason
+        }).execute()
+        return True
+    except Exception as e:
+        print(f"Add Global Ban Error: {e}")
+        return False
+
+async def get_global_ban(user_id: str):
+    if not supabase: return None
+    try:
+        res = supabase.table("global_bans").select("*").eq("user_id", str(user_id)).execute()
+        return res.data[0] if res.data else None
+    except: return None
+
+async def remove_global_ban(user_id: str):
+    if not supabase: return False
+    try:
+        supabase.table("global_bans").delete().eq("user_id", str(user_id)).execute()
+        return True
+    except: return False

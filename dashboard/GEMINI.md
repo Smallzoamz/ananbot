@@ -4,8 +4,8 @@
 2. **NO EXCEPTIONS:** ไม่อนุญาติให้ละเว้นการอ่านไฟล์ GEMINI.md ไม่ว่าจะด้วยจุดประสงค์ใดก็ตาม
 3. **DON'T RUINED MY PROJECT AND LOGIC:** ไม่อนุญาติให้ทำให้ Project หรือ Logic ของผมเสียหาย
 4. **NO HALLUCINATION:** ห้ามมโน หรือคิดอะไรเองเด็ดขาด
-5. **ALWAYS CHECK CONTEXT7 , REF and ShadCN:** Always use Context7 , REF and ShadCN MCP when I need library/API documentation, code generation , UI Design, setup or configuration steps without me having to explicitly ask.
-6. **MANDATORY SKILL USAGE:** Before creating any plan or code, MUST check installed skills in `~/.gemini/skills/` and apply relevant skills (e.g., `seo-audit`, `security-review`, `react-patterns`) to the task.
+5. **ALWAYS CHECK MCP & SKILLS:** ก่อนเริ่มวางแผนหรือเขียนโค้ด ให้ตรวจสอบเครื่องมือ MCP (Context7, REF, ShadCN) สำหรับข้อมูลเอกสาร/การออกแบบ และตรวจสอบ Skills ที่ติดตั้งใน `~/.gemini/skills/` ทุกครั้ง เพื่อนำมาประยุกต์ใช้กับงาน (เช่น seo-audit, security-review) โดยไม่ต้องให้ Papa บอกซ้ำค่ะ
+6. **LOGGING & COMMAND RULES:** ห้ามใช้ `echo` ในการบันทึก Log ลงใน `PROJECT_LOG.md` (ให้ใช้เครื่องมือ Edit แทน) และใช้สัญลักษณ์ `;` แทน `&&` เมื่อสั่งหลายคำสั่งต่อกันใน Terminal เสมอค่ะ
 
 ---
 
@@ -63,7 +63,9 @@ Before notifying Papa of completion, verify every line of code:
 
 ## 📝 LOGGING STANDARD
 
-Every update to `PROJECT_LOG.md` must be truthful and descriptive:
+- **NO ECHO:** ห้ามใช้คำสั่ง `echo` ในการบันทึก Log ลงไฟล์ `PROJECT_LOG.md` โดยเด็ดขาด ให้ใช้เครื่องมือ `replace_file_content` หรือ `multi_replace_file_content` เพื่อป้องกันไฟล์เสียหายค่ะ
+- **Chain Command:** ใช้สัญลักษณ์ `;` แทน `&&` เมื่อต้องการสั่งหลายคำสั่งต่อกันใน Terminal ค่ะ
+- Every update to `PROJECT_LOG.md` must be truthful and descriptive:
 `[Date/Time] | File: [Name] | Line: [#] | Keyword: [Function] | Status: [Status] | Change: [Explain "What" and "Why" in detail (Thai/English)]`
 
 ---
