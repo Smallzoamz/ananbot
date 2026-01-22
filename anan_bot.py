@@ -41,6 +41,9 @@ import datetime
 # Global memory for rollback (Guild ID -> {timestamp, channels_data, roles_data})
 ROLLBACK_MEMORY = {}
 
+# Global memory for statistics caching (Guild ID -> {data, timestamp})
+STATS_CACHE = {}
+
 # Core Logic for Guild Setup
 def get_game_genre(game_name):
     name = game_name.lower()
@@ -1060,13 +1063,28 @@ class AnAnBot(commands.Bot):
         if not guild:
             return web.json_response({"error": "Guild not found"}, status=404)
             
+        # Check Cache 🛡️ (5 Minutes)
+        now = datetime.datetime.now()
+        cache_entry = STATS_CACHE.get(guild_id)
+        if cache_entry and (now - cache_entry["timestamp"]).total_seconds() < 300:
+            return web.json_response(cache_entry["data"], headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            })
+
+        online_count = sum(1 for m in guild.members if m.status != disnake.Status.offline)
         data = {
             "name": guild.name,
             "total_members": guild.member_count,
-            "online_members": sum(1 for m in guild.members if m.status != disnake.Status.offline),
+            "online_members": online_count,
             "status": "online",
             "uptime": "99.9%"
         }
+        
+        # Save to Cache
+        STATS_CACHE[guild_id] = {"data": data, "timestamp": now}
+        
         return web.json_response(data, headers={
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -1212,18 +1230,38 @@ class AnAnBot(commands.Bot):
 
             if action == "get_missions":
                 user_id = body.get("user_id")
+                guild_id = body.get("guild_id")
                 if not user_id: return web.json_response({"error": "user_id required"}, status=400, headers={"Access-Control-Allow-Origin": "*"})
                 
-                # Parallel fetching! 🚀
-                import asyncio
-                missions, stats, plan = await asyncio.gather(
+                # Dynamic Parallel fetching! 🚀
+                tasks = [
                     get_user_active_missions(user_id),
                     get_user_stats(user_id),
                     get_user_plan(user_id)
-                )
+                ]
+                
+                # Optimization: Include Guild Stats if requested (Consolidation) 💎
+                if guild_id:
+                    guild = self.get_guild(int(guild_id))
+                    if guild:
+                        now = datetime.datetime.now()
+                        cache_entry = STATS_CACHE.get(str(guild_id))
+                        if cache_entry and (now - cache_entry["timestamp"]).total_seconds() < 300:
+                            tasks.append(asyncio.sleep(0, result=cache_entry["data"])) # Fake task for consistency
+                        else:
+                            async def get_stats_and_cache():
+                                online = sum(1 for m in guild.members if m.status != disnake.Status.offline)
+                                d = {"total_members": guild.member_count, "online_members": online}
+                                STATS_CACHE[str(guild_id)] = {"data": d, "timestamp": now}
+                                return d
+                            tasks.append(get_stats_and_cache())
+
+                results = await asyncio.gather(*tasks)
+                missions, user_stats, plan = results[0], results[1], results[2]
+                guild_stats = results[3] if len(results) > 3 else None
                 
                 # Calculate Level (Max 10)
-                xp_balance = stats.get("xp_balance", 0)
+                xp_balance = user_stats.get("xp_balance", 0)
                 
                 def get_level_info(total_xp):
                     if total_xp <= 0: return 1, 0, 5000
@@ -1245,10 +1283,14 @@ class AnAnBot(commands.Bot):
                     level = 10
                     current_xp = 0
                     next_xp = 0
-                stats["level"] = level
-                stats["current_level_xp"] = current_xp
-                stats["xp_needed_for_next"] = next_xp
-                return web.json_response({"missions": missions, "stats": stats, "plan": plan}, headers={"Access-Control-Allow-Origin": "*"})
+                user_stats["level"] = level
+                user_stats["current_level_xp"] = current_xp
+                user_stats["xp_needed_for_next"] = next_xp
+                
+                final_res = {"missions": missions, "stats": user_stats, "plan": plan}
+                if guild_stats: final_res["guild_stats"] = guild_stats # Add consolidated stats
+                
+                return web.json_response(final_res, headers={"Access-Control-Allow-Origin": "*"})
                 
             elif action == "claim_mission":
                 user_id = body.get("user_id")
