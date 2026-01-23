@@ -53,7 +53,10 @@ export default function ReactionRolesPage({ params }) {
                         return;
                     }
                     if (settingsData.reaction_roles_config) {
-                        setConfig(settingsData.reaction_roles_config);
+                        setConfig({
+                            ...settingsData.reaction_roles_config,
+                            mappings: settingsData.reaction_roles_config.mappings || []
+                        });
                     }
                 }
 
@@ -182,10 +185,10 @@ export default function ReactionRolesPage({ params }) {
                             <div className="rr-preview-title">{config.title || "Title"}</div>
                             <div className="rr-preview-desc">{config.description || "Description..."}</div>
                             <div className="rr-preview-buttons">
-                                {config.mappings.slice(0, 5).map((m, i) => (
+                                {(config.mappings || []).slice(0, 5).map((m, i) => (
                                     <span key={i} className="rr-preview-btn">{m.emoji} {m.label || "Button"}</span>
                                 ))}
-                                {config.mappings.length > 5 && <span className="rr-preview-btn">+{config.mappings.length - 5}</span>}
+                                {(config.mappings?.length || 0) > 5 && <span className="rr-preview-btn">+{config.mappings.length - 5}</span>}
                             </div>
                         </div>
                     </div>
@@ -194,19 +197,19 @@ export default function ReactionRolesPage({ params }) {
                 {/* Right: Role Mappings */}
                 <div className="rr-panel rr-mappings-panel">
                     <div className="rr-mappings-header">
-                        <h3>🛡️ {isThai ? "ปุ่มรับยศ" : "Role Buttons"} ({config.mappings.length})</h3>
+                        <h3>🛡️ {isThai ? "ปุ่มรับยศ" : "Role Buttons"} ({config.mappings?.length || 0})</h3>
                         <button className="rr-btn-add" onClick={addMapping}>+ {isThai ? "เพิ่ม" : "Add"}</button>
                     </div>
 
                     <div className="rr-mappings-list">
-                        {config.mappings.length === 0 ? (
+                        {(!config.mappings || config.mappings.length === 0) ? (
                             <div className="rr-empty">
                                 <span>🎯</span>
                                 <p>{isThai ? "ยังไม่มีปุ่มรับยศ" : "No role buttons yet"}</p>
                                 <button onClick={addMapping}>+ {isThai ? "เพิ่มปุ่มแรก" : "Add first button"}</button>
                             </div>
                         ) : (
-                            config.mappings.map((mapping, idx) => (
+                            (config.mappings || []).map((mapping, idx) => (
                                 <div key={idx} className="rr-mapping-card">
                                     <div className="rr-mapping-emoji" onClick={(e) => openEmojiPicker(idx, e)}>
                                         {mapping.emoji || '➕'}

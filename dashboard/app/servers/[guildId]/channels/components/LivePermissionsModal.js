@@ -85,39 +85,25 @@ const LivePermissionsModal = ({ show, channelId, channelName, targetRole, onClos
     return (
         <Portal>
             <div className="fixed-overlay z-perms blur-in">
-                <div className="modal-card perms-modal glass animate-pop" style={{ maxWidth: '600px', padding: '30px', border: 'none' }}>
+                <div className="modal-card perms-modal-card glass animate-pop">
 
-                    <div className="setup-header" style={{ marginBottom: '20px', alignItems: 'center' }}>
+                    <div className="perms-modal-header">
                         {onBack && (
-                            <button
-                                className="back-btn"
-                                onClick={onBack}
-                                style={{ marginRight: '15px', width: '36px', height: '36px', fontSize: '18px' }}
-                            >←</button>
+                            <button className="back-btn perms-back" onClick={onBack}>←</button>
                         )}
-                        <div className="so-icon" style={{ background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', fontSize: '24px' }}>🔐</div>
+                        <div className="perms-icon">🔐</div>
                         <div className="m-title">
-                            <h3 style={{ fontSize: '22px', fontWeight: '900' }}>Edit Permissions</h3>
-                            <p style={{ fontSize: '14px', opacity: 0.7 }}>Managing <span style={{ color: '#ec4899', fontWeight: '900' }}>{targetRole.name}</span> in <span style={{ fontWeight: '700' }}>{channelName}</span></p>
+                            <h3>Edit Permissions</h3>
+                            <p>Managing <span className="role-highlight">{targetRole.name}</span> in <span className="channel-highlight">{channelName}</span></p>
                         </div>
-                        <button className="modal-close" onClick={onClose} style={{ position: 'static', marginLeft: 'auto' }}>×</button>
+                        <button className="modal-close perms-close" onClick={onClose}>×</button>
                     </div>
 
-                    <div className="modal-body perms-scroll-area" style={{ maxHeight: '400px', overflowY: 'auto', padding: '10px 5px', background: 'rgba(0,0,0,0.02)', borderRadius: '20px' }}>
-                        <div className="perms-list" style={{ padding: '0 10px' }}>
+                    <div className="perms-scroll-area">
+                        <div className="perms-list">
                             {permissionGroups.map((group, gIdx) => (
-                                <div key={gIdx} style={{ marginBottom: '20px' }}>
-                                    <h4 style={{
-                                        fontSize: '11px',
-                                        fontWeight: '900',
-                                        color: '#ec4899',
-                                        opacity: 0.6,
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '1px',
-                                        padding: '15px 10px 10px 10px',
-                                        borderBottom: '1.5px solid rgba(236, 72, 153, 0.1)',
-                                        marginBottom: '5px'
-                                    }}>
+                                <div key={gIdx} className="perm-group">
+                                    <h4 className="perm-group-title">
                                         {group.title}
                                     </h4>
                                     {group.perms.map(p => {
@@ -126,10 +112,10 @@ const LivePermissionsModal = ({ show, channelId, channelName, targetRole, onClos
                                         const isNeutral = !isAllowed && !isDenied;
 
                                         return (
-                                            <div key={p.id} className="perm-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 10px', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
-                                                <div className="p-info">
-                                                    <div style={{ fontWeight: '700', fontSize: '14px', color: '#4a4a68' }}>{p.name}</div>
-                                                    <div style={{ fontSize: '10px', opacity: 0.4, fontWeight: '800' }}>{p.id}</div>
+                                            <div key={p.id} className="perm-row">
+                                                <div className="perm-info">
+                                                    <div className="perm-name">{p.name}</div>
+                                                    <div className="perm-id">{p.id}</div>
                                                 </div>
                                                 <div className="perm-btn-group">
                                                     <button
@@ -153,17 +139,11 @@ const LivePermissionsModal = ({ show, channelId, channelName, targetRole, onClos
                         </div>
                     </div>
 
-                    <div className="modal-actions" style={{ marginTop: '25px' }}>
-                        <button className="modal-btn ghost" onClick={onClose} style={{ background: 'rgba(0,0,0,0.03)', color: '#64748b' }}>ยกเลิก 🌸</button>
+                    <div className="perms-modal-actions">
+                        <button className="sub-modal-btn cancel" onClick={onClose}>ยกเลิก 🌸</button>
                         <button
-                            className="modal-btn primary"
+                            className="sub-modal-btn primary"
                             onClick={() => onSave(targetRole.id, allow.toString(), deny.toString())}
-                            style={{
-                                background: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
-                                color: 'white',
-                                fontWeight: '900',
-                                boxShadow: '0 8px 20px rgba(139, 92, 246, 0.25)'
-                            }}
                         >
                             บันทึกการตั้งค่าค่ะ ✨
                         </button>

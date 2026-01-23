@@ -215,31 +215,21 @@ export default function ChannelManagement({ params }) {
 
     return (
         <div className="dashboard-container blur-in channel-mgmt-layout">
-            <div className="setup-header channel-mgmt-header">
+            <div className="channel-mgmt-header">
                 <button className="back-btn" onClick={() => router.push(`/servers/${guildId}`)}>←</button>
                 <div className="m-title">
-                    <h3 style={{ fontSize: '24px', fontWeight: '950', background: 'linear-gradient(135deg, #ec4899, #8b5cf6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', letterSpacing: '-0.5px' }}>Channel Management 🏗️</h3>
-                    <p style={{ fontSize: '13px', opacity: 0.7, fontWeight: '600' }}>Live manage server structure. Exclusive to Papa only.</p>
+                    <h3>Channel Management 🏗️</h3>
+                    <p>Live manage server structure. Exclusive to Papa only.</p>
                 </div>
-                <div style={{ marginLeft: 'auto' }}>
+                <div className="header-actions">
                     <button
-                        className="modal-btn"
+                        className="mini-add-btn"
                         onClick={() => {
                             setCreateType('category');
                             setParentCatId(null);
                             setShowCreate(true);
                         }}
                         disabled={isProcessing}
-                        style={{
-                            background: 'rgba(236, 72, 153, 0.1)',
-                            color: '#ec4899',
-                            border: '1px solid rgba(236, 72, 153, 0.2)',
-                            fontWeight: '900',
-                            padding: '10px 20px',
-                            borderRadius: '12px',
-                            fontSize: '12px',
-                            width: 'auto'
-                        }}
                     >
                         + NEW CATEGORY
                     </button>
@@ -249,9 +239,9 @@ export default function ChannelManagement({ params }) {
             <div className="channel-mgmt-grid">
                 {/* Left Panel: Category List */}
                 <div className="channel-mgmt-panel category-list">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', flexShrink: 0 }}>
-                        <p style={{ fontSize: '10px', fontWeight: '950', color: 'var(--primary)', letterSpacing: '1.2px', textTransform: 'uppercase' }}>Categories</p>
-                        <span style={{ fontSize: '9px', background: 'rgba(0,0,0,0.05)', padding: '2px 6px', borderRadius: '50px', fontWeight: '800' }}>{structure.length} Total</span>
+                    <div className="panel-header">
+                        <p className="panel-title">Categories</p>
+                        <span className="panel-count">{structure.length} Total</span>
                     </div>
 
                     <div className="channel-scroll-area">
@@ -298,13 +288,13 @@ export default function ChannelManagement({ params }) {
                 <div className="channel-mgmt-panel channel-list">
                     {activeZone ? (
                         <>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', paddingBottom: '15px', borderBottom: '1px solid rgba(0,0,0,0.03)', flexShrink: 0 }}>
+                            <div className="panel-header channel-panel-header">
                                 <div>
-                                    <h4 style={{ margin: 0, fontSize: '18px', fontWeight: '950', color: '#4a4a68', letterSpacing: '-0.3px' }}>
-                                        Channels in <span style={{ color: '#ec4899', background: 'rgba(236, 72, 153, 0.05)', padding: '3px 10px', borderRadius: '10px' }}>{activeZone.name}</span>
+                                    <h4 className="channel-panel-title">
+                                        Channels in <span className="zone-name-badge">{activeZone.name}</span>
                                     </h4>
                                 </div>
-                                <div style={{ display: 'flex', gap: '10px' }}>
+                                <div className="channel-panel-actions">
                                     <button
                                         className="mini-add-btn"
                                         onClick={() => {
@@ -313,18 +303,9 @@ export default function ChannelManagement({ params }) {
                                             setShowCreate(true);
                                         }}
                                         disabled={isProcessing}
-                                        style={{ padding: '8px 16px', fontSize: '11px', borderRadius: '10px' }}
                                     >+ TEXT ROOM</button>
                                     <button
-                                        className="mini-add-btn"
-                                        style={{
-                                            padding: '8px 16px',
-                                            fontSize: '11px',
-                                            borderRadius: '10px',
-                                            background: 'rgba(139, 92, 246, 0.08)',
-                                            color: '#8b5cf6',
-                                            borderColor: 'rgba(139, 92, 246, 0.15)'
-                                        }}
+                                        className="mini-add-btn voice"
                                         onClick={() => {
                                             setCreateType('voice');
                                             setParentCatId(activeZone.id);
@@ -342,43 +323,21 @@ export default function ChannelManagement({ params }) {
                                         className={`ch-item-premium ${selectedChannelId === ch.id ? 'active' : ''}`}
                                         onClick={() => setSelectedChannelId(selectedChannelId === ch.id ? null : ch.id)}
                                     >
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                                <div style={{
-                                                    width: '40px',
-                                                    height: '40px',
-                                                    borderRadius: '12px',
-                                                    background: ch.type.includes('voice') ? 'linear-gradient(135deg, #a78bfa, #8b5cf6)' : 'linear-gradient(135deg, #f472b6, #ec4899)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    fontSize: '18px',
-                                                    color: 'white',
-                                                    boxShadow: '0 4px 10px rgba(0,0,0,0.05)'
-                                                }}>
+                                        <div className="ch-item-row">
+                                            <div className="ch-item-left">
+                                                <div className={`ch-item-icon ${ch.type.includes('voice') ? 'voice' : 'text'}`}>
                                                     {ch.type.includes('voice') ? '🔊' : '💬'}
                                                 </div>
-                                                <div>
-                                                    <span style={{ fontWeight: '900', fontSize: '15px', color: '#4a4a68', display: 'block' }}>{ch.name}</span>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                        <span style={{ fontSize: '9px', background: 'rgba(0,0,0,0.05)', padding: '1px 6px', borderRadius: '4px', fontWeight: '800', opacity: 0.6, textTransform: 'uppercase' }}>{ch.type}</span>
-                                                        <span style={{ fontSize: '9px', opacity: 0.3, fontWeight: '700' }}>ID: {ch.id}</span>
+                                                <div className="ch-item-info">
+                                                    <span className="ch-name">{ch.name}</span>
+                                                    <div className="ch-meta">
+                                                        <span className="ch-type-badge">{ch.type}</span>
+                                                        <span className="ch-id">ID: {ch.id}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             <button
-                                                className="delete-btn"
-                                                style={{
-                                                    background: 'rgba(239, 68, 68, 0.08)',
-                                                    color: '#ef4444',
-                                                    padding: '6px 14px',
-                                                    borderRadius: '10px',
-                                                    fontSize: '11px',
-                                                    fontWeight: '800',
-                                                    border: '1px solid rgba(239, 68, 68, 0.15)',
-                                                    transition: '0.2s',
-                                                    cursor: 'pointer'
-                                                }}
+                                                className="ch-delete-btn"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setPendingDelete({ id: ch.id, name: ch.name });
@@ -390,19 +349,19 @@ export default function ChannelManagement({ params }) {
                                 ))}
 
                                 {(!activeZone.channels || activeZone.channels.length === 0) && (
-                                    <div className="empty-state" style={{ padding: '80px 0', textAlign: 'center', opacity: 0.3 }}>
-                                        <div style={{ fontSize: '50px', marginBottom: '20px' }}>🌸</div>
-                                        <p style={{ fontWeight: '800', fontSize: '16px' }}>No channels in this category yet.</p>
-                                        <p style={{ fontSize: '13px' }}>Start building your kingdom, Papa!</p>
+                                    <div className="channel-empty-state">
+                                        <div className="icon">🌸</div>
+                                        <p className="title">No channels in this category yet.</p>
+                                        <p className="desc">Start building your kingdom, Papa!</p>
                                     </div>
                                 )}
                             </div>
                         </>
                     ) : (
-                        <div className="empty-state" style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', opacity: 0.2 }}>
-                            <div style={{ fontSize: '80px', marginBottom: '30px' }}>🏗️</div>
-                            <p style={{ fontSize: '20px', fontWeight: '950' }}>Select a Category to manage channels</p>
-                            <p style={{ fontSize: '14px', fontWeight: '700', marginTop: '10px' }}>Everything is under your command!</p>
+                        <div className="channel-empty-state full">
+                            <div className="icon">🏗️</div>
+                            <p className="title">Select a Category to manage channels</p>
+                            <p className="desc">Everything is under your command!</p>
                         </div>
                     )}
                 </div>
