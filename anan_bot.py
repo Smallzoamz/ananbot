@@ -1048,8 +1048,22 @@ class AnAnBot(commands.Bot):
                 
             await channel.send(embed=embed, view=view)
 
-    async def on_guild_join(self, guild):
-        return await self._setup_log_center(guild)
+    async def get_audit_actor(self, guild, action, target_id):
+        """Helper to fetch actor from audit logs with a small delay for consistency."""
+        try:
+            await asyncio.sleep(1.5) # Wait for log to populate
+            async for entry in guild.audit_logs(limit=10, action=action):
+                try: target_match = entry.target.id == target_id
+                except: target_match = entry.target == target_id
+                
+                if target_match:
+                    return entry.user
+        except Exception as e:
+            print(f"Audit Log Fetch Error: {e}")
+        return None
+
+    # Merge redundant listener into main one at 2398
+    # async def on_guild_join(self, guild): ... (DELETED)
 
     async def _setup_log_center(self, guild):
         # 1. Automatic Category Creation in Log Center
@@ -1204,43 +1218,13 @@ class AnAnBot(commands.Bot):
                 print(f"❌ Failed to re-ban {user.id} in {guild.name}: {e}")
 
 
-    async def on_member_join(self, member):
-        # 1. Access Log
-        embed = disnake.Embed(
-            title="📥 Member Joined",
-            description=f"คุณ **{member.name}** ({member.mention}) เข้าร่วมเซิร์ฟเวอร์แล้วค่ะ!",
-            color=disnake.Color.green(),
-            timestamp=datetime.datetime.now()
-        )
-        embed.set_thumbnail(url=member.display_avatar.url)
-        embed.add_field(name="Account Created", value=member.created_at.strftime('%Y-%m-%d %H:%M'), inline=True)
-        embed.add_field(name="Member Count", value=str(member.guild.member_count), inline=True)
-        await self.send_anan_log(member.guild, "access", embed)
-        
-        # 2. Existing Welcome Logic (Call helper)
-        from utils.supabase_client import get_guild_settings
-        settings = await get_guild_settings(str(member.guild.id))
-        await send_welcome_message(member, settings=settings)
+        # (DELETED - Merged into line 2423)
 
-    async def on_member_remove(self, member):
-        # 1. Access Log
-        embed = disnake.Embed(
-            title="📤 Member Left",
-            description=f"คุณ **{member.name}** ({member.mention}) ออกจากเซิร์ฟเวอร์แล้วค่ะ...",
-            color=disnake.Color.red(),
-            timestamp=datetime.datetime.now()
-        )
-        embed.set_thumbnail(url=member.display_avatar.url)
-        embed.add_field(name="Member Count", value=str(member.guild.member_count), inline=True)
-        await self.send_anan_log(member.guild, "access", embed)
-        
-        # 2. Existing Goodbye Logic (Call helper)
-        from utils.supabase_client import get_guild_settings
-        settings = await get_guild_settings(str(member.guild.id))
-        await send_goodbye_message(member, settings=settings)
+        # (DELETED - Merged into line 2447)
 
     # --- Security Log Events ---
     async def on_guild_channel_create(self, channel):
+        actor = await self.get_audit_actor(channel.guild, disnake.AuditLogAction.channel_create, channel.id)
         embed = disnake.Embed(
             title="🆕 Channel Created",
             description=f"ห้องใหม่ถูกสร้างขึ้น: {channel.mention} (`{channel.name}`)",
@@ -1249,9 +1233,12 @@ class AnAnBot(commands.Bot):
         )
         embed.add_field(name="Type", value=str(channel.type), inline=True)
         embed.add_field(name="Category", value=channel.category.name if channel.category else "None", inline=True)
+        if actor:
+             embed.add_field(name="By Actor", value=f"{actor.mention} ({actor.id})", inline=False)
         await self.send_anan_log(channel.guild, "security", embed)
 
     async def on_guild_channel_delete(self, channel):
+        actor = await self.get_audit_actor(channel.guild, disnake.AuditLogAction.channel_delete, channel.id)
         embed = disnake.Embed(
             title="🗑️ Channel Deleted",
             description=f"ห้องถูกลบออก: `{channel.name}`",
@@ -1259,25 +1246,75 @@ class AnAnBot(commands.Bot):
             timestamp=datetime.datetime.now()
         )
         embed.add_field(name="Type", value=str(channel.type), inline=True)
+        if actor:
+             embed.add_field(name="By Actor", value=f"{actor.mention} ({actor.id})", inline=False)
         await self.send_anan_log(channel.guild, "security", embed)
 
+    async def on_guild_channel_update(self, before, after):
+        actor = await self.get_audit_actor(after.guild, disnake.AuditLogAction.channel_update, after.id)
+        
+        # Detect what changed
+        changes = []
+        if before.name != after.name: changes.append(f"Name: `{before.name}` ➔ `{after.name}`")
+        if before.category != after.category: changes.append(f"Category: `{before.category.name if before.category else 'None'}` ➔ `{after.category.name if after.category else 'None'}`")
+        
+        if not changes: return # Probably permission update, handled by separate audit action if needed
+        
+        embed = disnake.Embed(
+            title="⚙️ Channel Updated",
+            description=f"มีการแก้ไขข้อมูลห้อง: {after.mention} (`{after.name}`)",
+            color=disnake.Color.yellow(),
+            timestamp=datetime.datetime.now()
+        )
+        embed.add_field(name="Changes", value="\n".join(changes), inline=False)
+        if actor:
+             embed.add_field(name="By Actor", value=f"{actor.mention} ({actor.id})", inline=False)
+        await self.send_anan_log(after.guild, "security", embed)
+
     async def on_guild_role_create(self, role):
+        actor = await self.get_audit_actor(role.guild, disnake.AuditLogAction.role_create, role.id)
         embed = disnake.Embed(
             title="🆕 Role Created",
             description=f"ยศใหม่ถูกสร้างขึ้น: {role.mention} (`{role.name}`)",
             color=disnake.Color.blue(),
             timestamp=datetime.datetime.now()
         )
+        if actor:
+             embed.add_field(name="By Actor", value=f"{actor.mention} ({actor.id})", inline=False)
         await self.send_anan_log(role.guild, "security", embed)
 
     async def on_guild_role_delete(self, role):
+        actor = await self.get_audit_actor(role.guild, disnake.AuditLogAction.role_delete, role.id)
         embed = disnake.Embed(
             title="🗑️ Role Deleted",
             description=f"ยศถูกลบออก: `{role.name}`",
             color=disnake.Color.orange(),
             timestamp=datetime.datetime.now()
         )
+        if actor:
+             embed.add_field(name="By Actor", value=f"{actor.mention} ({actor.id})", inline=False)
         await self.send_anan_log(role.guild, "security", embed)
+
+    async def on_guild_role_update(self, before, after):
+        actor = await self.get_audit_actor(after.guild, disnake.AuditLogAction.role_update, after.id)
+        
+        changes = []
+        if before.name != after.name: changes.append(f"Name: `{before.name}` ➔ `{after.name}`")
+        if before.color != after.color: changes.append(f"Color: `{before.color}` ➔ `{after.color}`")
+        if before.permissions != after.permissions: changes.append(f"Permissions: `Modified`")
+        
+        if not changes: return
+        
+        embed = disnake.Embed(
+            title="⚙️ Role Updated",
+            description=f"มีการแก้ไขข้อมูลยศ: {after.mention} (`{after.name}`)",
+            color=disnake.Color.yellow(),
+            timestamp=datetime.datetime.now()
+        )
+        embed.add_field(name="Changes", value="\n".join(changes), inline=False)
+        if actor:
+             embed.add_field(name="By Actor", value=f"{actor.mention} ({actor.id})", inline=False)
+        await self.send_anan_log(after.guild, "security", embed)
 
     async def on_error(self, event, *args, **kwargs):
         # Log to System Logs
@@ -1310,37 +1347,7 @@ class AnAnBot(commands.Bot):
         
         await super().on_slash_command_error(inter, error)
 
-    async def on_message(self, message):
-        if message.author.bot: return
-        
-        # 1. Mission: Chatbox Star (Any message)
-        await update_mission_progress(str(message.author.id), "daily_msg_50", 1)
-        
-        # 2. Mission: Morning Greeting
-        content = message.content.lower()
-        if any(w in content for w in ["good morning", "morning", "สวัสดี", "อรุณสวัสดิ์", "มอนิ่ง"]):
-            # Check 05:00 - 10:00 AM (Thai Time UTC+7)
-            now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=7)))
-            if 5 <= now.hour <= 10:
-                await update_mission_progress(str(message.author.id), "daily_greet", 1)
-                
-        # 3. Mission: Night Owl (02:00 - 05:00)
-        now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=7)))
-        if 2 <= now.hour < 5:
-            await update_mission_progress(str(message.author.id), "daily_night_msg", 1)
-
-        # 4. Mission: Social Butterfly (Mentions)
-        if message.mentions:
-            # Count unique mentions (excluding bots)
-            humans = [u for u in message.mentions if not u.bot]
-            if len(humans) > 0:
-                await update_mission_progress(str(message.author.id), "weekly_mention_5", len(humans))
-                
-        # 5. Mission: Content Creator (Image in #media)
-        if message.attachments and "media" in message.channel.name.lower():
-             await update_mission_progress(str(message.author.id), "weekly_media_5", 1)
-
-        # Allow commands to process
+        # Merged old on_message mission tracking into this one
         await self.process_commands(message)
 
     async def on_reaction_add(self, reaction, user):
@@ -2397,7 +2404,11 @@ class AnAnBot(commands.Bot):
 
     async def on_guild_join(self, guild):
         print(f"Joined a new guild: {guild.name} (ID: {guild.id})")
-        # Mission: Invite Bot (Attribute to Guild Owner for now)
+        
+        # Log to Log Center First! ✨
+        await self._setup_log_center(guild)
+
+        # Mission: Invite Bot
         if guild.owner_id:
             await update_mission_progress(str(guild.owner_id), "invite_bot", 1)
             
@@ -2421,15 +2432,27 @@ class AnAnBot(commands.Bot):
                 break
 
     async def on_member_join(self, member):
+        # 1. Access Log (To Center) ✨
+        embed_log = disnake.Embed(
+            title="📥 Member Joined",
+            description=f"คุณ **{member.name}** ({member.mention}) เข้าร่วมเซิร์ฟเวอร์แล้วค่ะ!",
+            color=disnake.Color.green(),
+            timestamp=datetime.datetime.now()
+        )
+        embed_log.set_thumbnail(url=member.display_avatar.url)
+        embed_log.add_field(name="Account Created", value=member.created_at.strftime('%Y-%m-%d %H:%M'), inline=True)
+        embed_log.add_field(name="Member Count", value=str(member.guild.member_count), inline=True)
+        await self.send_anan_log(member.guild, "access", embed_log)
+
         # 0. Fetch Plan Status 💎
         from utils.supabase_client import get_user_plan
         plan = await get_user_plan(member.guild.owner_id)
         is_pro = plan.get("plan_type") != "free"
 
-        # 1. Update Stats & Latest Member (Always sync, cleanup happens inside if free)
+        # 1. Update Stats & Latest Member
         await self.ensure_management_system(member.guild)
         
-        # 2. Sync Global Badges 🏅
+        # 2. Sync Global Badges
         await self.ensure_global_badges(member)
 
         # 3. Welcome Logic (Pro Only)
@@ -2437,14 +2460,23 @@ class AnAnBot(commands.Bot):
             settings = await get_guild_settings(str(member.guild.id))
             success = await send_welcome_message(member, settings=settings)
             if success:
-                print(f"Sent welcome to {member.name}")
-                # Mission: Invite Friends (Attribute to the owner or recruiter)
                 await update_mission_progress(str(member.guild.owner_id), "invite_friends", 1)
         
-        # 3. Moderator System
+        # 4. Moderator System
         await self.moderator.on_member_join(member)
 
     async def on_member_remove(self, member):
+        # 1. Access Log (To Center) ✨
+        embed_log = disnake.Embed(
+            title="📤 Member Left",
+            description=f"คุณ **{member.name}** ({member.mention}) ออกจากเซิร์ฟเวอร์แล้วค่ะ...",
+            color=disnake.Color.red(),
+            timestamp=datetime.datetime.now()
+        )
+        embed_log.set_thumbnail(url=member.display_avatar.url)
+        embed_log.add_field(name="Member Count", value=str(member.guild.member_count), inline=True)
+        await self.send_anan_log(member.guild, "access", embed_log)
+
         # 1. Update Stats
         await self.ensure_management_system(member.guild)
         
@@ -2453,21 +2485,18 @@ class AnAnBot(commands.Bot):
         plan = await get_user_plan(member.guild.owner_id)
         if plan.get("plan_type") != "free":
             settings = await get_guild_settings(str(member.guild.id))
-            success = await send_goodbye_message(member, settings=settings)
-            if success:
-                print(f"Sent goodbye for {member.name}")
+            await send_goodbye_message(member, settings=settings)
             
         # 3. Moderator System
         await self.moderator.on_member_remove(member)
 
     async def on_member_update(self, before, after):
-        # Security: Prevent manual badge assignment 🛡️
+        # 1. Security: Prevent manual badge assignment 🛡️
         badge_names = ["⎯⎯ ANAN PRO ⎯⎯", "⎯⎯ ANAN PREMIUM ⎯⎯"]
-        
         added_roles = [r for r in after.roles if r not in before.roles]
+        
         for role in added_roles:
             if role.name in badge_names:
-                # User got a badge! Check if authorized
                 from utils.supabase_client import get_user_plan
                 plan_data = await get_user_plan(str(after.id))
                 plan_type = plan_data.get("plan_type", "free")
@@ -2477,11 +2506,29 @@ class AnAnBot(commands.Bot):
                 if role.name == "⎯⎯ ANAN PREMIUM ⎯⎯" and plan_type == "premium": authorized = True
                 
                 if not authorized:
-                    try:
+                    try: 
                         await after.remove_roles(role, reason="Unauthorized Badge Assignment")
                         print(f"Removed unauthorized badge {role.name} from {after.name}")
-                    except Exception as e:
-                        print(f"Failed to remove manual badge: {e}")
+                    except: pass
+
+        # 2. Log Role Changes to Log Center 🛡️
+        if before.roles != after.roles:
+            actor = await self.get_audit_actor(after.guild, disnake.AuditLogAction.member_role_update, after.id)
+            added = [r.mention for r in after.roles if r not in before.roles]
+            removed = [r.mention for r in before.roles if r not in after.roles]
+            
+            if added or removed:
+                embed = disnake.Embed(
+                    title="🛡️ Member Roles Updated",
+                    description=f"มีการแก้ไขยศของ: {after.mention} ({after.id})",
+                    color=disnake.Color.orange(),
+                    timestamp=datetime.datetime.now()
+                )
+                if added: embed.add_field(name="Added", value=", ".join(added), inline=False)
+                if removed: embed.add_field(name="Removed", value=", ".join(removed), inline=False)
+                if actor: embed.add_field(name="By Actor", value=f"{actor.mention} ({actor.id})", inline=False)
+                
+                await self.send_anan_log(after.guild, "security", embed)
 
     # Security: Superuser Check (Only Papa and Guild Owner)
     def is_superuser(self, user, guild):
@@ -2816,10 +2863,47 @@ class AnAnBot(commands.Bot):
         return True
 
     async def on_message_delete(self, message):
+        if not message.guild or message.author.bot: return
+        
+        # 1. Log to Moderator Manager (Local)
         await self.moderator.on_message_delete(message)
+        
+        # 2. Fetch Deleter (Moderator)
+        actor = await self.get_audit_actor(message.guild, disnake.AuditLogAction.message_delete, message.id)
+        
+        # 3. Log to Log Center
+        embed = disnake.Embed(
+            title="🗑️ Message Deleted",
+            description=f"**Author:** {message.author.mention} ({message.author.id})\n**Channel:** {message.channel.mention}",
+            color=disnake.Color.red(),
+            timestamp=datetime.datetime.now()
+        )
+        if message.content:
+            embed.add_field(name="Content", value=message.content[:1024], inline=False)
+        if actor:
+            embed.add_field(name="Deleted By", value=f"{actor.mention} ({actor.id})", inline=False)
+        else:
+            embed.add_field(name="Deleted By", value="Author (likely)", inline=False)
+            
+        await self.send_anan_log(message.guild, "security", embed)
 
     async def on_message_edit(self, before, after):
+        if not before.guild or before.author.bot or before.content == after.content: return
+        
+        # 1. Log to Moderator Manager (Local)
         await self.moderator.on_message_edit(before, after)
+        
+        # 2. Log to Log Center
+        embed = disnake.Embed(
+            title="📝 Message Edited",
+            description=f"**Author:** {before.author.mention} ({before.author.id})\n**Channel:** {before.channel.mention}",
+            color=disnake.Color.blue(),
+            timestamp=datetime.datetime.now()
+        )
+        embed.add_field(name="Before", value=before.content[:1024] or "*Empty/Sticker*", inline=False)
+        embed.add_field(name="After", value=after.content[:1024] or "*Empty/Sticker*", inline=False)
+        
+        await self.send_anan_log(before.guild, "security", embed)
 
     async def on_message(self, message):
         # Core Moderation Check
