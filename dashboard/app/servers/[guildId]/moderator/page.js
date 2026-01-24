@@ -16,7 +16,9 @@ export default function ModeratorPage({ params }) {
 
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [config, setConfig] = useState({
+
+    // Config State (Merged)
+    const [modConfig, setModConfig] = useState({
         auto_mod_enabled: false,
         bad_words: [],
         anti_invite_enabled: false,
@@ -26,13 +28,22 @@ export default function ModeratorPage({ params }) {
         warning_system_enabled: false,
         lockdown_enabled: false
     });
+
+    const [spamConfig, setSpamConfig] = useState({
+        enabled: false,
+        max_mentions: 5,
+        rate_limit_enabled: false,
+        rate_limit_count: 5,
+        rate_limit_window: 10,
+        repeat_text_enabled: false,
+        repeat_text_count: 3,
+        action: "warn"
+    });
+
     const [channels, setChannels] = useState([]);
     const [userPlan, setUserPlan] = useState(null);
     const [modalState, setModalState] = useState({ show: false, title: "", message: "", type: "success" });
-
-    // UI State for Setting Modals
-    const [activeModal, setActiveModal] = useState(null); // 'autoMod', 'auditLogs', etc.
-
+    const [activeModal, setActiveModal] = useState(null); // 'autoMod', 'antiSpam', 'auditLogs'
 
     useEffect(() => {
         if (session?.accessToken && guildId) {
@@ -49,21 +60,27 @@ export default function ModeratorPage({ params }) {
                 body: JSON.stringify({ action: 'get_user_info', user_id: session.user.id })
             });
             const planData = await planRes.json();
-
             if (planData.plan?.plan_type === 'free') {
                 router.push(`/servers/${guildId}`);
                 return;
             }
             setUserPlan(planData.plan);
 
-            // 2. Fetch Settings
-            const settingsRes = await fetch(`/api/proxy/guild/${guildId}/settings`);
-            const settingsData = await settingsRes.json();
-            if (settingsData.moderator_config) {
-                setConfig(prev => ({ ...prev, ...settingsData.moderator_config }));
+            // 2. Fetch Moderator Config
+            const modRes = await fetch(`/api/proxy/guild/${guildId}/settings`);
+            const modData = await modRes.json();
+            if (modData.moderator_config) {
+                setModConfig(prev => ({ ...prev, ...modData.moderator_config }));
             }
 
-            // 3. Fetch Channels for Logs
+            // 3. Fetch Anti-Spam Config
+            const spamRes = await fetch(`/api/guild/${guildId}/anti-spam`);
+            const spamData = await spamRes.json();
+            if (spamData.config) {
+                setSpamConfig(prev => ({ ...prev, ...spamData.config }));
+            }
+
+            // 4. Fetch Channels
             const channelsRes = await fetch(`/api/proxy/guild/${guildId}/action`, {
                 method: 'POST',
                 body: JSON.stringify({ action: 'get_channels', user_id: session.user.id })
@@ -78,463 +95,421 @@ export default function ModeratorPage({ params }) {
         }
     };
 
-    const handleSave = async (updatedConfig = config) => {
+    const handleSave = async (type, overrideConfig = null) => {
         setSaving(true);
         try {
-            const res = await fetch(`/api/proxy/guild/${guildId}/action`, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'save_moderator_settings',
-                    user_id: session.user.id,
-                    config: updatedConfig
-                })
-            });
-            const data = await res.json();
-            if (data.success) {
-                setModalState({ show: true, title: "Success", message: t.moderator.saveSuccess, type: "success" });
-            } else {
-                setModalState({ show: true, title: "Error", message: data.error || "Failed to save", type: "error" });
+            if (type === 'moderator') {
+                const configToSave = overrideConfig || modConfig;
+                await fetch(`/api/proxy/guild/${guildId}/action`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'save_moderator_settings',
+                        user_id: session.user.id,
+                        config: configToSave
+                    })
+                });
+            } else if (type === 'antispam') {
+                const configToSave = overrideConfig || spamConfig;
+                await fetch(`/api/guild/${guildId}/anti-spam`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ config: configToSave })
+                });
+            }
+            if (!overrideConfig) {
+                setModalState({ show: true, title: "Success", message: "Settings saved successfully! ✨", type: "success" });
+                setActiveModal(null);
             }
         } catch (error) {
-            setModalState({ show: true, title: "Error", message: "Network error", type: "error" });
+            setModalState({ show: true, title: "Error", message: "Failed to save settings.", type: "error" });
         } finally {
             setSaving(false);
         }
     };
 
-    const toggleFeature = (key) => {
-        const newConfig = { ...config, [key]: !config[key] };
-        setConfig(newConfig);
-        handleSave(newConfig);
-    };
-
-    if (loading) return <div className="loading-screen">Papa is waiting... An An is working... 🌸</div>;
+    if (loading) return (
+        <div className="loading-screen">
+            <div className="loader"></div>
+            <p>An An is preparing your Moderator Center... 🌸</p>
+            <style jsx>{`
+                .loading-screen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff5f7; }
+                .loader { width: 50px; height: 50px; border: 5px solid #ffd1dc; border-top: 5px solid #ff85a2; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+                @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                p { color: #ff85a2; font-weight: 600; font-family: 'Outfit', sans-serif; }
+            `}</style>
+        </div>
+    );
 
     const cards = [
         {
             id: 'autoMod',
-            name: t.moderator.autoMod,
-            desc: t.moderator.autoModDesc,
+            name: "Auto-Mod System",
+            desc: "Protection against bad words, links, and invites.",
             icon: "🤖",
-            enabled: config.auto_mod_enabled || config.anti_invite_enabled || config.anti_link_enabled,
-            toggleKey: 'auto_mod_enabled', // Base toggle
-            hasSettings: true
+            enabled: modConfig.auto_mod_enabled || modConfig.anti_invite_enabled || modConfig.anti_link_enabled,
+            toggleKey: 'auto_mod_enabled',
+            configType: 'moderator'
+        },
+        {
+            id: 'antiSpam',
+            name: "Anti-Spam Shield",
+            desc: "Prevent floods, raids, and repetitive messages.",
+            icon: "🛡️",
+            enabled: spamConfig.enabled,
+            toggleKey: 'enabled',
+            configType: 'antispam',
+            isNew: true
         },
         {
             id: 'auditLogs',
-            name: t.moderator.auditLogs,
-            desc: t.moderator.auditLogsDesc,
+            name: "Audit Logs",
+            desc: "Detailed history of server events and moderation.",
             icon: "📜",
-            enabled: config.audit_logs_enabled,
+            enabled: modConfig.audit_logs_enabled,
             toggleKey: 'audit_logs_enabled',
-            hasSettings: true
+            configType: 'moderator'
         },
         {
             id: 'warnings',
-            name: t.moderator.warnings,
-            desc: t.moderator.warningsDesc,
+            name: "Warning System",
+            desc: "Issue warnings to users and track their history.",
             icon: "⚠️",
-            enabled: config.warning_system_enabled,
+            enabled: modConfig.warning_system_enabled,
             toggleKey: 'warning_system_enabled',
-            hasSettings: false
+            configType: 'moderator'
         },
         {
             id: 'lockdown',
-            name: t.moderator.lockdown,
-            desc: t.moderator.lockdownDesc,
+            name: "Server Lockdown",
+            desc: "Temporarily lock the server to prevent raids.",
             icon: "🚨",
-            enabled: config.lockdown_enabled,
+            enabled: modConfig.lockdown_enabled,
             toggleKey: 'lockdown_enabled',
-            hasSettings: false,
+            configType: 'moderator',
             color: 'danger'
         }
     ];
 
     return (
-        <div className="moderator-page page-animate">
-            <div className="page-header">
-                <div className="header-info">
-                    <h1>{t.moderator.title}</h1>
-                    <p>{t.moderator.desc}</p>
+        <div className="mod-center page-animate">
+            <div className="container">
+                <div className="page-header">
+                    <div className="header-content">
+                        <span className="subtitle">SECURITY CONTROL</span>
+                        <h1>Moderator Center 🛡️</h1>
+                        <p>Advanced security tools to keep your community safe and pure.</p>
+                    </div>
+                    <div className="pro-indicator">
+                        <CrownIcon size={20} />
+                        <span>PRO PLAN ACTIVE</span>
+                    </div>
                 </div>
-                <div className="pro-badge-large">
-                    <CrownIcon size={24} /> <span>PRO FEATURE</span>
-                </div>
-            </div>
 
-            <div className="moderator-grid">
-                {cards.map(card => (
-                    <div key={card.id} className={`mod-card glass ${card.color || ''}`}>
-                        <div className="mod-card-header">
-                            <span className="mod-icon">{card.icon}</span>
-                            <div className="mod-status-toggle">
+                <div className="mod-grid">
+                    {cards.map(card => (
+                        <div key={card.id} className={`mod-card shadow-glass ${card.color || ''}`}>
+                            {card.isNew && <span className="badge-new">NEW</span>}
+                            <div className="card-top">
+                                <span className="card-icon">{card.icon}</span>
                                 <label className="switch">
                                     <input
                                         type="checkbox"
-                                        checked={config[card.toggleKey]}
-                                        onChange={() => toggleFeature(card.toggleKey)}
+                                        checked={card.configType === 'moderator' ? modConfig[card.toggleKey] : spamConfig[card.toggleKey]}
+                                        onChange={() => {
+                                            if (card.configType === 'moderator') {
+                                                const newMod = { ...modConfig, [card.toggleKey]: !modConfig[card.toggleKey] };
+                                                setModConfig(newMod);
+                                                handleSave('moderator', newMod);
+                                            } else {
+                                                const newSpam = { ...spamConfig, [card.toggleKey]: !spamConfig[card.toggleKey] };
+                                                setSpamConfig(newSpam);
+                                                handleSave('antispam', newSpam);
+                                            }
+                                        }}
                                     />
-                                    <span className="slider round"></span>
+                                    <span className="slider"></span>
                                 </label>
                             </div>
+                            <div className="card-info">
+                                <h3>{card.name}</h3>
+                                <p>{card.desc}</p>
+                            </div>
+                            <button className="configure-btn" onClick={() => setActiveModal(card.id)}>
+                                Configure ⚙️
+                            </button>
                         </div>
-                        <div className="mod-card-body">
-                            <h3>{card.name}</h3>
-                            <p>{card.desc}</p>
+                    ))}
+                </div>
+
+                {/* MODALS */}
+                {activeModal === 'autoMod' && (
+                    <Portal>
+                        <div className="modal-overlay blur-in">
+                            <div className="modal-content animate-pop">
+                                <button className="close-btn" onClick={() => setActiveModal(null)}>×</button>
+                                <div className="modal-header">
+                                    <h2>🤖 Auto-Mod Config</h2>
+                                    <p>Configure automated protection layers.</p>
+                                </div>
+                                <div className="modal-body">
+                                    <div className="setting-row">
+                                        <div className="setting-label">
+                                            <h4>Anti-Invite</h4>
+                                            <span>Delete Discord guild invites.</span>
+                                        </div>
+                                        <label className="switch">
+                                            <input type="checkbox" checked={modConfig.anti_invite_enabled} onChange={() => setModConfig({ ...modConfig, anti_invite_enabled: !modConfig.anti_invite_enabled })} />
+                                            <span className="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div className="setting-row">
+                                        <div className="setting-label">
+                                            <h4>Anti-Link</h4>
+                                            <span>Block all external websites.</span>
+                                        </div>
+                                        <label className="switch">
+                                            <input type="checkbox" checked={modConfig.anti_link_enabled} onChange={() => setModConfig({ ...modConfig, anti_link_enabled: !modConfig.anti_link_enabled })} />
+                                            <span className="slider"></span>
+                                        </label>
+                                    </div>
+                                    <div className="setting-block">
+                                        <h4>Bad Words Filter</h4>
+                                        <TagInput
+                                            tags={modConfig.bad_words || []}
+                                            onChange={(tags) => setModConfig({ ...modConfig, bad_words: tags })}
+                                            placeholder="Add words to filter..."
+                                        />
+                                    </div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button className="save-button" onClick={() => handleSave('moderator')} disabled={saving}>
+                                        {saving ? "Saving..." : "Save Changes ✨"}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <div className="mod-card-footer">
-                            {card.hasSettings && (
-                                <button className="mod-settings-btn" onClick={() => setActiveModal(card.id)}>
-                                    ⚙️ Settings
-                                </button>
-                            )}
+                    </Portal>
+                )}
+
+                {activeModal === 'antiSpam' && (
+                    <Portal>
+                        <div className="modal-overlay blur-in">
+                            <div className="modal-content modal-large animate-pop">
+                                <button className="close-btn" onClick={() => setActiveModal(null)}>×</button>
+                                <div className="modal-header">
+                                    <h2>🛡️ Anti-Spam Details</h2>
+                                    <p>Fine-tune your spam protection thresholds.</p>
+                                </div>
+                                <div className="modal-body scrollable">
+                                    <div className="setting-group-grid">
+                                        <div className="setting-card">
+                                            <div className="s-card-head">
+                                                <h4>📢 Max Mentions</h4>
+                                                <input type="number" className="num-input" value={spamConfig.max_mentions} onChange={(e) => setSpamConfig({ ...spamConfig, max_mentions: parseInt(e.target.value) })} />
+                                            </div>
+                                            <p>Allow up to X mentions per message.</p>
+                                        </div>
+                                        <div className="setting-card">
+                                            <div className="s-card-head">
+                                                <h4>📝 Repeat Text</h4>
+                                                <label className="switch">
+                                                    <input type="checkbox" checked={spamConfig.repeat_text_enabled} onChange={(e) => setSpamConfig({ ...spamConfig, repeat_text_enabled: e.target.checked })} />
+                                                    <span className="slider"></span>
+                                                </label>
+                                            </div>
+                                            <div className="s-card-body">
+                                                <span>Limit:</span>
+                                                <input type="number" className="num-input small" value={spamConfig.repeat_text_count} onChange={(e) => setSpamConfig({ ...spamConfig, repeat_text_count: parseInt(e.target.value) })} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="setting-card full-w">
+                                        <div className="s-card-head">
+                                            <h4>⚡ Rate Limiting</h4>
+                                            <label className="switch">
+                                                <input type="checkbox" checked={spamConfig.rate_limit_enabled} onChange={(e) => setSpamConfig({ ...spamConfig, rate_limit_enabled: e.target.checked })} />
+                                                <span className="slider"></span>
+                                            </label>
+                                        </div>
+                                        {spamConfig.rate_limit_enabled && (
+                                            <div className="s-card-flex">
+                                                <div className="input-box">
+                                                    <label>Max Messages</label>
+                                                    <input type="number" value={spamConfig.rate_limit_count} onChange={(e) => setSpamConfig({ ...spamConfig, rate_limit_count: parseInt(e.target.value) })} />
+                                                </div>
+                                                <div className="input-box">
+                                                    <label>Window (sec)</label>
+                                                    <input type="number" value={spamConfig.rate_limit_window} onChange={(e) => setSpamConfig({ ...spamConfig, rate_limit_window: parseInt(e.target.value) })} />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="setting-card full-w danger">
+                                        <h4>⚖️ Punishment Action</h4>
+                                        <div className="punish-options">
+                                            {['warn', 'mute', 'kick', 'ban'].map(opt => (
+                                                <div key={opt} className={`punish-btn ${spamConfig.action === opt ? 'active' : ''}`} onClick={() => setSpamConfig({ ...spamConfig, action: opt })}>
+                                                    {opt.toUpperCase()}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button className="save-button" onClick={() => handleSave('antispam')} disabled={saving}>
+                                        {saving ? "Saving..." : "Save Anti-Spam ✨"}
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    </Portal>
+                )}
+
+                {activeModal === 'auditLogs' && (
+                    <Portal>
+                        <div className="modal-overlay blur-in">
+                            <div className="modal-content animate-pop">
+                                <button className="close-btn" onClick={() => setActiveModal(null)}>×</button>
+                                <div className="modal-header">
+                                    <h2>📜 Audit Log Config</h2>
+                                    <p>Track server actions in a channel.</p>
+                                </div>
+                                <div className="modal-body">
+                                    <div className="setting-block">
+                                        <h4>Log Channel</h4>
+                                        <select
+                                            className="pastel-select"
+                                            value={modConfig.log_channel_id}
+                                            onChange={(e) => setModConfig({ ...modConfig, log_channel_id: e.target.value })}
+                                        >
+                                            <option value="">-- Choose Channel --</option>
+                                            {channels.map(ch => <option key={ch.id} value={ch.id}># {ch.name}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button className="save-button" onClick={() => handleSave('moderator')} disabled={saving}>
+                                        {saving ? "Saving..." : "Apply Logs ✨"}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </Portal>
+                )}
             </div>
-
-            {/* Popup Modals */}
-            {activeModal === 'autoMod' && (
-                <Portal>
-                    <div className="fixed-overlay blur-in">
-                        <div className="modal-card animate-pop" style={{ maxWidth: '500px' }}>
-                            <button className="modal-close" onClick={() => setActiveModal(null)}>×</button>
-                            <div className="modal-header">
-                                <h2>🛡️ {t.moderator.autoMod} Settings</h2>
-                                <p>Configure your automated security layers ✨</p>
-                            </div>
-                            <div className="modal-body" style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <div className="config-item">
-                                    <div className="config-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: '700', color: '#4a4a68' }}>{t.moderator.antiInvite}</span>
-                                        <label className="switch">
-                                            <input
-                                                type="checkbox"
-                                                checked={config.anti_invite_enabled}
-                                                onChange={() => setConfig({ ...config, anti_invite_enabled: !config.anti_invite_enabled })}
-                                            />
-                                            <span className="slider round"></span>
-                                        </label>
-                                    </div>
-                                    <p style={{ fontSize: '0.85rem', color: '#888', marginTop: '4px' }}>Delete discord invite links from non-staff members.</p>
-                                </div>
-
-                                <div className="config-item">
-                                    <div className="config-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: '700', color: '#4a4a68' }}>{t.moderator.antiLink}</span>
-                                        <label className="switch">
-                                            <input
-                                                type="checkbox"
-                                                checked={config.anti_link_enabled}
-                                                onChange={() => setConfig({ ...config, anti_link_enabled: !config.anti_link_enabled })}
-                                            />
-                                            <span className="slider round"></span>
-                                        </label>
-                                    </div>
-                                    <p style={{ fontSize: '0.85rem', color: '#888', marginTop: '4px' }}>Delete all external links from non-staff members.</p>
-                                </div>
-
-                                <div className="divider" style={{ height: '1px', background: 'rgba(0,0,0,0.05)', margin: '10px 0' }}></div>
-
-                                <div className="config-item">
-                                    <label style={{ fontWeight: '700', color: '#4a4a68', display: 'block', marginBottom: '8px' }}>{t.moderator.badWords}</label>
-                                    <TagInput
-                                        tags={config.bad_words || []}
-                                        onChange={(newTags) => setConfig({ ...config, bad_words: newTags })}
-                                        placeholder="Type a word and hit Enter or Comma..."
-                                    />
-                                    <p style={{ fontSize: '0.85rem', color: '#888', marginTop: '6px' }}>Messages containing these words will be deleted automatically.</p>
-                                </div>
-                            </div>
-                            <div className="modal-actions" style={{ marginTop: '20px' }}>
-                                <button className="modal-btn primary-long" onClick={() => { handleSave(); setActiveModal(null); }} disabled={saving}>
-                                    {saving ? "Saving..." : "Apply Settings ✨"}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </Portal>
-            )}
-
-            {activeModal === 'auditLogs' && (
-                <Portal>
-                    <div className="fixed-overlay blur-in">
-                        <div className="modal-card animate-pop" style={{ maxWidth: '500px' }}>
-                            <button className="modal-close" onClick={() => setActiveModal(null)}>×</button>
-                            <div className="modal-header">
-                                <h2>📜 {t.moderator.auditLogs} Settings</h2>
-                                <p>Keep track of everything happening in your server ✨</p>
-                            </div>
-                            <div className="modal-body" style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <div className="config-item">
-                                    <div className="config-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontWeight: '700', color: '#4a4a68' }}>{t.moderator.auditEnabled}</span>
-                                        <label className="switch">
-                                            <input
-                                                type="checkbox"
-                                                checked={config.audit_logs_enabled}
-                                                onChange={() => setConfig({ ...config, audit_logs_enabled: !config.audit_logs_enabled })}
-                                            />
-                                            <span className="slider round"></span>
-                                        </label>
-                                    </div>
-                                    <p style={{ fontSize: '0.85rem', color: '#888', marginTop: '4px' }}>Enable or disable activity logging globally.</p>
-                                </div>
-
-                                <div className="divider" style={{ height: '1px', background: 'rgba(0,0,0,0.05)', margin: '10px 0' }}></div>
-
-                                <div className="config-item">
-                                    <label style={{ fontWeight: '700', color: '#4a4a68', display: 'block', marginBottom: '8px' }}>{t.moderator.logChannel}</label>
-                                    <select
-                                        className="glass-input"
-                                        style={{ width: '100%', borderRadius: '15px', padding: '12px', background: '#f8f9fb', border: 'none' }}
-                                        value={config.log_channel_id}
-                                        onChange={(e) => setConfig({ ...config, log_channel_id: e.target.value })}
-                                    >
-                                        <option value="">Select a channel</option>
-                                        {channels.map(ch => (
-                                            <option key={ch.id} value={ch.id}># {ch.name}</option>
-                                        ))}
-                                    </select>
-                                    <p style={{ fontSize: '0.85rem', color: '#888', marginTop: '8px' }}>The bot will send logs (deletes, edits, roles) to this channel.</p>
-                                </div>
-                            </div>
-                            <div className="modal-actions" style={{ marginTop: '20px' }}>
-                                <button className="modal-btn primary-long" onClick={() => { handleSave(); setActiveModal(null); }} disabled={saving}>
-                                    {saving ? "Saving..." : "Apply Settings ✨"}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </Portal>
-            )}
 
             <ResultModal
                 isOpen={modalState.show}
                 onClose={() => setModalState({ ...modalState, show: false })}
-                title={modalState.title}
-                message={modalState.message}
-                type={modalState.type}
+                {...modalState}
             />
 
             <style jsx>{`
-                .moderator-page {
-                    padding: 40px;
-                    max-width: 1200px;
-                    margin: 0 auto;
-                }
-                .page-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    margin-bottom: 40px;
-                }
-                .header-info h1 {
-                    font-size: 2.5rem;
-                    color: #4a4a4a;
-                    margin-bottom: 10px;
-                    background: linear-gradient(135deg, #FF9A9E, #FAD0C4);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                }
-                .header-info p {
-                    color: #888;
-                }
-                .pro-badge-large {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                    background: #FFF9E6;
-                    color: #D4AF37;
-                    padding: 10px 20px;
-                    border-radius: 50px;
-                    font-weight: 700;
-                    font-size: 0.9rem;
-                    border: 1px solid #FFEBB3;
-                    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.1);
-                }
-
-                .moderator-grid {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-                    gap: 25px;
-                }
-
-                .mod-card {
-                    padding: 25px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 15px;
-                    position: relative;
-                    transition: all 0.3s ease;
-                }
-                .mod-card:hover {
-                    transform: translateY(-5px);
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-                }
-                .mod-card.danger {
-                    border-bottom: 3px solid #ff4d4d;
-                }
-
-                .mod-card-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                .mod-icon {
-                    font-size: 2rem;
-                    background: #F0F2F5;
-                    width: 50px;
-                    height: 50px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 12px;
-                }
-
-                .mod-card-body h3 {
-                    font-size: 1.25rem;
-                    margin-bottom: 8px;
-                    color: #333;
-                }
-                .mod-card-body p {
-                    font-size: 0.9rem;
-                    color: #777;
-                    line-height: 1.4;
-                }
-
-                .mod-card-footer {
-                    margin-top: auto;
-                    display: flex;
-                    justify-content: flex-end;
-                }
-                .mod-settings-btn {
-                    background: #f8f9fa;
-                    border: 1px solid #eee;
-                    padding: 6px 15px;
-                    border-radius: 8px;
-                    font-size: 0.85rem;
-                    color: #666;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                .mod-settings-btn:hover {
-                    background: #FF9A9E;
-                    color: white;
-                    border-color: #FF9A9E;
-                }
-
-                /* Standard Switch */
-                .switch {
-                    position: relative;
-                    display: inline-block;
-                    width: 46px;
-                    height: 24px;
-                }
-                .switch input { opacity: 0; width: 0; height: 0; }
-                .slider {
-                    position: absolute;
-                    cursor: pointer;
-                    top: 0; left: 0; right: 0; bottom: 0;
-                    background-color: #ccc;
-                    transition: .4s;
-                    border-radius: 34px;
-                }
-                .slider:before {
-                    position: absolute;
-                    content: "";
-                    height: 18px;
-                    width: 18px;
-                    left: 3px;
-                    bottom: 3px;
-                    background-color: white;
-                    transition: .4s;
-                    border-radius: 50%;
-                }
-                input:checked + .slider { background-color: #FF9A9E; }
-                input:checked + .slider:before { transform: translateX(22px); }
-
-                /* Modal Specifics */
-                .modal-overlay {
-                    position: fixed;
-                    top: 0; left: 0; width: 100%; height: 100%;
-                    background: rgba(0,0,0,0.4);
-                    backdrop-filter: blur(5px);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 1000;
-                }
-                .modal-content {
-                    width: 90%;
-                    max-width: 500px;
-                    padding: 0;
-                    overflow: hidden;
-                    border: none;
-                }
-                .modal-header {
-                    padding: 20px 30px;
-                    border-bottom: 1px solid #eee;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    background: #fafafa;
-                }
-                .modal-body {
-                    padding: 30px;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 25px;
-                }
-                .config-item {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 5px;
-                }
-                .config-label {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    font-weight: 600;
-                    color: #444;
-                }
-                .config-hint {
-                    font-size: 0.8rem;
-                    color: #999;
-                }
-                textarea, select {
-                    width: 100%;
-                    padding: 12px;
-                    border-radius: 10px;
-                    border: 1px solid #eee;
-                    margin-top: 5px;
-                    font-size: 0.9rem;
-                }
-                textarea { height: 80px; resize: none; }
+                .mod-center { min-height: 100vh; background: #fffcfd; padding: 60px 20px; }
+                .container { max-width: 1100px; margin: 0 auto; }
                 
-                .modal-footer {
-                    padding: 15px 30px;
-                    background: #fafafa;
-                    border-top: 1px solid #eee;
-                    display: flex;
-                    justify-content: flex-end;
+                .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 50px; }
+                .subtitle { color: #ff85a2; font-weight: 800; font-size: 0.8rem; letter-spacing: 2px; }
+                h1 { font-size: 3rem; color: #4a4a68; margin: 5px 0; font-family: 'Outfit', sans-serif; }
+                p { color: #8e8eaf; font-size: 1.1rem; }
+
+                .pro-indicator { display: flex; align-items: center; gap: 8px; background: #fff5e6; color: #d99c00; padding: 8px 16px; border-radius: 99px; font-weight: 700; font-size: 0.85rem; border: 1px solid #ffe4b3; }
+
+                .mod-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+                
+                .mod-card { 
+                    background: white; border-radius: 30px; padding: 40px; border: 1px solid #f0f0f5; 
+                    position: relative; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    display: flex; flex-direction: column;
                 }
-                .save-btn {
-                    background: #FF9A9E;
-                    color: white;
-                    padding: 10px 25px;
-                    border-radius: 10px;
-                    font-weight: 600;
-                    border: none;
-                    cursor: pointer;
-                    transition: all 0.2s;
+                .mod-card:hover { transform: translateY(-10px); border-color: #ff85a2; box-shadow: 0 20px 40px rgba(255, 133, 162, 0.1); }
+                
+                .mod-card.danger { border-bottom: 4px solid #ff4d4d; }
+                .mod-card.danger:hover { border-color: #ff4d4d; box-shadow: 0 20px 40px rgba(255, 77, 77, 0.1); }
+                .mod-card.danger .card-icon { background: #fff1f1; color: #ff4d4d; }
+                .mod-card.danger .configure-btn:hover { background: #ff4d4d; border-color: #ff4d4d; }
+                
+                .badge-new { position: absolute; top: 20px; right: -10px; background: #ff477e; color: white; padding: 4px 12px; border-radius: 10px; font-size: 0.7rem; font-weight: 900; box-shadow: 0 4px 10px rgba(255, 71, 126, 0.3); }
+
+                .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; }
+                .card-icon { font-size: 2.5rem; background: #fff5f7; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; border-radius: 20px; }
+                
+                .card-info h3 { font-size: 1.6rem; color: #4a4a68; margin-bottom: 10px; }
+                .card-info p { font-size: 0.95rem; color: #8e8eaf; line-height: 1.6; margin-bottom: 30px; flex: 1; }
+
+                .configure-btn { 
+                    width: 100%; padding: 14px; border-radius: 18px; border: 2px solid #f0f0f5; 
+                    background: white; color: #4a4a68; font-weight: 700; cursor: pointer; transition: all 0.2s;
                 }
-                .save-btn:hover:not(:disabled) {
-                    transform: scale(1.05);
-                    box-shadow: 0 5px 15px rgba(255, 154, 158, 0.3);
-                }
-                .save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+                .configure-btn:hover { background: #ff85a2; color: white; border-color: #ff85a2; }
+
+                /* Switch CSS */
+                .switch { position: relative; display: inline-block; width: 60px; height: 32px; }
+                .switch input { opacity: 0; width: 0; height: 0; }
+                .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e2e8f0; transition: .4s; border-radius: 34px; }
+                .slider:before { position: absolute; content: ""; height: 24px; width: 24px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                input:checked + .slider { background-color: #ff85a2; }
+                input:checked + .slider:before { transform: translateX(28px); }
+
+                /* MODAL STYLES */
+                .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(74, 74, 104, 0.4); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; }
+                .modal-content { background: white; width: 500px; max-width: 90vw; border-radius: 40px; padding: 40px; position: relative; box-shadow: 0 30px 60px rgba(0,0,0,0.15); }
+                .modal-large { width: 700px; }
+                .close-btn { position: absolute; top: 25px; right: 25px; background: #f0f0f5; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 1.5rem; color: #8e8eaf; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+                
+                .modal-header h2 { font-size: 2rem; color: #4a4a68; margin-bottom: 5px; }
+                .modal-header p { margin-bottom: 30px; font-size: 1rem; }
+
+                .modal-body { display: flex; flex-direction: column; gap: 20px; }
+                .modal-body.scrollable { max-height: 60vh; overflow-y: auto; padding-right: 10px; }
+                .modal-body.scrollable::-webkit-scrollbar { width: 6px; }
+                .modal-body.scrollable::-webkit-scrollbar-thumb { background: #ffd1dc; border-radius: 10px; }
+
+                .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 20px; background: #fffcfd; border-radius: 20px; border: 1px solid #fef0f3; }
+                .setting-label h4 { font-size: 1.1rem; color: #4a4a68; margin-bottom: 2px; }
+                .setting-label span { font-size: 0.85rem; color: #bcbcce; }
+
+                .setting-block h4 { font-size: 1.1rem; color: #4a4a68; margin-bottom: 12px; }
+                
+                .setting-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                .setting-card { background: #fffcfd; padding: 20px; border-radius: 24px; border: 1px solid #fef0f3; }
+                .setting-card.full-w { grid-column: 1 / -1; }
+                .s-card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+                .s-card-head h4 { font-size: 1rem; color: #4a4a68; }
+                .setting-card p { font-size: 0.85rem; color: #bcbcce; }
+                
+                .s-card-body { display: flex; align-items: center; gap: 10px; margin-top: 15px; }
+                .s-card-flex { display: flex; gap: 20px; margin-top: 20px; }
+                .input-box { flex: 1; }
+                .input-box label { font-size: 0.8rem; font-weight: 700; color: #bcbcce; display: block; margin-bottom: 8px; }
+                .input-box input { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #f0f0f5; outline: none; transition: border-color 0.2s; }
+                .input-box input:focus { border-color: #ff85a2; }
+
+                .num-input { width: 70px; padding: 8px; border-radius: 10px; border: 1px solid #f0f0f5; text-align: center; font-weight: 700; }
+                .num-input.small { width: 50px; }
+
+                .punish-options { display: flex; gap: 10px; margin-top: 15px; }
+                .punish-btn { flex: 1; padding: 12px; text-align: center; background: #f8f9fa; border-radius: 15px; font-weight: 800; font-size: 0.8rem; cursor: pointer; color: #94a3b8; border: 2px solid transparent; transition: all 0.2s; }
+                .punish-btn:hover { background: #fff1f3; color: #ff85a2; }
+                .punish-btn.active { background: #ff4d4d; color: white; border-color: #ff4d4d; box-shadow: 0 4px 15px rgba(255, 77, 77, 0.3); }
+
+                .modal-footer { margin-top: 40px; display: flex; justify-content: flex-end; }
+                .save-button { background: linear-gradient(135deg, #ff85a2, #ff4d4d); color: white; padding: 16px 32px; border-radius: 20px; border: none; font-weight: 800; font-size: 1rem; cursor: pointer; box-shadow: 0 10px 25px rgba(255, 133, 162, 0.3); transition: all 0.3s; }
+                .save-button:hover { transform: translateY(-3px); box-shadow: 0 15px 35px rgba(255, 133, 162, 0.4); }
+                .save-button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+                .pastel-select { width: 100%; padding: 14px; border-radius: 15px; border: 1px solid #f0f0f5; background: #fffcfd; color: #4a4a68; outline: none; }
+                
+                .blur-in { animation: blurIn 0.3s ease-out; }
+                @keyframes blurIn { from { backdrop-filter: blur(0); background: rgba(0,0,0,0); } to { backdrop-filter: blur(10px); background: rgba(74, 74, 104, 0.4); } }
+                
+                .animate-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+                @keyframes popIn { from { opacity: 0; transform: scale(0.8) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
             `}</style>
         </div>
     );
 }
+
+// Result Modal and Portal are already available as components, so I'm using them directly as imports.
