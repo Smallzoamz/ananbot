@@ -5,7 +5,6 @@ import { useSession } from "next-auth/react";
 import { CrownIcon, ProBadge, TwitchIcon, YouTubeIcon } from "../../../components/Icons";
 import ConsoleModal from "./ConsoleModal";
 import VerificationModal from "./VerificationModal";
-import ModeratorModal from "./ModeratorModal";
 
 const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructure, onShowSelectiveModal, userPlan, onShowProWall }) => {
     const router = useRouter();
@@ -13,7 +12,6 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
     const isPapa = session?.user?.id === "956866340474478642" || session?.user?.uid === "956866340474478642";
     const [showConsoleModal, setShowConsoleModal] = React.useState(false);
     const [showVerificationModal, setShowVerificationModal] = React.useState(false);
-    const [showModeratorModal, setShowModeratorModal] = React.useState(false);
 
     const tabs = ["All Plugins", "Essentials", "Stream Alert", "Server Management", "Moderator", "Utilities"];
 
@@ -114,7 +112,7 @@ const PluginGrid = ({ guildId, activeTab, onTabChange, onAction, onFetchStructur
             badgeClass: "",
             category: "Moderator",
             desc: "Advanced auto-mod, audit logs, and security tools to keep your server safe.",
-            action: () => checkPro("Moderator", () => setShowModeratorModal(true)),
+            action: () => checkPro("Moderator", () => router.push(`/servers/${guildId}/moderator`)),
             btnText: "Configure"
         },
         {
