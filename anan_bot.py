@@ -152,13 +152,34 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
         # Announcements
         "ประกาศ": "announce", "announce": "announce", "news": "announce", "ข่าวสาร": "announce",
         # Chat & Social
-        "แชท": "chat", "chat": "chat", "พูดคุย": "chat", "สนทนา": "chat",
+        "แชท": "chat", "chat": "chat", "พูดคุย": "chat", "สนทนา": "chat", "คุย": "chat",
         # Support & Tickets
-        "support": "support", "สอบถาม": "support", "ticket": "support", "ปัญหา": "support",
+        "support": "support", "สอบถาม": "support", "ticket": "support", "ปัญหา": "support", "แจ้งปัญหา": "support",
         # Shop & Commerce
         "shop": "shop", "ร้าน": "shop", "สินค้า": "shop", "ซื้อ": "shop", "nitro": "shop",
         # Voice
         "เสียง": "voice", "voice": "voice", "talk": "voice", "room": "voice",
+        # Social Channels (New)
+        "โชว์ผลงาน": "show_work", "ผลงาน": "show_work", "show": "show_work",
+        "แชร์รูป": "share_photo", "รูปภาพ": "share_photo", "photo": "share_photo",
+        "มีม": "meme", "meme": "meme",
+        "หาเพื่อน": "find_friends", "เพื่อน": "find_friends", "find": "find_friends",
+        "ทั่วไป": "general", "general": "general",
+        "อาหาร": "food", "food": "food",
+        "ไลฟ์สไตล์": "lifestyle", "lifestyle": "lifestyle",
+        # Game Channels (New)
+        "จัดอันดับ": "leaderboard", "อันดับ": "leaderboard", "leaderboard": "leaderboard",
+        "ไฮไลท์": "highlights", "highlights": "highlights",
+        "แลกเปลี่ยน": "trade", "trade": "trade",
+        # Fan Channels (New)
+        "สตรีม": "stream", "stream": "stream", "แจ้งสตรีม": "stream",
+        "ตาราง": "schedule", "schedule": "schedule",
+        "ครอบครัว": "fc_chat", "fc": "fc_chat",
+        "กระทบไหล่": "meet_greet", "meet": "meet_greet",
+        "กิจกรรม": "giveaway", "giveaway": "giveaway",
+        "ไอเดีย": "ideas", "เสนอ": "ideas", "ideas": "ideas",
+        "แฟนอาร์ต": "fan_art", "fanart": "fan_art",
+        "คลิป": "clips", "clips": "clips",
         # General default for unmapped
         "info": "announce", "ข้อมูล": "announce"
     }
@@ -343,7 +364,9 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
             permissions=role_perms,
             reason=f"An An Bot: Setup"
         )
-        roles_map[role_info["name"]] = role
+        # Store both original template name AND final transformed name for flexible lookup
+        roles_map[role_info["name"]] = role  # Original template name
+        roles_map[final_role_name] = role     # Transformed name (for verification)
         role_levels[role] = role_info.get("permissions", "member")
 
     # Explicitly fix order (Top to Bottom)
@@ -665,18 +688,29 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
         )
         
         # Determine member role name based on template and language
+        # IMPORTANT: Use role.name (actual Discord name) not the roles_map key
         member_role_name = ""
-        customer_translated = get_translation(language, "roles", "customer")
-        member_translated = get_translation(language, "roles", "member")
-        fanclub_translated = get_translation(language, "roles", "fanclub")
+        member_role_obj = None
         
         if template_name == "Shop":
-            # Find actual role name from roles_map that contains customer keyword
-            member_role_name = next((name for name in roles_map.keys() if "customer" in name.lower() or "ลูกค้า" in name.lower()), "")
+            # Find role object that contains customer keyword
+            for role_obj in roles_map.values():
+                if "customer" in role_obj.name.lower() or "ลูกค้า" in role_obj.name.lower():
+                    member_role_obj = role_obj
+                    break
         elif template_name == "Community":
-            member_role_name = next((name for name in roles_map.keys() if "member" in name.lower() or "สมาชิก" in name.lower()), "")
+            for role_obj in roles_map.values():
+                if "member" in role_obj.name.lower() or "สมาชิก" in role_obj.name.lower():
+                    member_role_obj = role_obj
+                    break
         elif template_name == "Fanclub":
-            member_role_name = next((name for name in roles_map.keys() if "fanclub" in name.lower() or "ครอบครัว" in name.lower()), "")
+            for role_obj in roles_map.values():
+                if "fanclub" in role_obj.name.lower() or "ครอบครัว" in role_obj.name.lower():
+                    member_role_obj = role_obj
+                    break
+        
+        if member_role_obj:
+            member_role_name = member_role_obj.name  # Use actual Discord role name
         
         await verify_ch.send(embed=embed, view=VerificationView(member_role_name, verify_button_text))
 

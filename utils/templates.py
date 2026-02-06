@@ -59,32 +59,61 @@ EMOJI_THEMES = {
     "kawaii": {
         "name": "Kawaii Cute 🎀",
         "emojis": ["🎀", "🌸", "🍰", "🧸", "💕", "✨", "🌷", "🍓", "🍡", "🎂"],
+        # Core channels
         "rules": "📋", "verify": "✅", "welcome": "👋", "announce": "📢",
-        "chat": "💬", "voice": "🔊", "support": "🎫", "shop": "🛍️"
+        "chat": "💬", "voice": "🔊", "support": "🎫", "shop": "🛍️",
+        # Social channels
+        "show_work": "🎤", "share_photo": "📸", "meme": "😂", "find_friends": "🌸",
+        "general": "💬", "food": "🍰", "lifestyle": "🌷",
+        # Game channels
+        "leaderboard": "🏆", "highlights": "✨", "trade": "🎁",
+        # Fan channels
+        "stream": "📺", "schedule": "📅", "fc_chat": "💕", "meet_greet": "🌸",
+        "giveaway": "🎁", "ideas": "💡", "fan_art": "🎨", "clips": "🎬"
     },
     "elegant": {
         "name": "Minimal Elegant ✦",
         "emojis": ["✦", "◇", "◈", "⊹", "⁺", "⋆", "∘", "•", "─", "│"],
         "rules": "◈", "verify": "✓", "welcome": "⊹", "announce": "◇",
-        "chat": "⋆", "voice": "∘", "support": "•", "shop": "◈"
+        "chat": "⋆", "voice": "∘", "support": "•", "shop": "◈",
+        "show_work": "✦", "share_photo": "◇", "meme": "⁺", "find_friends": "⊹",
+        "general": "⋆", "food": "◇", "lifestyle": "⊹",
+        "leaderboard": "★", "highlights": "✦", "trade": "◈",
+        "stream": "◇", "schedule": "•", "fc_chat": "⊹", "meet_greet": "✦",
+        "giveaway": "◈", "ideas": "✦", "fan_art": "◇", "clips": "•"
     },
     "nature": {
         "name": "Nature Pastel 🌿",
         "emojis": ["🌿", "🍃", "🌻", "🌼", "🌺", "☁️", "🌙", "🍂", "🦋", "🌈"],
         "rules": "🍃", "verify": "🌿", "welcome": "🌸", "announce": "🌻",
-        "chat": "🦋", "voice": "☁️", "support": "🌼", "shop": "🌺"
+        "chat": "🦋", "voice": "☁️", "support": "🌼", "shop": "🌺",
+        "show_work": "🌻", "share_photo": "📷", "meme": "🌈", "find_friends": "🦋",
+        "general": "🍃", "food": "🍂", "lifestyle": "🌸",
+        "leaderboard": "🏆", "highlights": "✨", "trade": "🌼",
+        "stream": "☁️", "schedule": "🌙", "fc_chat": "🌸", "meet_greet": "🌷",
+        "giveaway": "🌻", "ideas": "💡", "fan_art": "🎨", "clips": "🎬"
     },
     "gaming": {
         "name": "Gaming Cool 🎮",
         "emojis": ["🎮", "⚔️", "🔥", "💎", "🏆", "⭐", "🎯", "🚀", "💀", "👑"],
         "rules": "📜", "verify": "🛡️", "welcome": "⚔️", "announce": "📢",
-        "chat": "💬", "voice": "🎮", "support": "🎯", "shop": "💎"
+        "chat": "💬", "voice": "🎮", "support": "🎯", "shop": "💎",
+        "show_work": "🔥", "share_photo": "📸", "meme": "💀", "find_friends": "👥",
+        "general": "💬", "food": "🍕", "lifestyle": "🎮",
+        "leaderboard": "🏆", "highlights": "🔥", "trade": "💎",
+        "stream": "📺", "schedule": "📅", "fc_chat": "💬", "meet_greet": "⚔️",
+        "giveaway": "🎁", "ideas": "💡", "fan_art": "🎨", "clips": "🎬"
     },
     "food": {
         "name": "Food & Sweets 🍮",
         "emojis": ["🍮", "🍡", "🍎", "🍌", "🍊", "🧁", "🍪", "🍩", "☕", "🧋"],
         "rules": "🍮", "verify": "🍡", "welcome": "🍰", "announce": "🧁",
-        "chat": "☕", "voice": "🧋", "support": "🍪", "shop": "🍩"
+        "chat": "☕", "voice": "🧋", "support": "🍪", "shop": "🍩",
+        "show_work": "🧁", "share_photo": "📸", "meme": "🍡", "find_friends": "🍰",
+        "general": "☕", "food": "🍮", "lifestyle": "🍓",
+        "leaderboard": "🏆", "highlights": "✨", "trade": "🍪",
+        "stream": "📺", "schedule": "📅", "fc_chat": "☕", "meet_greet": "🍰",
+        "giveaway": "🎁", "ideas": "💡", "fan_art": "🎨", "clips": "🎬"
     }
 }
 
@@ -191,7 +220,13 @@ TRANSLATIONS = {
             "fan_art": "แฟนอาร์ต",
             "clips": "คลิปตัดต่อ",
             "food": "ห้องอาหาร",
-            "lifestyle": "ไลฟ์สไตล์"
+            "lifestyle": "ไลฟ์สไตล์",
+            "chat": "พูดคุย",
+            "support": "ซัพพอร์ต",
+            "general": "ทั่วไป",
+            "voice": "ห้องเสียง",
+            "shop": "ร้านค้า",
+            "stream": "สตรีม"
         },
         "messages": {
             "verify_title": "✅ ยืนยันตัวตนเพื่อเข้าสู่เซิร์ฟเวอร์",
@@ -265,7 +300,13 @@ TRANSLATIONS = {
             "fan_art": "Fan Art",
             "clips": "Clips & Edits",
             "food": "Food Room",
-            "lifestyle": "Lifestyle"
+            "lifestyle": "Lifestyle",
+            "chat": "Chat",
+            "support": "Support",
+            "general": "General",
+            "voice": "Voice",
+            "shop": "Shop",
+            "stream": "Stream"
         },
         "messages": {
             "verify_title": "✅ Verify to Access the Server",
