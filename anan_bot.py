@@ -6,6 +6,7 @@ from utils.templates import (
     get_translation, get_emoji_for_channel
 )
 import os
+import re  # For Pattern Library name extraction
 import json
 import asyncio
 from aiohttp import web
@@ -113,6 +114,117 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
     def format_cat_name(emoji, name):
         """Format category name using selected pattern"""
         return format_category_name(pattern_id, emoji, name)
+    
+    # ============================================
+    # Smart Name Transformation (Pattern Library Integration)
+    # ============================================
+    # These helpers transform hardcoded template names to use selected Pattern + Language
+    
+    def extract_emoji_and_name(original_name):
+        """Extract emoji and clean name from hardcoded template name like '｜・📋：กฎกติกา'"""
+        # Common patterns: ｜・📋：, 🎮 ⎯, emoji | , etc.
+        patterns = [
+            r'^｜・([^\s：:]+)[：:](.+)$',  # ｜・📋：กฎกติกา
+            r'^([^\s]+)\s*\|\s*(.+)$',      # 👋 | WELCOME ZONE
+            r'^([^\s]+)\s*⎯\s*(.+)$',       # 🎮 ⎯ GAME
+        ]
+        
+        for p in patterns:
+            m = re.match(p, original_name.strip())
+            if m:
+                emoji = m.group(1).strip()
+                name = m.group(2).strip()
+                return emoji, name
+        
+        # Fallback: try to extract leading emoji
+        emoji_match = re.match(r'^([\U00010000-\U0010ffff\u2600-\u27bf\u2b50\u2702-\u27b0\ufe00-\ufe0f]+)\s*(.*)$', original_name, re.UNICODE)
+        if emoji_match:
+            return emoji_match.group(1), emoji_match.group(2)
+        
+        return "📝", original_name  # Default emoji
+    
+    # Channel type -> translation key mapping
+    CHANNEL_KEY_MAP = {
+        "กฎกติกา": "rules", "rules": "rules",
+        "verify": "verify", "welcome": "welcome",
+        "ประกาศ": "announce", "announce": "announce",
+        "แชท": "chat", "chat": "chat", "พูดคุย": "chat",
+        "support": "support", "สอบถาม": "support",
+        "shop": "shop", "ร้าน": "shop",
+        "nitro": "nitro", "เสียง": "voice", "voice": "voice"
+    }
+    
+    def get_channel_key(name):
+        """Try to match channel name to a translation key"""
+        name_lower = name.lower()
+        for keyword, key in CHANNEL_KEY_MAP.items():
+            if keyword in name_lower:
+                return key
+        return None
+    
+    def transform_channel_name(original_name, is_voice=False):
+        """Transform hardcoded template channel name using Pattern + Language"""
+        emoji, raw_name = extract_emoji_and_name(original_name)
+        
+        # Try to translate
+        channel_key = get_channel_key(raw_name)
+        if channel_key:
+            translated = get_translation(language, "channels", channel_key)
+            if translated != channel_key:  # Translation found
+                raw_name = translated
+        
+        # Apply pattern
+        display_name = raw_name.upper() if is_voice else raw_name.lower()
+        return format_channel_name(pattern_id, emoji, display_name)
+    
+    def transform_category_name(original_name):
+        """Transform hardcoded template category name using Pattern + Language"""
+        emoji, raw_name = extract_emoji_and_name(original_name)
+        
+        # Try to translate category
+        cat_key = None
+        cat_keywords = {
+            "shop": "shop_info", "information": "shop_info",
+            "nitro": "nitro_service", "status": "nitro_service",
+            "boost": "boost_service", "customer": "customer_service",
+            "welcome": "welcome", "social": "social", "game": "game",
+            "staff": "staff", "admin": "admin"
+        }
+        for kw, key in cat_keywords.items():
+            if kw in raw_name.lower():
+                cat_key = key
+                break
+        
+        if cat_key:
+            translated = get_translation(language, "categories", cat_key)
+            if translated != cat_key:
+                raw_name = translated
+        
+        return format_category_name(pattern_id, emoji, raw_name)
+    
+    def transform_role_name(original_name, permission_level="member"):
+        """Transform hardcoded template role name using Pattern + Language + Layout"""
+        emoji, raw_name = extract_emoji_and_name(original_name)
+        
+        # Try to translate role
+        role_keywords = {
+            "owner": "owner", "店主": "owner",
+            "admin": "admin", "ผู้ดูแล": "admin",
+            "staff": "staff", "พนักงาน": "staff", "moderator": "moderator",
+            "vip": "vip", "member": "member", "สมาชิก": "member", "ลูกค้า": "customer"
+        }
+        role_key = None
+        for kw, key in role_keywords.items():
+            if kw in raw_name.lower():
+                role_key = key
+                break
+        
+        if role_key:
+            translated = get_translation(language, "roles", role_key)
+            if translated != role_key:
+                raw_name = translated
+        
+        return format_role_name(role_layout_id, emoji, raw_name)
 
     def get_all_discord_permissions_info():
         # List of important permissions with Thai descriptions
@@ -158,10 +270,12 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
     dynamic_roles = []
     if template_name == "Community" and "games" in extra_data:
         for game in extra_data["games"]:
-            dynamic_roles.append({"name": f"🎮 {game.strip().upper()} PLAYER", "color": 0x3498DB, "hoist": True, "permissions": "member"})
+            game_role_name = format_role_name(role_layout_id, "🎮", f"{game.strip().upper()} PLAYER")
+            dynamic_roles.append({"name": game_role_name, "color": 0x3498DB, "hoist": True, "permissions": "member"})
     elif template_name == "Fanclub" and "platforms" in extra_data:
         for plat in extra_data["platforms"]:
-            dynamic_roles.append({"name": f"✨ {plat.strip().upper()} STREAMER", "color": 0xFD79A8, "hoist": True, "permissions": "member"})
+            plat_role_name = format_role_name(role_layout_id, "✨", f"{plat.strip().upper()} STREAMER")
+            dynamic_roles.append({"name": plat_role_name, "color": 0xFD79A8, "hoist": True, "permissions": "member"})
     elif template_name == "Custom" and "custom_roles" in extra_data:
         for crole in extra_data["custom_roles"]:
             color_val = crole.get("color", "FFFFFF")
@@ -174,15 +288,15 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
             # Check for bitmask from Dashboard
             bitmask = crole.get("permissions_bitmask")
             
-            # --- Role Design Layer ---
+            # --- Role Design Layer (Uses Pattern Library) ---
             # Automatically assign emoji based on permission level
             role_emoji = "👥"
             if level == "admin": role_emoji = "👑"
             elif level == "staff": role_emoji = "🛡️"
             
             raw_name = crole["name"].strip().upper()
-            # Apply design format if not already present
-            role_name = f"｜・{role_emoji}：{raw_name}" if "｜・" not in raw_name else raw_name
+            # Apply Pattern Library format
+            role_name = format_role_name(role_layout_id, role_emoji, raw_name)
             
             dynamic_roles.append({
                 "name": role_name,
@@ -200,9 +314,16 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
             role_perms = disnake.Permissions(int(role_info["bitmask"]))
         else:
             role_perms = get_role_perms(role_info.get("permissions", "member"))
+        
+        # Transform role name using Pattern Library (for template roles)
+        original_name = role_info["name"]
+        if role_info not in dynamic_roles:  # Only transform template roles, not already-transformed dynamic roles
+            final_role_name = transform_role_name(original_name, role_info.get("permissions", "member"))
+        else:
+            final_role_name = original_name
 
         role = await guild.create_role(
-            name=role_info["name"],
+            name=final_role_name,
             color=disnake.Color(role_info["color"]),
             hoist=role_info["hoist"],
             permissions=role_perms,
@@ -367,25 +488,31 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
                 
         if overwrites: await target.edit(overwrites=overwrites)
 
-    # 2. Global Channels
+    # 2. Global Channels (Apply Pattern Library transformation)
     for ch in template_data.get("GlobalChannels", []):
-        new_ch = await (guild.create_text_channel(name=ch["name"]) if ch["type"] == "text" else guild.create_voice_channel(name=ch["name"]))
+        is_voice = ch["type"] == "voice"
+        transformed_name = transform_channel_name(ch["name"], is_voice=is_voice)
+        new_ch = await (guild.create_text_channel(name=transformed_name) if ch["type"] == "text" else guild.create_voice_channel(name=transformed_name))
         # Always call apply_setup_overwrites to enforce everyone restriction
         await apply_setup_overwrites(new_ch, ch.get("permissions", {}))
 
-    # 3. Zones & Channels
+    # 3. Zones & Channels (Apply Pattern Library transformation)
     for zone in template_data["Zones"]:
         # Skip specific zones based on Shop options
         if template_name == "Shop" and "options" in extra_data:
             if "เม็ด Boost" not in extra_data["options"] and "BOOST" in zone["name"]: continue
             if "Stream Status" not in extra_data["options"] and "STATUS" in zone["name"]: continue
-            
-        category = await guild.create_category(name=zone["name"])
+        
+        # Transform category name using Pattern Library
+        transformed_cat_name = transform_category_name(zone["name"])
+        category = await guild.create_category(name=transformed_cat_name)
         # Always call apply_setup_overwrites to enforce everyone restriction
         await apply_setup_overwrites(category, zone.get("permissions", {}))
         
         for ch in zone["channels"]:
-            new_ch = await (guild.create_text_channel(name=ch["name"], category=category) if ch["type"] == "text" else guild.create_voice_channel(name=ch["name"], category=category))
+            is_voice = ch["type"] == "voice"
+            transformed_ch_name = transform_channel_name(ch["name"], is_voice=is_voice)
+            new_ch = await (guild.create_text_channel(name=transformed_ch_name, category=category) if ch["type"] == "text" else guild.create_voice_channel(name=transformed_ch_name, category=category))
             # If standard channel has no explicit perms, SYNC with category!
             # (Allows inheriting the visibility set on category)
             perms = ch.get("permissions", {})
@@ -401,10 +528,12 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
             else:
                 await apply_setup_overwrites(new_ch, perms)
 
-    # 4. Custom Zones (For Custom Template)
+    # 4. Custom Zones (For Custom Template - Apply Pattern Library)
     if template_name == "Custom" and "custom_zones" in extra_data:
         for zone in extra_data["custom_zones"]:
-            category = await guild.create_category(name=zone["name"])
+            # Transform category name using Pattern Library
+            transformed_zone_name = transform_category_name(zone["name"]) if "｜・" not in zone["name"] and "🎵" not in zone["name"] else zone["name"]
+            category = await guild.create_category(name=transformed_zone_name)
             
             # Handle explicit RBAC for Category
             if "allowedRoles" in zone:
@@ -418,9 +547,10 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
             
             for ch in zone["channels"]:
                 ch_name = ch["name"]
-                if "｜・" not in ch_name:
-                    ch_emoji = ch.get("emoji", "💬" if ch["type"] == "text" else "🔊")
-                    ch_name = format_name(ch_emoji, ch_name, is_voice=(ch["type"]=="voice"))
+                # Apply Pattern Library format
+                ch_emoji = ch.get("emoji", "💬" if ch["type"] == "text" else "🔊")
+                is_voice = ch["type"] == "voice"
+                ch_name = format_name(ch_emoji, ch_name, is_voice=is_voice)
                 
                 new_ch = await (guild.create_text_channel(name=ch_name, category=category) if ch["type"] == "text" else guild.create_voice_channel(name=ch_name, category=category))
                 
@@ -440,16 +570,18 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
                 else:
                     await apply_setup_overwrites(new_ch, ch.get("permissions", {}))
 
-    # Dynamic Channels
+    # Dynamic Channels (Apply Pattern Library)
     if template_name == "Community" and "games" in extra_data:
         for game in extra_data["games"]:
             g_name = game.strip().upper()
             
-            # Create a dedicated category for the game
-            cat = await guild.create_category(name=f"🎮 ⎯  {g_name} SPACE")
+            # Create a dedicated category for the game using Pattern Library
+            game_cat_name = format_category_name(pattern_id, "🎮", f"{g_name} SPACE")
+            cat = await guild.create_category(name=game_cat_name)
             
-            # Specific Role for this game
-            game_role = roles_map.get(f"🎮 {g_name} PLAYER")
+            # Specific Role for this game (use transformed name)
+            game_role_name = format_role_name(role_layout_id, "🎮", f"{g_name} PLAYER")
+            game_role = roles_map.get(game_role_name)
             
             # helper for game-specific channels
             async def create_game_ch(name, emoji, type="text", is_private=True):
