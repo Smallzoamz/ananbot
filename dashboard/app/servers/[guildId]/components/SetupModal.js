@@ -5,14 +5,15 @@ import { ArrowIcon, ProBadge } from "../../../components/Icons";
 
 // ============================================
 // PATTERN LIBRARY (Synced with templates.py)
+// No spaces allowed - Discord converts spaces to hyphens
 // ============================================
 const PATTERNS = {
     classic: { name: "Classic An An", example: "｜・📢：ประกาศ" },
-    ribbon: { name: "Ribbon Cute 🎀", example: "🎀 ┊ 📢 · ประกาศ" },
-    minimal: { name: "Minimal Elegant ✦", example: "· 📢 ⸝ ประกาศ" },
-    star: { name: "Starlight ★", example: "✦ ┊ 📢 : ประกาศ" },
-    heart: { name: "Heart Pastel ♡", example: "♡ · 📢 ─ ประกาศ" },
-    arrow: { name: "Arrow Modern →", example: "├ : → 📢 ประกาศ" }
+    ribbon: { name: "Ribbon Cute 🎀", example: "🎀┊📢·ประกาศ" },
+    minimal: { name: "Minimal Elegant ✦", example: "·📢⸝ประกาศ" },
+    star: { name: "Starlight ★", example: "✦┊📢:ประกาศ" },
+    heart: { name: "Heart Pastel ♡", example: "♡·📢─ประกาศ" },
+    arrow: { name: "Arrow Modern →", example: "├→📢ประกาศ" }
 };
 
 const EMOJI_THEMES = {

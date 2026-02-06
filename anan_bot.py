@@ -143,15 +143,24 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
         
         return "📝", original_name  # Default emoji
     
-    # Channel type -> translation key mapping
+    # Channel type -> translation key mapping (for emoji theme lookup)
     CHANNEL_KEY_MAP = {
-        "กฎกติกา": "rules", "rules": "rules",
-        "verify": "verify", "welcome": "welcome",
-        "ประกาศ": "announce", "announce": "announce",
-        "แชท": "chat", "chat": "chat", "พูดคุย": "chat",
-        "support": "support", "สอบถาม": "support",
-        "shop": "shop", "ร้าน": "shop",
-        "nitro": "nitro", "เสียง": "voice", "voice": "voice"
+        # Rules & Verification
+        "กฎกติกา": "rules", "rules": "rules", "กฎ": "rules",
+        "verify": "verify", "ยืนยัน": "verify",
+        "welcome": "welcome", "ต้อนรับ": "welcome",
+        # Announcements
+        "ประกาศ": "announce", "announce": "announce", "news": "announce", "ข่าวสาร": "announce",
+        # Chat & Social
+        "แชท": "chat", "chat": "chat", "พูดคุย": "chat", "สนทนา": "chat",
+        # Support & Tickets
+        "support": "support", "สอบถาม": "support", "ticket": "support", "ปัญหา": "support",
+        # Shop & Commerce
+        "shop": "shop", "ร้าน": "shop", "สินค้า": "shop", "ซื้อ": "shop", "nitro": "shop",
+        # Voice
+        "เสียง": "voice", "voice": "voice", "talk": "voice", "room": "voice",
+        # General default for unmapped
+        "info": "announce", "ข้อมูล": "announce"
     }
     
     def get_channel_key(name):
@@ -163,15 +172,20 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
         return None
     
     def transform_channel_name(original_name, is_voice=False):
-        """Transform hardcoded template channel name using Pattern + Language"""
+        """Transform hardcoded template channel name using Pattern + Language + Emoji Theme"""
         emoji, raw_name = extract_emoji_and_name(original_name)
         
-        # Try to translate
+        # Try to translate and get themed emoji
         channel_key = get_channel_key(raw_name)
         if channel_key:
             translated = get_translation(language, "channels", channel_key)
             if translated != channel_key:  # Translation found
                 raw_name = translated
+            
+            # Use emoji from selected theme if available
+            themed_emoji = emoji_theme.get(channel_key)
+            if themed_emoji:
+                emoji = themed_emoji
         
         # Apply pattern
         display_name = raw_name.upper() if is_voice else raw_name.lower()
@@ -639,22 +653,32 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
     # 4. Final step: Post Verification/Role selection messages
     verify_ch = next((c for c in guild.text_channels if "verify" in c.name), None)
     if verify_ch:
+        # Get translated messages based on language setting
+        verify_title = get_translation(language, "messages", "verify_title")
+        verify_desc = get_translation(language, "messages", "verify_desc")
+        verify_button_text = get_translation(language, "messages", "verify_button")
+        
         embed = disnake.Embed(
-            title="✅ ยืนยันตัวตนเพื่อเข้าสู่เซิร์ฟเวอร์",
-            description=(
-                "ยินดีต้อนรับเข้าสู่ครอบครัวของเราค่ะ! ✨\n\n"
-                "กรุณากดปุ่มด้านล่างเพื่อยืนยันตัวตนและรับยศเพื่อเข้าถึงคอมมูนิตี้ของเรานะคะ\n\n"
-                "*(Please click the button below to verify and access the server)*"
-            ),
+            title=verify_title,
+            description=verify_desc,
             color=disnake.Color.green()
         )
-        # Determine member role name based on template
-        member_role_name = ""
-        if template_name == "Shop": member_role_name = "🛒 ลูกค้าทั่วไป | CUSTOMER"
-        elif template_name == "Community": member_role_name = "👥 สมาชิก | MEMBER"
-        elif template_name == "Fanclub": member_role_name = "❤️ ครอบครัว | FANCLUB"
         
-        await verify_ch.send(embed=embed, view=VerificationView(member_role_name))
+        # Determine member role name based on template and language
+        member_role_name = ""
+        customer_translated = get_translation(language, "roles", "customer")
+        member_translated = get_translation(language, "roles", "member")
+        fanclub_translated = get_translation(language, "roles", "fanclub")
+        
+        if template_name == "Shop":
+            # Find actual role name from roles_map that contains customer keyword
+            member_role_name = next((name for name in roles_map.keys() if "customer" in name.lower() or "ลูกค้า" in name.lower()), "")
+        elif template_name == "Community":
+            member_role_name = next((name for name in roles_map.keys() if "member" in name.lower() or "สมาชิก" in name.lower()), "")
+        elif template_name == "Fanclub":
+            member_role_name = next((name for name in roles_map.keys() if "fanclub" in name.lower() or "ครอบครัว" in name.lower()), "")
+        
+        await verify_ch.send(embed=embed, view=VerificationView(member_role_name, verify_button_text))
 
     # 4.1 Save Verification Role ID to DB (Unified Strategy) 🛡️
     target_role_id = None
@@ -705,21 +729,32 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
     await post_guild_rules(guild, template_name)
 
 class VerificationView(disnake.ui.View):
-    def __init__(self, role_name):
+    def __init__(self, role_name, button_text="ยืนยันตัวตน (Verify)"):
         super().__init__(timeout=None)
         self.role_name = role_name
-
-    @disnake.ui.button(label="ยืนยันตัวตน (Verify)", style=disnake.ButtonStyle.success, emoji="✅", custom_id="verify_button")
-    async def verify(self, button: disnake.ui.Button, inter: disnake.MessageInteraction):
+        self.button_text = button_text
+        
+        # Dynamically create button with translated label
+        verify_btn = disnake.ui.Button(
+            label=button_text,
+            style=disnake.ButtonStyle.success,
+            emoji="✅",
+            custom_id="verify_button"
+        )
+        verify_btn.callback = self.verify_callback
+        self.add_item(verify_btn)
+    
+    async def verify_callback(self, inter: disnake.MessageInteraction):
         role = disnake.utils.get(inter.guild.roles, name=self.role_name)
         if role:
             if role in inter.author.roles:
-                await inter.response.send_message(f"{inter.author.mention} มียศนี้อยู่แล้วนะคะ! 🌸", ephemeral=True)
+                # Bilingual response
+                await inter.response.send_message(f"{inter.author.mention} already has this role! 🌸 (มียศนี้อยู่แล้วค่ะ!)", ephemeral=True)
             else:
                 await inter.author.add_roles(role)
-                await inter.response.send_message(f"ยินดีด้วยค่ะ! {inter.author.mention} ได้รับยศ **{self.role_name}** เรียบร้อยแล้วค่ะ ✨💖", ephemeral=True)
+                await inter.response.send_message(f"Congratulations! {inter.author.mention} received **{self.role_name}** ✨💖 (ยินดีด้วยค่ะ! ได้รับยศเรียบร้อยแล้ว)", ephemeral=True)
         else:
-            await inter.response.send_message("อุ๊ย! An An หาไม่เจอเลยค่ะว่าต้องให้ยศไหน รบกวนแอดมินตรวจสอบหน่อยนะคะ 🥺", ephemeral=True)
+            await inter.response.send_message("Error: Role not found. Please contact admin. 🥺 (หาไม่เจอเลยค่ะว่าต้องให้ยศไหน)", ephemeral=True)
 
 class GameRoleView(disnake.ui.View):
     def __init__(self, games):

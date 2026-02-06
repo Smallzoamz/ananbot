@@ -8,48 +8,49 @@
 # ============================================
 
 # Channel Name Patterns - Use consistent pattern across all channels
+# IMPORTANT: Discord converts spaces to hyphens, so we use special Unicode separators
 PATTERNS = {
     "classic": {
         "name": "Classic An An",
         "channel": "｜・{emoji}：{name}",
-        "category": "{emoji} | {name}",
+        "category": "{emoji}｜{name}",
         "example_th": "｜・📢：ประกาศ",
-        "example_en": "｜・📢：Announcements"
+        "example_en": "｜・📢：announcements"
     },
     "ribbon": {
         "name": "Ribbon Cute 🎀",
-        "channel": "🎀 ┊ {emoji} · {name}",
-        "category": "✿ {name} ✿",
-        "example_th": "🎀 ┊ 📢 · ประกาศ",
-        "example_en": "🎀 ┊ 📢 · Announcements"
+        "channel": "🎀┊{emoji}·{name}",
+        "category": "✿{name}✿",
+        "example_th": "🎀┊📢·ประกาศ",
+        "example_en": "🎀┊📢·announcements"
     },
     "minimal": {
         "name": "Minimal Elegant ✦",
-        "channel": "· {emoji} ⸝ {name}",
-        "category": "⊹ {name}",
-        "example_th": "· 📢 ⸝ ประกาศ",
-        "example_en": "· 📢 ⸝ Announcements"
+        "channel": "·{emoji}⸝{name}",
+        "category": "⊹{name}",
+        "example_th": "·📢⸝ประกาศ",
+        "example_en": "·📢⸝announcements"
     },
     "star": {
         "name": "Starlight ★",
-        "channel": "✦ ┊ {emoji} : {name}",
-        "category": "★ {name} ★",
-        "example_th": "✦ ┊ 📢 : ประกาศ",
-        "example_en": "✦ ┊ 📢 : Announcements"
+        "channel": "✦┊{emoji}:{name}",
+        "category": "★{name}★",
+        "example_th": "✦┊📢:ประกาศ",
+        "example_en": "✦┊📢:announcements"
     },
     "heart": {
         "name": "Heart Pastel ♡",
-        "channel": "♡ · {emoji} ─ {name}",
-        "category": "💕 {name}",
-        "example_th": "♡ · 📢 ─ ประกาศ",
-        "example_en": "♡ · 📢 ─ Announcements"
+        "channel": "♡·{emoji}─{name}",
+        "category": "💕{name}",
+        "example_th": "♡·📢─ประกาศ",
+        "example_en": "♡·📢─announcements"
     },
     "arrow": {
         "name": "Arrow Modern →",
-        "channel": "├ : → {emoji} {name}",
-        "category": "▸ {name}",
-        "example_th": "├ : → 📢 ประกาศ",
-        "example_en": "├ : → 📢 Announcements"
+        "channel": "├→{emoji}{name}",
+        "category": "▸{name}",
+        "example_th": "├→📢ประกาศ",
+        "example_en": "├→📢announcements"
     }
 }
 
@@ -191,6 +192,16 @@ TRANSLATIONS = {
             "clips": "คลิปตัดต่อ",
             "food": "ห้องอาหาร",
             "lifestyle": "ไลฟ์สไตล์"
+        },
+        "messages": {
+            "verify_title": "✅ ยืนยันตัวตนเพื่อเข้าสู่เซิร์ฟเวอร์",
+            "verify_desc": "ยินดีต้อนรับเข้าสู่ครอบครัวของเราค่ะ! ✨\n\nกรุณากดปุ่มด้านล่างเพื่อยืนยันตัวตนและรับยศเพื่อเข้าถึงคอมมูนิตี้ของเรานะคะ",
+            "verify_button": "ยืนยันตัวตน (Verify)",
+            "clear_data_success": "✅ ล้างข้อมูลเรียบร้อยแล้วค่ะ!",
+            "setup_complete": "🎉 ตั้งค่าเซิร์ฟเวอร์เสร็จสิ้น!",
+            "rollback_info": "หากต้องการเอาทุกอย่างกลับคืนมา สามารถพิมพ์ `!rollback` หรือ `/rollback` ได้ที่ห้องนี้นะคะ",
+            "rollback_expire": "(เหลือเวลาอีก {time} นาทีค่ะ)",
+            "rollback_link": "จัดการต่อได้ที่ ananbot.xyz 🌸✨"
         }
     },
     "en": {
@@ -255,6 +266,16 @@ TRANSLATIONS = {
             "clips": "Clips & Edits",
             "food": "Food Room",
             "lifestyle": "Lifestyle"
+        },
+        "messages": {
+            "verify_title": "✅ Verify to Access the Server",
+            "verify_desc": "Welcome to our community! ✨\n\nPlease click the button below to verify and access the server.",
+            "verify_button": "Verify",
+            "clear_data_success": "✅ Data cleared successfully!",
+            "setup_complete": "🎉 Server setup complete!",
+            "rollback_info": "If you want to restore everything, type `!rollback` or `/rollback` in this channel.",
+            "rollback_expire": "({time} minutes remaining)",
+            "rollback_link": "Manage your server at ananbot.xyz 🌸✨"
         }
     }
 }
