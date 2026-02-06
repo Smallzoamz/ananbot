@@ -1,7 +1,299 @@
 # templates.py
 
-# An An v4.1 - Aesthetic Templates with Permissions & Universal Channels
-# Logic: GlobalChannels (No Category) -> Zones (Categories with Mixed Text/Voice)
+# An An v4.2 - Pattern Library System with Multi-Language Support
+# Logic: Language -> Pattern -> GlobalChannels (No Category) -> Zones (Categories with Mixed Text/Voice)
+
+# ============================================
+# PATTERN LIBRARY
+# ============================================
+
+# Channel Name Patterns - Use consistent pattern across all channels
+PATTERNS = {
+    "classic": {
+        "name": "Classic An An",
+        "channel": "｜・{emoji}：{name}",
+        "category": "{emoji} | {name}",
+        "example_th": "｜・📢：ประกาศ",
+        "example_en": "｜・📢：Announcements"
+    },
+    "ribbon": {
+        "name": "Ribbon Cute 🎀",
+        "channel": "🎀 ┊ {emoji} · {name}",
+        "category": "✿ {name} ✿",
+        "example_th": "🎀 ┊ 📢 · ประกาศ",
+        "example_en": "🎀 ┊ 📢 · Announcements"
+    },
+    "minimal": {
+        "name": "Minimal Elegant ✦",
+        "channel": "· {emoji} ⸝ {name}",
+        "category": "⊹ {name}",
+        "example_th": "· 📢 ⸝ ประกาศ",
+        "example_en": "· 📢 ⸝ Announcements"
+    },
+    "star": {
+        "name": "Starlight ★",
+        "channel": "✦ ┊ {emoji} : {name}",
+        "category": "★ {name} ★",
+        "example_th": "✦ ┊ 📢 : ประกาศ",
+        "example_en": "✦ ┊ 📢 : Announcements"
+    },
+    "heart": {
+        "name": "Heart Pastel ♡",
+        "channel": "♡ · {emoji} ─ {name}",
+        "category": "💕 {name}",
+        "example_th": "♡ · 📢 ─ ประกาศ",
+        "example_en": "♡ · 📢 ─ Announcements"
+    },
+    "arrow": {
+        "name": "Arrow Modern →",
+        "channel": "├ : → {emoji} {name}",
+        "category": "▸ {name}",
+        "example_th": "├ : → 📢 ประกาศ",
+        "example_en": "├ : → 📢 Announcements"
+    }
+}
+
+# Emoji Theme Collections
+EMOJI_THEMES = {
+    "kawaii": {
+        "name": "Kawaii Cute 🎀",
+        "emojis": ["🎀", "🌸", "🍰", "🧸", "💕", "✨", "🌷", "🍓", "🍡", "🎂"],
+        "rules": "📋", "verify": "✅", "welcome": "👋", "announce": "📢",
+        "chat": "💬", "voice": "🔊", "support": "🎫", "shop": "🛍️"
+    },
+    "elegant": {
+        "name": "Minimal Elegant ✦",
+        "emojis": ["✦", "◇", "◈", "⊹", "⁺", "⋆", "∘", "•", "─", "│"],
+        "rules": "◈", "verify": "✓", "welcome": "⊹", "announce": "◇",
+        "chat": "⋆", "voice": "∘", "support": "•", "shop": "◈"
+    },
+    "nature": {
+        "name": "Nature Pastel 🌿",
+        "emojis": ["🌿", "🍃", "🌻", "🌼", "🌺", "☁️", "🌙", "🍂", "🦋", "🌈"],
+        "rules": "🍃", "verify": "🌿", "welcome": "🌸", "announce": "🌻",
+        "chat": "🦋", "voice": "☁️", "support": "🌼", "shop": "🌺"
+    },
+    "gaming": {
+        "name": "Gaming Cool 🎮",
+        "emojis": ["🎮", "⚔️", "🔥", "💎", "🏆", "⭐", "🎯", "🚀", "💀", "👑"],
+        "rules": "📜", "verify": "🛡️", "welcome": "⚔️", "announce": "📢",
+        "chat": "💬", "voice": "🎮", "support": "🎯", "shop": "💎"
+    },
+    "food": {
+        "name": "Food & Sweets 🍮",
+        "emojis": ["🍮", "🍡", "🍎", "🍌", "🍊", "🧁", "🍪", "🍩", "☕", "🧋"],
+        "rules": "🍮", "verify": "🍡", "welcome": "🍰", "announce": "🧁",
+        "chat": "☕", "voice": "🧋", "support": "🍪", "shop": "🍩"
+    }
+}
+
+# Role Layout Patterns
+ROLE_LAYOUTS = {
+    "classic": {
+        "name": "Classic Badge",
+        "format": "{emoji} {name}",
+        "example_th": "👑 เจ้าของ | OWNER",
+        "example_en": "👑 Owner"
+    },
+    "numbered": {
+        "name": "Numbered Rank @",
+        "format": "@{rank} ⁺ ☆ : {name} ∶ {emoji}",
+        "example_th": "@1 ⁺ ☆ : Pudding ∶ 🍮",
+        "example_en": "@1 ⁺ ☆ : Owner ∶ 👑"
+    },
+    "bracket": {
+        "name": "Bracket Style 【】",
+        "format": "【{emoji}】{name}",
+        "example_th": "【👑】เจ้าของ",
+        "example_en": "【👑】Owner"
+    },
+    "heart": {
+        "name": "Heart Cute ♡",
+        "format": "♡ ⊱ {name} · {emoji}",
+        "example_th": "♡ ⊱ เจ้าของ · 👑",
+        "example_en": "♡ ⊱ Owner · 👑"
+    },
+    "arrow": {
+        "name": "Arrow Modern →",
+        "format": "◦ {name} › {emoji}",
+        "example_th": "◦ เจ้าของ › 👑",
+        "example_en": "◦ Owner › 👑"
+    },
+    "symbol": {
+        "name": "Symbol Minimal ⫻",
+        "format": "{emoji} ⫻ {name}",
+        "example_th": "👑 ⫻ เจ้าของ",
+        "example_en": "👑 ⫻ Owner"
+    }
+}
+
+# Multi-Language Translations
+TRANSLATIONS = {
+    "th": {
+        "roles": {
+            "owner": "เจ้าของ",
+            "admin": "ผู้ดูแล",
+            "staff": "พนักงาน",
+            "moderator": "ผู้พิทักษ์",
+            "vip": "VIP",
+            "pro_player": "โปรเพลเยอร์",
+            "member": "สมาชิก",
+            "customer": "ลูกค้า",
+            "creator": "ครีเอเตอร์",
+            "manager": "แอดมินจิ๋ว",
+            "super_fan": "แฟนตัวยง",
+            "fanclub": "ครอบครัว"
+        },
+        "categories": {
+            "shop_info": "ข้อมูลร้านค้า",
+            "nitro_service": "NITRO & STATUS SERVICE",
+            "boost_service": "BOOSTING SERVICE",
+            "customer_service": "บริการลูกค้า",
+            "welcome_zone": "ต้อนรับ",
+            "social_hub": "พูดคุยสังสรรค์",
+            "game_lobby": "ล็อบบี้เกม",
+            "competitive": "แข่งขัน",
+            "creator_area": "พื้นที่ครีเอเตอร์",
+            "fan_zone": "โซนแฟนคลับ",
+            "media_hub": "มีเดียฮับ",
+            "exclusive_lounge": "ห้องพิเศษ"
+        },
+        "channels": {
+            "rules": "กฎกติกา",
+            "verify": "ยืนยันตัวตน",
+            "welcome": "ต้อนรับ",
+            "announce": "ประกาศ",
+            "products": "ประเภทสินค้า",
+            "how_to_buy": "วิธีสั่งซื้อ",
+            "payment": "ช่องทางชำระเงิน",
+            "history": "ประวัติการสั่งซื้อ",
+            "reviews": "รีวิวลูกค้า",
+            "ticket": "ติดต่อสอบถาม",
+            "general_chat": "พูดคุยทั่วไป",
+            "problem": "แจ้งปัญหา",
+            "live_support": "ห้องซัพพอร์ต",
+            "get_roles": "รับยศ",
+            "server_info": "ข้อมูลเซิร์ฟเวอร์",
+            "show_work": "โชว์ผลงาน",
+            "share_photo": "แชร์รูปภาพ",
+            "meme": "ห้องมีม",
+            "find_friends": "หาเพื่อนเล่น",
+            "leaderboard": "จัดอันดับ",
+            "highlights": "ไฮไลท์เกม",
+            "trade": "แลกเปลี่ยน",
+            "stream_notify": "แจ้งสตรีม",
+            "schedule": "ตารางงาน",
+            "fc_chat": "คุยเล่นกับ FC",
+            "meet_greet": "กระทบไหล่",
+            "giveaway": "กิจกรรม",
+            "ideas": "เสนอไอเดีย",
+            "fan_art": "แฟนอาร์ต",
+            "clips": "คลิปตัดต่อ",
+            "food": "ห้องอาหาร",
+            "lifestyle": "ไลฟ์สไตล์"
+        }
+    },
+    "en": {
+        "roles": {
+            "owner": "Owner",
+            "admin": "Admin",
+            "staff": "Staff",
+            "moderator": "Moderator",
+            "vip": "VIP",
+            "pro_player": "Pro Player",
+            "member": "Member",
+            "customer": "Customer",
+            "creator": "Creator",
+            "manager": "Manager",
+            "super_fan": "Super Fan",
+            "fanclub": "Fan Club"
+        },
+        "categories": {
+            "shop_info": "Shop Information",
+            "nitro_service": "Nitro & Status Service",
+            "boost_service": "Boosting Service",
+            "customer_service": "Customer Service",
+            "welcome_zone": "Welcome Zone",
+            "social_hub": "Social Hub",
+            "game_lobby": "Game Lobby",
+            "competitive": "Competitive",
+            "creator_area": "Creator Area",
+            "fan_zone": "Fan Zone",
+            "media_hub": "Media Hub",
+            "exclusive_lounge": "Exclusive Lounge"
+        },
+        "channels": {
+            "rules": "Rules",
+            "verify": "Verify",
+            "welcome": "Welcome",
+            "announce": "Announcements",
+            "products": "Products",
+            "how_to_buy": "How to Buy",
+            "payment": "Payment Methods",
+            "history": "Order History",
+            "reviews": "Reviews",
+            "ticket": "Ticket Support",
+            "general_chat": "General Chat",
+            "problem": "Report Issues",
+            "live_support": "Live Support",
+            "get_roles": "Get Roles",
+            "server_info": "Server Info",
+            "show_work": "Show Your Work",
+            "share_photo": "Share Photos",
+            "meme": "Memes",
+            "find_friends": "Find Players",
+            "leaderboard": "Leaderboard",
+            "highlights": "Game Highlights",
+            "trade": "Trading",
+            "stream_notify": "Stream Alerts",
+            "schedule": "Schedule",
+            "fc_chat": "Fan Chat",
+            "meet_greet": "Meet & Greet",
+            "giveaway": "Giveaways",
+            "ideas": "Ideas & Suggestions",
+            "fan_art": "Fan Art",
+            "clips": "Clips & Edits",
+            "food": "Food Room",
+            "lifestyle": "Lifestyle"
+        }
+    }
+}
+
+# ============================================
+# HELPER FUNCTIONS
+# ============================================
+
+def format_channel_name(pattern_id: str, emoji: str, name: str) -> str:
+    """Format channel name using selected pattern"""
+    pattern = PATTERNS.get(pattern_id, PATTERNS["classic"])
+    return pattern["channel"].format(emoji=emoji, name=name)
+
+def format_category_name(pattern_id: str, emoji: str, name: str) -> str:
+    """Format category name using selected pattern"""
+    pattern = PATTERNS.get(pattern_id, PATTERNS["classic"])
+    return pattern["category"].format(emoji=emoji, name=name)
+
+def format_role_name(layout_id: str, emoji: str, name: str, rank: int = None) -> str:
+    """Format role name using selected layout"""
+    layout = ROLE_LAYOUTS.get(layout_id, ROLE_LAYOUTS["classic"])
+    fmt = layout["format"]
+    if "{rank}" in fmt and rank is not None:
+        return fmt.format(emoji=emoji, name=name, rank=rank)
+    return fmt.replace("{rank} ", "").format(emoji=emoji, name=name)
+
+def get_translation(lang: str, category: str, key: str) -> str:
+    """Get translated text for given language"""
+    translations = TRANSLATIONS.get(lang, TRANSLATIONS["th"])
+    return translations.get(category, {}).get(key, key)
+
+def get_emoji_for_channel(theme_id: str, channel_type: str) -> str:
+    """Get appropriate emoji for channel type from theme"""
+    theme = EMOJI_THEMES.get(theme_id, EMOJI_THEMES["kawaii"])
+    return theme.get(channel_type, "📝")
+
+# ============================================
+# TEMPLATES (Legacy support - uses default pattern)
+# ============================================
 
 TEMPLATES = {
     "Shop": {

@@ -3,6 +3,35 @@ import React from "react";
 import Portal from "../../../components/Portal";
 import { ArrowIcon, ProBadge } from "../../../components/Icons";
 
+// ============================================
+// PATTERN LIBRARY (Synced with templates.py)
+// ============================================
+const PATTERNS = {
+    classic: { name: "Classic An An", example: "｜・📢：ประกาศ" },
+    ribbon: { name: "Ribbon Cute 🎀", example: "🎀 ┊ 📢 · ประกาศ" },
+    minimal: { name: "Minimal Elegant ✦", example: "· 📢 ⸝ ประกาศ" },
+    star: { name: "Starlight ★", example: "✦ ┊ 📢 : ประกาศ" },
+    heart: { name: "Heart Pastel ♡", example: "♡ · 📢 ─ ประกาศ" },
+    arrow: { name: "Arrow Modern →", example: "├ : → 📢 ประกาศ" }
+};
+
+const EMOJI_THEMES = {
+    kawaii: { name: "Kawaii Cute 🎀", emojis: "🎀 🌸 🍰 🧸 💕 ✨" },
+    elegant: { name: "Minimal Elegant ✦", emojis: "✦ ◇ ◈ ⊹ ⁺ ⋆" },
+    nature: { name: "Nature Pastel 🌿", emojis: "🌿 🍃 🌻 🌼 🌺 ☁️" },
+    gaming: { name: "Gaming Cool 🎮", emojis: "🎮 ⚔️ 🔥 💎 🏆 ⭐" },
+    food: { name: "Food & Sweets 🍮", emojis: "🍮 🍡 🍎 🧁 🍪 ☕" }
+};
+
+const ROLE_LAYOUTS = {
+    classic: { name: "Classic Badge", example: "👑 Owner" },
+    numbered: { name: "Numbered Rank @", example: "@1 ⁺ ☆ : Owner ∶ 👑" },
+    bracket: { name: "Bracket Style 【】", example: "【👑】Owner" },
+    heart: { name: "Heart Cute ♡", example: "♡ ⊱ Owner · 👑" },
+    arrow: { name: "Arrow Modern →", example: "◦ Owner › 👑" },
+    symbol: { name: "Symbol Minimal ⫻", example: "👑 ⫻ Owner" }
+};
+
 const SetupModal = ({
     show,
     setupStep,
@@ -23,10 +52,25 @@ const SetupModal = ({
     onClose,
     onShowPermissions,
     userPlan,
-    onShowProWall
+    onShowProWall,
+    // New Pattern Library props (will be added to parent)
+    patternSettings,
+    setPatternSettings
 }) => {
     const [activeZoneIndex, setActiveZoneIndex] = React.useState(0);
     const [activeTab, setActiveTab] = React.useState('roles'); // 'roles' or 'zones'
+
+    // Pattern Library State (local fallback if props not provided)
+    const [localPatternSettings, setLocalPatternSettings] = React.useState({
+        language: "th",
+        pattern_id: "classic",
+        emoji_theme: "kawaii",
+        role_layout_id: "classic"
+    });
+
+    // Use props if provided, otherwise use local state
+    const currentSettings = patternSettings || localPatternSettings;
+    const updateSettings = setPatternSettings || setLocalPatternSettings;
 
     // Permission Modal State
     const [showPermModal, setShowPermModal] = React.useState(false);
@@ -48,7 +92,12 @@ const SetupModal = ({
     const handleBack = () => {
         if (setupStep === 3) setSetupStep(2);
         else if (setupStep === 2) setSetupStep(1);
+        else if (setupStep === 1) setSetupStep(0); // Back to Style Selection
         else if (isCustomMode) setSetupStep(1);
+    };
+
+    const handleStyleConfirm = () => {
+        setSetupStep(1); // Proceed to Template Selection
     };
 
     const handleTemplateClick = (key) => {
@@ -73,17 +122,101 @@ const SetupModal = ({
                     <button className="modal-close" onClick={onClose}>×</button>
 
                     <div className="setup-header">
-                        {(setupStep !== 1) && <button className="back-btn" onClick={handleBack}>←</button>}
+                        {(setupStep !== 0) && <button className="back-btn" onClick={handleBack}>←</button>}
                         <div className="m-title">
                             <h3>{isCustomMode ? "Custom Template Builder" : "Template Deployment"}</h3>
                             <p>
-                                {setupStep === 1 && "Phase 1 of 3 • Select a Template"}
-                                {setupStep === 2 && "Phase 2 of 3 • Choose Type"}
-                                {setupStep === 3 && "Phase 3 of 3 • Final Details"}
+                                {setupStep === 0 && "Phase 1 of 4 • Choose Style & Language"}
+                                {setupStep === 1 && "Phase 2 of 4 • Select a Template"}
+                                {setupStep === 2 && "Phase 3 of 4 • Choose Type"}
+                                {setupStep === 3 && "Phase 4 of 4 • Final Details"}
                                 {isCustomMode && "Design your own server structure with An An's magic 🪄"}
                             </p>
                         </div>
                     </div>
+
+                    {/* ============================================ */}
+                    {/* STEP 0: Style & Language Selection */}
+                    {/* ============================================ */}
+                    {setupStep === 0 && (
+                        <div className="setup-style-section">
+                            {/* Language Selection */}
+                            <div className="style-group">
+                                <label className="style-label">🌐 Language / ภาษา</label>
+                                <div className="style-options">
+                                    <button
+                                        className={`style-option ${currentSettings.language === 'th' ? 'active' : ''}`}
+                                        onClick={() => updateSettings({ ...currentSettings, language: 'th' })}
+                                    >
+                                        <span className="style-icon">🇹🇭</span>
+                                        <span className="style-name">ไทย</span>
+                                    </button>
+                                    <button
+                                        className={`style-option ${currentSettings.language === 'en' ? 'active' : ''}`}
+                                        onClick={() => updateSettings({ ...currentSettings, language: 'en' })}
+                                    >
+                                        <span className="style-icon">🇺🇸</span>
+                                        <span className="style-name">English</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Pattern Selection */}
+                            <div className="style-group">
+                                <label className="style-label">✨ Channel Pattern</label>
+                                <div className="style-grid">
+                                    {Object.entries(PATTERNS).map(([key, p]) => (
+                                        <button
+                                            key={key}
+                                            className={`style-card ${currentSettings.pattern_id === key ? 'active' : ''}`}
+                                            onClick={() => updateSettings({ ...currentSettings, pattern_id: key })}
+                                        >
+                                            <span className="style-name">{p.name}</span>
+                                            <span className="style-example">{p.example}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Emoji Theme Selection */}
+                            <div className="style-group">
+                                <label className="style-label">🎨 Emoji Theme</label>
+                                <div className="style-grid small">
+                                    {Object.entries(EMOJI_THEMES).map(([key, t]) => (
+                                        <button
+                                            key={key}
+                                            className={`style-card ${currentSettings.emoji_theme === key ? 'active' : ''}`}
+                                            onClick={() => updateSettings({ ...currentSettings, emoji_theme: key })}
+                                        >
+                                            <span className="style-name">{t.name}</span>
+                                            <span className="style-emojis">{t.emojis}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Role Layout Selection */}
+                            <div className="style-group">
+                                <label className="style-label">👑 Role Layout</label>
+                                <div className="style-grid">
+                                    {Object.entries(ROLE_LAYOUTS).map(([key, r]) => (
+                                        <button
+                                            key={key}
+                                            className={`style-card ${currentSettings.role_layout_id === key ? 'active' : ''}`}
+                                            onClick={() => updateSettings({ ...currentSettings, role_layout_id: key })}
+                                        >
+                                            <span className="style-name">{r.name}</span>
+                                            <span className="style-example">{r.example}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <button className="modal-btn primary-long" onClick={handleStyleConfirm}>
+                                Continue → Select Template 🚀
+                            </button>
+                        </div>
+                    )}
 
                     {setupStep === 1 && (
                         <div className="setup-grid">

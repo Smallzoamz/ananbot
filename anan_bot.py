@@ -1,6 +1,10 @@
 import disnake
 from disnake.ext import commands, tasks
-from utils.templates import TEMPLATES
+from utils.templates import (
+    TEMPLATES, PATTERNS, EMOJI_THEMES, TRANSLATIONS, ROLE_LAYOUTS,
+    format_channel_name, format_category_name, format_role_name, 
+    get_translation, get_emoji_for_channel
+)
 import os
 import json
 import asyncio
@@ -73,6 +77,17 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
     
     extra_data = extra_data or {}
     
+    # ============================================
+    # Pattern Library Settings (from Dashboard)
+    # ============================================
+    pattern_id = extra_data.get("pattern_id", "classic")  # Default to classic An An style
+    language = extra_data.get("language", "th")           # Default to Thai
+    role_layout_id = extra_data.get("role_layout_id", "classic")  # Default role layout
+    emoji_theme_id = extra_data.get("emoji_theme", "kawaii")  # Default emoji theme
+    
+    # Get emoji theme data
+    emoji_theme = EMOJI_THEMES.get(emoji_theme_id, EMOJI_THEMES["kawaii"])
+    
     # helper for permissions
     def get_role_perms(p_type):
         perms = disnake.Permissions.none()
@@ -89,11 +104,15 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
                          use_external_emojis=True, add_reactions=True)
         return perms
 
-    # layout helper for premium look (No hyphens)
+    # layout helper for premium look (Uses Pattern Library)
     def format_name(emoji, name, is_voice=False):
-        if is_voice:
-            return f"｜・{emoji}：{name.upper()}"
-        return f"｜・{emoji}：{name.lower()}"
+        """Format channel/category name using selected pattern"""
+        display_name = name.upper() if is_voice else name.lower()
+        return format_channel_name(pattern_id, emoji, display_name)
+    
+    def format_cat_name(emoji, name):
+        """Format category name using selected pattern"""
+        return format_category_name(pattern_id, emoji, name)
 
     def get_all_discord_permissions_info():
         # List of important permissions with Thai descriptions

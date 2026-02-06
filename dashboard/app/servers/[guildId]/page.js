@@ -28,11 +28,19 @@ export default function Dashboard({ params }) {
 
     // Setup & Action State
     const [showSetup, setShowSetup] = useState(false);
-    const [setupStep, setSetupStep] = useState(1); // 1: Template, 2: Flavor, 3: Details
+    const [setupStep, setSetupStep] = useState(0); // 0: Style/Language, 1: Template, 2: Flavor, 3: Details
     const [selectedTemplate, setSelectedTemplate] = useState('Shop');
     const [setupFlavor, setSetupFlavor] = useState(""); // "Friend", "Game", "Full", "Standard"
     const [extraDataInput, setExtraDataInput] = useState("");
     const [isDeploying, setIsDeploying] = useState(false);
+
+    // Pattern Library Settings (for Style Selection Step 0)
+    const [patternSettings, setPatternSettings] = useState({
+        language: "th",
+        pattern_id: "classic",
+        emoji_theme: "kawaii",
+        role_layout_id: "classic"
+    });
 
     // Trial State
     const [showClaimModal, setShowClaimModal] = useState(false);
@@ -157,7 +165,7 @@ export default function Dashboard({ params }) {
             return;
         }
         if (action === 'setup' && !showSetup) {
-            setSetupStep(1);
+            setSetupStep(0); // Start at Style Selection (Step 0)
             setSetupFlavor("");
             setExtraDataInput("");
             setShowSetup(true);
@@ -209,7 +217,10 @@ export default function Dashboard({ params }) {
                     action: 'setup',
                     template: selectedTemplate,
                     user_id: user?.id || user?.uid,
-                    extra_data: finalExtra
+                    extra_data: {
+                        ...finalExtra,
+                        ...patternSettings // Include Pattern Library settings
+                    }
                 })
             });
             const data = await res.json();
@@ -361,6 +372,8 @@ export default function Dashboard({ params }) {
                 onShowPermissions={(idx) => { setActiveRoleIndex(idx); setShowPermissions(true); }}
                 userPlan={userPlan}
                 onShowProWall={(feature) => setProWallState({ show: true, featureName: feature })}
+                patternSettings={patternSettings}
+                setPatternSettings={setPatternSettings}
             />
 
             <ConfirmModal

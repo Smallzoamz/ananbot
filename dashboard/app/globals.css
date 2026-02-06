@@ -3388,6 +3388,146 @@ h3 {
   text-decoration: underline;
 }
 
+/* ============================================ */
+/* Pattern Library - Style Selection Step 0 */
+/* ============================================ */
+.setup-style-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-height: 520px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.style-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.style-label {
+  font-size: 14px;
+  font-weight: 800;
+  color: #4a4a68;
+}
+
+/* Language Toggle Buttons */
+.style-options {
+  display: flex;
+  gap: 12px;
+}
+
+.style-option {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 20px;
+  background: white;
+  border: 2px solid #f1f5f9;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.style-option:hover {
+  border-color: var(--primary);
+  background: #fff5f8;
+}
+
+.style-option.active {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, #fff5f8 0%, #fdf2f8 100%);
+  box-shadow: 0 4px 15px rgba(255, 183, 226, 0.3);
+}
+
+.style-option .style-icon {
+  font-size: 24px;
+}
+
+.style-option .style-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #4a4a68;
+}
+
+/* Pattern & Layout Grid Cards */
+.style-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.style-grid.small {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.style-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 14px 16px;
+  background: white;
+  border: 2px solid #f1f5f9;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  text-align: left;
+}
+
+.style-card:hover {
+  border-color: var(--primary);
+  background: #fffafa;
+  transform: translateY(-2px);
+}
+
+.style-card.active {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, #fff5f8 0%, #fdf2f8 100%);
+  box-shadow: 0 4px 12px rgba(255, 183, 226, 0.25);
+}
+
+.style-card .style-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4a4a68;
+}
+
+.style-card .style-example {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: 'Courier New', monospace;
+  background: #f8fafc;
+  padding: 4px 8px;
+  border-radius: 6px;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.style-card .style-emojis {
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
+/* Scrollbar for style section */
+.setup-style-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.setup-style-section::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.setup-style-section::-webkit-scrollbar-thumb {
+  background: rgba(255, 183, 226, 0.4);
+  border-radius: 10px;
+}
+
 /* Split View for Custom Zones */
 .split-view {
   display: grid;
