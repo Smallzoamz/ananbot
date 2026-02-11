@@ -810,7 +810,7 @@ async def post_ananbot_content(guild):
 async def post_ananbot_guides(guild):
     """Populates commands list, faq, and official links"""
     # 1. Commands List
-    cmd_ch = next((c for c in guild.text_channels if "commands_list" in c.name), None)
+    cmd_ch = next((c for c in guild.text_channels if "commands_list" in c.name or "commands-list" in c.name), None)
     if cmd_ch:
         embed = disnake.Embed(
             title=get_translation("th", "messages", "guide_commands_title"),
@@ -828,7 +828,7 @@ async def post_ananbot_guides(guild):
         await cmd_ch.send(embed=embed_en)
 
     # 2. FAQ Guide
-    faq_ch = next((c for c in guild.text_channels if "faq_guide" in c.name), None)
+    faq_ch = next((c for c in guild.text_channels if "faq_guide" in c.name or "faq-guide" in c.name), None)
     if faq_ch:
         embed = disnake.Embed(
             title=get_translation("th", "messages", "guide_faq_title"),
@@ -845,7 +845,7 @@ async def post_ananbot_guides(guild):
         await faq_ch.send(embed=embed_en)
 
     # 3. Official Links
-    links_ch = next((c for c in guild.text_channels if "official_links" in c.name), None)
+    links_ch = next((c for c in guild.text_channels if "official_links" in c.name or "official-links" in c.name), None)
     if links_ch:
         embed = disnake.Embed(
             title=get_translation("th", "messages", "guide_links_title"),
@@ -857,7 +857,8 @@ async def post_ananbot_guides(guild):
 async def post_ananbot_patch_notes(guild):
     """Posts latest patch notes from LATEST_PATCH"""
     from utils.templates import LATEST_PATCH
-    patch_ch = next((c for c in guild.text_channels if "patch_notes" in c.name), None)
+    # Resilient matching for hyphens/underscores
+    patch_ch = next((c for c in guild.text_channels if "patch_notes" in c.name or "patch-notes" in c.name), None)
     if patch_ch:
         # Post localized versions
         for lang in ["th", "en"]:
@@ -3517,8 +3518,8 @@ async def broadcast_patch(inter: disnake.ApplicationCommandInteraction):
     
     for guild in bot.guilds:
         try:
-            # Look for patch notes channel
-            patch_ch = next((c for c in guild.text_channels if "patch_notes" in c.name), None)
+            # Look for patch notes channel (Resilient)
+            patch_ch = next((c for c in guild.text_channels if "patch_notes" in c.name or "patch-notes" in c.name), None)
             if patch_ch:
                 # Post TH (Main)
                 content = LATEST_PATCH["th"]
@@ -3538,6 +3539,20 @@ async def broadcast_patch(inter: disnake.ApplicationCommandInteraction):
     await inter.edit_original_response(
         content=f"✅ กระจายข่าวสาร Patch {LATEST_PATCH['version']} เรียบร้อยแล้วค่ะ!\n• ส่งสำเร็จ: {count} เซิร์ฟเวอร์\n• ผิดพลาด: {errors} เซิร์ฟเวอร์"
     )
+
+@bot.slash_command(name="populate_guides", description="[Admin] Manually populate informational channels for existing servers")
+async def populate_guides(inter: disnake.ApplicationCommandInteraction):
+    # Security Check: Only Papa or Guild Owner
+    if inter.author.id != 956866340474478642 and inter.author.id != inter.guild.owner_id:
+        return await inter.response.send_message("❌ เฉพาะ Papa หรือเจ้าของเซิร์ฟเวอร์เท่านั้นที่กดได้ค๊าา!", ephemeral=True)
+
+    await inter.response.send_message("กำลังลงข้อมูลให้ทุกช่องที่ว่างอยู่นะคะ... 🌸✨", ephemeral=True)
+    
+    try:
+        await post_ananbot_content(inter.guild)
+        await inter.edit_original_response(content="✅ ลงข้อมูลเรียบร้อยแล้วค่ะ! ลองไปดูที่ห้อง Guide และ Patch Notes ได้เลยค๊าา! 💖✨")
+    except Exception as e:
+        await inter.edit_original_response(content=f"❌ อุ๊ย! เกิดข้อผิดพลาดตอนลงข้อมูลค่ะ: {e}")
 
 # Helpers for Welcome/Goodbye
 
