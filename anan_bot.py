@@ -40,6 +40,13 @@ import dateutil.parser
 
 load_dotenv() # Load variables from .env
 
+# --- Logging Configuration (Silence Scanner Noise) ---
+import logging
+# Suppress 400 BadHttpMessage errors from external scanners (Censys, etc.)
+logging.getLogger('aiohttp.server').setLevel(logging.ERROR)
+logging.getLogger('aiohttp.access').setLevel(logging.ERROR)
+# ---------------------------------------------------
+
 # An An Bot v4.1 - Hybrid Precision
 # Developed by Antigravity for You
 
@@ -146,6 +153,12 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
     
     # Channel type -> translation key mapping (for emoji theme lookup)
     CHANNEL_KEY_MAP = {
+        # Specialized AnAnBot Channels (Prioritize these)
+        "th_chat": "th_chat", "en_chat": "en_chat",
+        "patch_notes": "patch_notes", "roadmap": "roadmap", "official_news": "official_news",
+        "commands_list": "commands_list", "faq_guide": "faq_guide", "official_links": "official_links",
+        "feature_request": "feature_request", "bug_report": "bug_report",
+        
         # Rules & Verification
         "กฎกติกา": "rules", "rules": "rules", "กฎ": "rules",
         "verify": "verify", "ยืนยัน": "verify",
@@ -762,6 +775,139 @@ async def perform_guild_setup(guild, template_name, extra_data=None, user_id=Non
 
     # 5. Post Guild Rules
     await post_guild_rules(guild, template_name)
+
+    # 6. Specialized Automation for AnAnBot template
+    if template_name == "AnAnBot":
+        await post_ananbot_content(guild)
+
+async def post_guild_rules(guild, template_name):
+    """Posts server rules based on template or default"""
+    rules_ch = next((c for c in guild.text_channels if "กฎกติกา" in c.name or "rules" in c.name.lower()), None)
+    if not rules_ch: return
+
+    # Content from TRANSLATIONS (Defaulting to TH if unknown template)
+    lang = "th" # Default for rules
+    title = get_translation(lang, "messages", "rules_title")
+    intro = get_translation(lang, "messages", "rules_intro")
+    rules_list = get_translation(lang, "messages", "rules_list")
+
+    embed = disnake.Embed(
+        title=title,
+        description=f"{intro}\n\n{rules_list}",
+        color=disnake.Color.purple()
+    )
+    embed.set_footer(text="AnAnBot Security System 🛡️✨")
+    await rules_ch.send(embed=embed)
+
+async def post_ananbot_content(guild):
+    """Populates guide and patch notes for AnAnBot template"""
+    try:
+        await post_ananbot_guides(guild)
+        await post_ananbot_patch_notes(guild)
+    except Exception as e:
+        print(f"Error posting AnAnBot content: {e}")
+
+async def post_ananbot_guides(guild):
+    """Populates commands list, faq, and official links"""
+    # 1. Commands List
+    cmd_ch = next((c for c in guild.text_channels if "commands_list" in c.name), None)
+    if cmd_ch:
+        embed = disnake.Embed(
+            title=get_translation("th", "messages", "guide_commands_title"),
+            description=get_translation("th", "messages", "guide_commands_desc"),
+            color=disnake.Color.blue()
+        )
+        await cmd_ch.send(embed=embed)
+        
+        # English version if it's dual lang
+        embed_en = disnake.Embed(
+            title=get_translation("en", "messages", "guide_commands_title"),
+            description=get_translation("en", "messages", "guide_commands_desc"),
+            color=disnake.Color.blue()
+        )
+        await cmd_ch.send(embed=embed_en)
+
+    # 2. FAQ Guide
+    faq_ch = next((c for c in guild.text_channels if "faq_guide" in c.name), None)
+    if faq_ch:
+        embed = disnake.Embed(
+            title=get_translation("th", "messages", "guide_faq_title"),
+            description=get_translation("th", "messages", "guide_faq_desc"),
+            color=disnake.Color.orange()
+        )
+        await faq_ch.send(embed=embed)
+        
+        embed_en = disnake.Embed(
+            title=get_translation("en", "messages", "guide_faq_title"),
+            description=get_translation("en", "messages", "guide_faq_desc"),
+            color=disnake.Color.orange()
+        )
+        await faq_ch.send(embed=embed_en)
+
+    # 3. Official Links
+    links_ch = next((c for c in guild.text_channels if "official_links" in c.name), None)
+    if links_ch:
+        embed = disnake.Embed(
+            title=get_translation("th", "messages", "guide_links_title"),
+            description=get_translation("th", "messages", "guide_links_desc"),
+            color=disnake.Color.green()
+        )
+        await links_ch.send(embed=embed)
+
+async def post_ananbot_patch_notes(guild):
+    """Posts latest patch notes from LATEST_PATCH"""
+    from utils.templates import LATEST_PATCH
+    patch_ch = next((c for c in guild.text_channels if "patch_notes" in c.name), None)
+    if patch_ch:
+        # Post localized versions
+        for lang in ["th", "en"]:
+            content = LATEST_PATCH.get(lang)
+            if not content: continue
+            
+            embed = disnake.Embed(
+                title=content["title"],
+                description=content["description"],
+                color=disnake.Color.gold()
+            )
+            embed.set_thumbnail(url="https://ananbot.xyz/assets/mascot/ANAN1.png")
+            embed.set_footer(text=f"Version {LATEST_PATCH['version']} | {LATEST_PATCH['date']}")
+            await patch_ch.send(embed=embed)
+
+@bot.slash_command(name="broadcast_patch", description="[Admin] Broadcast latest patch notes to all servers")
+async def broadcast_patch(inter: disnake.ApplicationCommandInteraction):
+    # Security Check: Only Papa (UID: 956866340474478642) or Guild Owner
+    if inter.author.id != 956866340474478642:
+        return await inter.response.send_message("❌ เฉพาะ Papa เท่านั้นที่รันคำสั่งนี้ได้ค๊าา!", ephemeral=True)
+
+    await inter.response.defer(ephemeral=True)
+    
+    count = 0
+    errors = 0
+    from utils.templates import LATEST_PATCH
+    
+    for guild in bot.guilds:
+        try:
+            # Look for patch notes channel
+            patch_ch = next((c for c in guild.text_channels if "patch_notes" in c.name), None)
+            if patch_ch:
+                # Post TH (Main)
+                content = LATEST_PATCH["th"]
+                embed = disnake.Embed(
+                    title=content["title"],
+                    description=content["description"],
+                    color=disnake.Color.gold()
+                )
+                embed.set_thumbnail(url="https://ananbot.xyz/assets/mascot/ANAN1.png")
+                embed.set_footer(text=f"Version {LATEST_PATCH['version']} | {LATEST_PATCH['date']}")
+                await patch_ch.send(embed=embed)
+                count += 1
+        except Exception as e:
+            print(f"Error broadcasting to {guild.name}: {e}")
+            errors += 1
+
+    await inter.edit_original_response(
+        content=f"✅ กระจายข่าวสาร Patch {LATEST_PATCH['version']} เรียบร้อยแล้วค่ะ!\n• ส่งสำเร็จ: {count} เซิร์ฟเวอร์\n• ผิดพลาด: {errors} เซิร์ฟเวอร์"
+    )
 
 class VerificationView(disnake.ui.View):
     def __init__(self, role_name, button_text="ยืนยันตัวตน (Verify)"):

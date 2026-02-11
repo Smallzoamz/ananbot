@@ -4,6 +4,23 @@
 # Logic: Language -> Pattern -> GlobalChannels (No Category) -> Zones (Categories with Mixed Text/Voice)
 
 # ============================================
+# BOT VERSION & PATCH NOTES
+# ============================================
+LATEST_PATCH = {
+    "version": "v4.2",
+    "codename": "Hybrid Precision",
+    "date": "2026-02-12",
+    "th": {
+        "title": "🚀 อัปเดตใหม่: An An v4.2 Hybrid Precision",
+        "description": "✨ **มีอะไรใหม่บ้าง?** ✨\n\n• **Auto-Translation**: ระบบแปลไทย-อังกฤษอัตโนมัติในช่อง Inter-Chat! 🌍\n• **New Template**: เปิดตัวเทมเพลต 'AnAnBot' แบบพรีเมียม! 🌸\n• **Log Noise Correction**: ลดการแจ้งเตือนกวนใจจากระบบ 🛡️\n• **Performance++**: ทำงานเร็วขึ้นและเสถียรกว่าเดิมค๊าา!\n\n*ขอบคุณที่ไว้วางใจให้ An An ดูแลเซิร์ฟเวอร์นะคะ 💖*"
+    },
+    "en": {
+        "title": "🚀 New Update: An An v4.2 Hybrid Precision",
+        "description": "✨ **What's New?** ✨\n\n• **Auto-Translation**: Automatic TH-EN translation in Inter-Chat! 🌍\n• **New Template**: Launched the premium 'AnAnBot' template! 🌸\n• **Log Noise Correction**: Reduced system noise for better focus 🛡️\n• **Performance++**: Faster and more stable than ever!\n\n*Thank you for letting An An take care of your server 💖*"
+    }
+}
+
+# ============================================
 # PATTERN LIBRARY
 # ============================================
 
@@ -69,7 +86,11 @@ EMOJI_THEMES = {
         "leaderboard": "🏆", "highlights": "✨", "trade": "🎁",
         # Fan channels
         "stream": "📺", "schedule": "📅", "fc_chat": "💕", "meet_greet": "🌸",
-        "giveaway": "🎁", "ideas": "💡", "fan_art": "🎨", "clips": "🎬"
+        "giveaway": "🎁", "ideas": "💡", "fan_art": "🎨", "clips": "🎬",
+        # AnAnBot specific
+        "th_chat": "🇹🇭", "en_chat": "🌐", "patch_notes": "📜", "roadmap": "🗺️", 
+        "official_news": "💎", "commands_list": "📖", "faq_guide": "❓", "official_links": "🔗",
+        "feature_request": "💡", "bug_report": "🐞", "bot_voice": "🤖"
     },
     "elegant": {
         "name": "Minimal Elegant ✦",
@@ -80,7 +101,10 @@ EMOJI_THEMES = {
         "general": "⋆", "food": "◇", "lifestyle": "⊹",
         "leaderboard": "★", "highlights": "✦", "trade": "◈",
         "stream": "◇", "schedule": "•", "fc_chat": "⊹", "meet_greet": "✦",
-        "giveaway": "◈", "ideas": "✦", "fan_art": "◇", "clips": "•"
+        "giveaway": "◈", "ideas": "✦", "fan_art": "◇", "clips": "•",
+        "th_chat": "─", "en_chat": "◈", "patch_notes": "•", "roadmap": "─", 
+        "official_news": "✦", "commands_list": "◇", "faq_guide": "◈", "official_links": "⊹",
+        "feature_request": "✦", "bug_report": "•", "bot_voice": "─"
     },
     "nature": {
         "name": "Nature Pastel 🌿",
@@ -91,7 +115,10 @@ EMOJI_THEMES = {
         "general": "🍃", "food": "🍂", "lifestyle": "🌸",
         "leaderboard": "🏆", "highlights": "✨", "trade": "🌼",
         "stream": "☁️", "schedule": "🌙", "fc_chat": "🌸", "meet_greet": "🌷",
-        "giveaway": "🌻", "ideas": "💡", "fan_art": "🎨", "clips": "🎬"
+        "giveaway": "🌻", "ideas": "💡", "fan_art": "🎨", "clips": "🎬",
+        "th_chat": "🇹🇭", "en_chat": "🌍", "patch_notes": "📜", "roadmap": "🗺️", 
+        "official_news": "💎", "commands_list": "📖", "faq_guide": "❓", "official_links": "🔗",
+        "feature_request": "💡", "bug_report": "🐞", "bot_voice": "🌱"
     },
     "gaming": {
         "name": "Gaming Cool 🎮",
@@ -102,7 +129,10 @@ EMOJI_THEMES = {
         "general": "💬", "food": "🍕", "lifestyle": "🎮",
         "leaderboard": "🏆", "highlights": "🔥", "trade": "💎",
         "stream": "📺", "schedule": "📅", "fc_chat": "💬", "meet_greet": "⚔️",
-        "giveaway": "🎁", "ideas": "💡", "fan_art": "🎨", "clips": "🎬"
+        "giveaway": "🎁", "ideas": "💡", "fan_art": "🎨", "clips": "🎬",
+        "th_chat": "🇹🇭", "en_chat": "🌐", "patch_notes": "📜", "roadmap": "🗺️", 
+        "official_news": "💎", "commands_list": "📖", "faq_guide": "❓", "official_links": "🔗",
+        "feature_request": "💡", "bug_report": "🐞", "bot_voice": "🤖"
     },
     "food": {
         "name": "Food & Sweets 🍮",
@@ -113,7 +143,10 @@ EMOJI_THEMES = {
         "general": "☕", "food": "🍮", "lifestyle": "🍓",
         "leaderboard": "🏆", "highlights": "✨", "trade": "🍪",
         "stream": "📺", "schedule": "📅", "fc_chat": "☕", "meet_greet": "🍰",
-        "giveaway": "🎁", "ideas": "💡", "fan_art": "🎨", "clips": "🎬"
+        "giveaway": "🎁", "ideas": "💡", "fan_art": "🎨", "clips": "🎬",
+        "th_chat": "🇹🇭", "en_chat": "🌐", "patch_notes": "📜", "roadmap": "🗺️", 
+        "official_news": "💎", "commands_list": "📖", "faq_guide": "❓", "official_links": "🔗",
+        "feature_request": "💡", "bug_report": "🐞", "bot_voice": "🍮"
     }
 }
 
@@ -247,7 +280,18 @@ TRANSLATIONS = {
             "setup_complete": "🎉 ตั้งค่าเซิร์ฟเวอร์เสร็จสิ้น!",
             "rollback_info": "หากต้องการเอาทุกอย่างกลับคืนมา สามารถพิมพ์ `!rollback` หรือ `/rollback` ได้ที่ห้องนี้นะคะ",
             "rollback_expire": "(เหลือเวลาอีก {time} นาทีค่ะ)",
-            "rollback_link": "จัดการต่อได้ที่ ananbot.xyz 🌸✨"
+            "rollback_link": "จัดการต่อได้ที่ ananbot.xyz 🌸✨",
+            "rules_title": "📜 กฎระเบียบของเซิร์ฟเวอร์",
+            "rules_intro": "ยินดีต้อนรับสู่ครอบครัวของเราค่ะ! เพื่อความสุขของทุกคน รบกวนช่วยกันรักษากฎดังนี้นะคะ ✨",
+            "rules_list": "1️⃣ สุภาพต่อกัน ไม่เหยียดหยามหรือบูลลี่ผู้อื่นนะคะ\n2️⃣ ห้ามสแปมข้อความ หรือลิงก์ที่ไม่เกี่ยวข้อง\n3️⃣ ไม่แชร์เนื้อหาที่ไม่เหมาะสม (NSFW)\n4️⃣ เคารพการตัดสินใจของทีมงานค่ะ\n\n*การอยู่ร่วมกันอย่างสันติคือหัวใจของเรานะคะ 🌸*",
+            "guide_commands_title": "📖 รายการคำสั่งของ ANANBOT",
+            "guide_commands_desc": "ประหยัดเวลาด้วยคำสั่งง่ายๆ ดังนี้ค่ะ:\n\n• `/setup` - ตั้งค่าเซิร์ฟเวอร์แบบด่วน\n• `/verify` - ระบบยืนยันตัวตน\n• `/stats` - ดูสถิติสมาชิก\n• `/personalizer` - ปรับโฉมบอท\n\n*จัดการทุกอย่างได้ง่ายๆ ที่ ananbot.xyz นะคะ ✨*",
+            "guide_faq_title": "❓ คำถามที่พบบ่อย (FAQ)",
+            "guide_faq_desc": "💡 **Q: ยืนยันตัวตนไม่ได้ทำไงดี?**\n• A: ลอง Re-login หรือแจ้งแอดมินในห้องซัพพอร์ตนะคะ\n\n💡 **Q: จะเติม Premium ได้ที่ไหน?**\n• A: เข้าไปที่หน้าแดชบอร์ด ananbot.xyz ได้เลยค่ะ!\n\n💡 **Q: บอทไม่ทำงาน?**\n• A: เช็คสิทธิ์ 'Administrator' ของบอทในเซิร์ฟเวอร์ด้วยนะคะ 🌸",
+            "guide_links_title": "🔗 ลิงก์สำคัญ",
+            "guide_links_desc": "ติดตามเราได้ที่ช่องทางเหล่านี้นะคะ:\n\n🌐 **Website**: [ananbot.xyz](https://ananbot.xyz)\n💎 **Dashboard**: [Manage Server](https://ananbot.xyz/dashboard)\n🌸 **Fanpage**: Coming Soon!",
+            "patch_v42_title": "🚀 อัปเดตใหม่: An An v4.2 Hybrid Precision",
+            "patch_v42_desc": "✨ **มีอะไรใหม่บ้าง?** ✨\n\n• **Auto-Translation**: ระบบแปลไทย-อังกฤษอัตโนมัติในช่อง Inter-Chat! 🌍\n• **New Template**: เปิดตัวเทมเพลต 'AnAnBot' แบบพรีเมียม! 🌸\n• **Log Noise Correction**: ลดการแจ้งเตือนกวนใจจากระบบ 🛡️\n• **Performance++**: ทำงานเร็วขึ้นและเสถียรกว่าเดิมค๊าา!\n\n*ขอบคุณที่ไว้วางใจให้ An An ดูแลเซิร์ฟเวอร์นะคะ 💖*"
         }
     },
     "en": {
@@ -338,7 +382,18 @@ TRANSLATIONS = {
             "setup_complete": "🎉 Server setup complete!",
             "rollback_info": "If you want to restore everything, type `!rollback` or `/rollback` in this channel.",
             "rollback_expire": "({time} minutes remaining)",
-            "rollback_link": "Manage your server at ananbot.xyz 🌸✨"
+            "rollback_link": "Manage your server at ananbot.xyz 🌸✨",
+            "rules_title": "📜 Server Rules",
+            "rules_intro": "Welcome to our family! To ensure everyone has a great time, please follow these rules: ✨",
+            "rules_list": "1️⃣ Be respectful to everyone. No bullying or harassment.\n2️⃣ No spamming messages or irrelevant links.\n3️⃣ No inappropriate or NSFW content.\n4️⃣ Respect the decisions of the Staff team.\n\n*Peaceful coexistence is our core value. 🌸*",
+            "guide_commands_title": "📖 ANANBOT Command List",
+            "guide_commands_desc": "Save time with these simple commands:\n\n• `/setup` - Quick server setup\n• `/verify` - Verification system\n• `/stats` - View member stats\n• `/personalizer` - Customize your bot\n\n*Manage everything easily at ananbot.xyz ✨*",
+            "guide_faq_title": "❓ Frequently Asked Questions (FAQ)",
+            "guide_faq_desc": "💡 **Q: Can't verify myself?**\n• A: Try re-logging or contact staff in the support channel.\n\n💡 **Q: Where to upgrade to Premium?**\n• A: Visit our dashboard at ananbot.xyz!\n\n💡 **Q: Bot is not responding?**\n• A: Check if the bot has 'Administrator' permission in your server. 🌸",
+            "guide_links_title": "🔗 Official Links",
+            "guide_links_desc": "Follow us through these channels:\n\n🌐 **Website**: [ananbot.xyz](https://ananbot.xyz)\n💎 **Dashboard**: [Manage Server](https://ananbot.xyz/dashboard)\n🌸 **Fanpage**: Coming Soon!",
+            "patch_v42_title": "🚀 New Update: An An v4.2 Hybrid Precision",
+            "patch_v42_desc": "✨ **What's New?** ✨\n\n• **Auto-Translation**: Automatic TH-EN translation in Inter-Chat! 🌍\n• **New Template**: Launched the premium 'AnAnBot' template! 🌸\n• **Log Noise Correction**: Reduced system noise for better focus 🛡️\n• **Performance++**: Faster and more stable than ever!\n\n*Thank you for letting An An take care of your server 💖*"
         }
     }
 }
