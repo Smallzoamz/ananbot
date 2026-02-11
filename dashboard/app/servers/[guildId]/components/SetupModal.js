@@ -279,12 +279,22 @@ const SetupModal = ({
                             )}
                             {selectedTemplate === "Fanclub" && (
                                 <div className="setup-option" onClick={() => setSetupStep(3)}>
-                                    <div className="so-icon">✨</div>
+                                    <div className="so-icon">🌟</div>
                                     <div className="so-info">
                                         <h4>Fanclub Setup</h4>
                                         <p>ตั้งค่าช่องทางการติดตามสำหรับแฟนคลับ</p>
                                     </div>
                                     <div className="so-arrow">→</div>
+                                </div>
+                            )}
+                            {selectedTemplate === "AnAnBot" && (
+                                <div className="setup-option" onClick={() => onDeploy()}>
+                                    <div className="so-icon">🤖</div>
+                                    <div className="so-info">
+                                        <h4>AnAnBot Official Setup</h4>
+                                        <p>ติดตั้งเทมเพลตพร้อมระบบแปลภาษา TH/EN อัตโนมัติทันที!</p>
+                                    </div>
+                                    <div className="so-arrow">🪄</div>
                                 </div>
                             )}
                         </div>

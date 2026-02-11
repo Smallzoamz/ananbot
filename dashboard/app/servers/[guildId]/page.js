@@ -86,6 +86,7 @@ export default function Dashboard({ params }) {
         Shop: { name: "Shop (ร้านค้า)", icon: "🛒", desc: "Optimized for selling nitro & services." },
         Community: { name: "Community (คอมมู/หาเพื่อน)", icon: "💬", desc: "For hanging out and chatting." },
         Fanclub: { name: "Fanclub (แฟนคลับ)", icon: "🌟", desc: "Exclusive zone for followers." },
+        AnAnBot: { name: "AnAnBot (ล่ามอัจฉริยะ)", icon: "🤖", desc: "Official template with TH/EN auto-translation." },
         Custom: { name: "100% Custom Template", icon: "🎨", desc: "Create your own unique style." }
     };
 
