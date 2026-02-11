@@ -873,41 +873,6 @@ async def post_ananbot_patch_notes(guild):
             embed.set_footer(text=f"Version {LATEST_PATCH['version']} | {LATEST_PATCH['date']}")
             await patch_ch.send(embed=embed)
 
-@bot.slash_command(name="broadcast_patch", description="[Admin] Broadcast latest patch notes to all servers")
-async def broadcast_patch(inter: disnake.ApplicationCommandInteraction):
-    # Security Check: Only Papa (UID: 956866340474478642) or Guild Owner
-    if inter.author.id != 956866340474478642:
-        return await inter.response.send_message("❌ เฉพาะ Papa เท่านั้นที่รันคำสั่งนี้ได้ค๊าา!", ephemeral=True)
-
-    await inter.response.defer(ephemeral=True)
-    
-    count = 0
-    errors = 0
-    from utils.templates import LATEST_PATCH
-    
-    for guild in bot.guilds:
-        try:
-            # Look for patch notes channel
-            patch_ch = next((c for c in guild.text_channels if "patch_notes" in c.name), None)
-            if patch_ch:
-                # Post TH (Main)
-                content = LATEST_PATCH["th"]
-                embed = disnake.Embed(
-                    title=content["title"],
-                    description=content["description"],
-                    color=disnake.Color.gold()
-                )
-                embed.set_thumbnail(url="https://ananbot.xyz/assets/mascot/ANAN1.png")
-                embed.set_footer(text=f"Version {LATEST_PATCH['version']} | {LATEST_PATCH['date']}")
-                await patch_ch.send(embed=embed)
-                count += 1
-        except Exception as e:
-            print(f"Error broadcasting to {guild.name}: {e}")
-            errors += 1
-
-    await inter.edit_original_response(
-        content=f"✅ กระจายข่าวสาร Patch {LATEST_PATCH['version']} เรียบร้อยแล้วค่ะ!\n• ส่งสำเร็จ: {count} เซิร์ฟเวอร์\n• ผิดพลาด: {errors} เซิร์ฟเวอร์"
-    )
 
 class VerificationView(disnake.ui.View):
     def __init__(self, role_name, button_text="ยืนยันตัวตน (Verify)"):
@@ -3538,7 +3503,41 @@ class ReactionRoleView(disnake.ui.View):
             )
             self.add_item(button)
 
-# Helper functions and Slash Commands below...
+@bot.slash_command(name="broadcast_patch", description="[Admin] Broadcast latest patch notes to all servers")
+async def broadcast_patch(inter: disnake.ApplicationCommandInteraction):
+    # Security Check: Only Papa (UID: 956866340474478642) or Guild Owner
+    if inter.author.id != 956866340474478642:
+        return await inter.response.send_message("❌ เฉพาะ Papa เท่านั้นที่รันคำสั่งนี้ได้ค๊าา!", ephemeral=True)
+
+    await inter.response.defer(ephemeral=True)
+    
+    count = 0
+    errors = 0
+    from utils.templates import LATEST_PATCH
+    
+    for guild in bot.guilds:
+        try:
+            # Look for patch notes channel
+            patch_ch = next((c for c in guild.text_channels if "patch_notes" in c.name), None)
+            if patch_ch:
+                # Post TH (Main)
+                content = LATEST_PATCH["th"]
+                embed = disnake.Embed(
+                    title=content["title"],
+                    description=content["description"],
+                    color=disnake.Color.gold()
+                )
+                embed.set_thumbnail(url="https://ananbot.xyz/assets/mascot/ANAN1.png")
+                embed.set_footer(text=f"Version {LATEST_PATCH['version']} | {LATEST_PATCH['date']}")
+                await patch_ch.send(embed=embed)
+                count += 1
+        except Exception as e:
+            print(f"Error broadcasting to {guild.name}: {e}")
+            errors += 1
+
+    await inter.edit_original_response(
+        content=f"✅ กระจายข่าวสาร Patch {LATEST_PATCH['version']} เรียบร้อยแล้วค่ะ!\n• ส่งสำเร็จ: {count} เซิร์ฟเวอร์\n• ผิดพลาด: {errors} เซิร์ฟเวอร์"
+    )
 
 # Helpers for Welcome/Goodbye
 
