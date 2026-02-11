@@ -152,7 +152,7 @@ class SocialManager:
         if not alert: return False
         
         target_ch_id = alert.get('target_discord_ch')
-        channel_name = alert.get('channel_id')
+        raw_id = alert.get('channel_id')
         
         if not target_ch_id: return False
         
@@ -162,10 +162,12 @@ class SocialManager:
             'url': 'https://ananbot.xyz',
             'thumbnail': 'https://ananbot.xyz/assets/mascot/ANAN1.png',
             'game': 'Development & Testing',
-            'custom_message': f"🔔 **TEST ALERT** for **{channel_name}**! ระบบพร้อมใช้งานแล้วนะค๊าา! 🌸"
+            'custom_message': f"🔔 **TEST ALERT** for **{raw_id}**! ระบบพร้อมใช้งานแล้วนะค๊าา! 🌸"
         }
-        
-        await self.trigger_alert(guild, target_ch_id, platform, channel_name, test_data)
+
+        # For the embed title/name, we'll use a friendly placeholder since we don't fetch real name yet
+        display_name = f"Channel ({raw_id[:8]}...)"
+        await self.trigger_alert(guild, target_ch_id, platform, display_name, test_data)
         return True
 
     # Note: Papa will need to provide:
