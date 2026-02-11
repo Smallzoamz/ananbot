@@ -226,7 +226,18 @@ TRANSLATIONS = {
             "general": "ทั่วไป",
             "voice": "ห้องเสียง",
             "shop": "ร้านค้า",
-            "stream": "สตรีม"
+            "stream": "สตรีม",
+            "patch_notes": "รายการอัปเดต",
+            "roadmap": "แผนการพัฒนา",
+            "official_news": "ข่าวสารทางการ",
+            "commands_list": "รายการคำสั่ง",
+            "faq_guide": "คู่มือการใช้งาน",
+            "official_links": "ลิงก์ที่เกี่ยวข้อง",
+            "th_chat": "พูดคุยสไตล์ไทย",
+            "en_chat": "International Chat",
+            "feature_request": "เสนอความสามารถ",
+            "bug_report": "แจ้งบั๊ก/ปัญหา",
+            "bot_voice": "ห้องเสียงบอท"
         },
         "messages": {
             "verify_title": "✅ ยืนยันตัวตนเพื่อเข้าสู่เซิร์ฟเวอร์",
@@ -306,7 +317,18 @@ TRANSLATIONS = {
             "general": "General",
             "voice": "Voice",
             "shop": "Shop",
-            "stream": "Stream"
+            "stream": "Stream",
+            "patch_notes": "Patch Notes",
+            "roadmap": "Roadmap",
+            "official_news": "Official News",
+            "commands_list": "Commands List",
+            "faq_guide": "FAQ & Guide",
+            "official_links": "Official Links",
+            "th_chat": "Thai Chat",
+            "en_chat": "International Chat",
+            "feature_request": "Feature Request",
+            "bug_report": "Bug Report",
+            "bot_voice": "Bot Voice"
         },
         "messages": {
             "verify_title": "✅ Verify to Access the Server",
@@ -527,6 +549,50 @@ TEMPLATES = {
                     {"name": "｜・🔊：private-chitchat", "type": "voice"},
                     {"name": "｜・🔊：secret-room", "type": "voice", "permissions": {"everyone": {"view": False}, "SUPER FAN": {"view": True}}},
                     {"name": "｜・🔊：radio-fanclub", "type": "voice", "permissions": {"everyone": {"connect": True}}}
+                ]
+            }
+        ]
+    },
+    "AnAnBot": {
+        "GlobalChannels": [
+            {"name": "｜・📋：กฎกติกา", "type": "text", "permissions": {"everyone": {"view": True, "send": False}}},
+            {"name": "｜・✅：verify", "type": "text", "permissions": {"everyone": {"view": True, "send": True}}},
+            {"name": "｜・👋：welcome", "type": "text", "permissions": {"everyone": {"view": True, "send": False}}}
+        ],
+        "Roles": [
+            {"name": "👑 Store Owner | Papa", "color": 0xFFD700, "hoist": True, "permissions": "admin"},
+            {"name": "💎 Developer | ANANBOT", "color": 0x3498DB, "hoist": True, "permissions": "admin"},
+            {"name": "🛡️ Moderator | Staff", "color": 0xE67E22, "hoist": True, "permissions": "staff"},
+            {"name": "👥 Member | Fanclub", "color": 0xA6A6A6, "hoist": True, "permissions": "member"}
+        ],
+        "Zones": [
+            {
+                "name": "📢 | ANANBOT UPDATES",
+                "permissions": {"everyone": {"view": False, "send": False}, "admin": {"send": True}},
+                "channels": [
+                    {"name": "｜・📢：patch_notes", "type": "text"},
+                    {"name": "｜・📅：roadmap", "type": "text"},
+                    {"name": "｜・💎：official_news", "type": "text"}
+                ]
+            },
+            {
+                "name": "📘 | ANANBOT GUIDE",
+                "permissions": {"everyone": {"view": False, "send": False}, "admin": {"send": True}},
+                "channels": [
+                    {"name": "｜・📖：commands_list", "type": "text"},
+                    {"name": "｜・❓：faq_guide", "type": "text"},
+                    {"name": "｜・🔗：official_links", "type": "text"}
+                ]
+            },
+            {
+                "name": "💬 | BOT COMMUNITY",
+                "permissions": {"everyone": {"view": False, "send": True}},
+                "channels": [
+                    {"name": "｜・🗨️：th_chat", "type": "text"},
+                    {"name": "｜・🗨️：en_chat", "type": "text"},
+                    {"name": "｜・💡：feature_request", "type": "text"},
+                    {"name": "｜・🐞：bug_report", "type": "text"},
+                    {"name": "｜・🔊：bot_voice", "type": "voice", "permissions": {"everyone": {"view": False, "connect": True}}}
                 ]
             }
         ]

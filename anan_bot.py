@@ -35,6 +35,7 @@ from utils.supabase_client import (
 )
 from utils.social_manager import SocialManager
 from utils.moderator_manager import ModeratorManager
+from utils.translation_manager import TranslationManager
 import dateutil.parser
 
 load_dotenv() # Load variables from .env
@@ -1026,6 +1027,7 @@ class AnAnBot(commands.Bot):
         self.db_ready = False
         self.social_manager = SocialManager(self)
         self.moderator = ModeratorManager(self)
+        self.translator = TranslationManager(self)
         
         self.sync_locks = set()
         self.start_time = datetime.datetime.now() # Track Uptime
@@ -3128,6 +3130,9 @@ class AnAnBot(commands.Bot):
     async def on_message(self, message):
         # Core Moderation Check
         await self.moderator.check_message(message)
+        
+        # Auto-translation for specific channels
+        await self.translator.handle_message(message)
         
         # Then process commands if it's not a moderation trigger
         await self.process_commands(message)
