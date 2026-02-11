@@ -75,7 +75,12 @@ export default function ServerSelection() {
                         headers: { Authorization: `Bearer ${session.accessToken}` },
                     });
 
-                    if (userRes.status === 429) {
+                    if (userRes.status === 401) {
+                        // Token expired or revoked -> Force Sign Out
+                        console.error("Discord session expired (401). Signing out...");
+                        signOut({ callbackUrl: "/login?error=SessionExpired" });
+                        return;
+                    } else if (userRes.status === 429) {
                         // 3. Rate Limit Hit -> Fallback to STALE cache if possible
                         console.warn("Discord 429 Rate Limit hit. Attempting fallback to stale cache.");
                         if (cachedData) {
