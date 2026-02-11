@@ -2433,7 +2433,10 @@ class AnAnBot(commands.Bot):
                         else:
                             def internal_format(e, n, is_v=False): return f"｜・{e}：{n.upper() if is_v else n.lower()}"
                             final_name = internal_format(emoji, name, is_v=(ch_type == "voice"))
-                        cat = guild.get_channel(int(cat_id)) if cat_id else None
+                        # Handle "orphans" ID from dashboard by treating it as no category
+                        cat = None
+                        if cat_id and str(cat_id).isdigit():
+                            cat = guild.get_channel(int(cat_id))
                         if ch_type == "category": new_ch = await guild.create_category(name=final_name)
                         elif ch_type == "voice": new_ch = await guild.create_voice_channel(name=final_name, category=cat)
                         else: new_ch = await guild.create_text_channel(name=final_name, category=cat)
