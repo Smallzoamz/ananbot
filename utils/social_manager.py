@@ -121,6 +121,53 @@ class SocialManager:
         message = data.get('custom_message', f"@everyone ✨ **{name}** is live now! 🌸")
         await channel.send(content=message, embed=embed)
 
+    async def test_alert(self, guild_id):
+        """Manually trigger a test alert to verify configuration"""
+        from utils.supabase_client import get_guild_settings
+        guild = self.bot.get_guild(int(guild_id))
+        if not guild: return False
+        
+        settings = await get_guild_settings(str(guild_id))
+        if not settings or 'social_config' not in settings:
+            return False
+            
+        social_config = settings.get('social_config', {})
+        
+        # Look for ANY configured alert
+        alert = None
+        platform = ""
+        
+        # Check Twitch
+        twitch_alerts = social_config.get('twitch', {}).get('alerts', [])
+        if twitch_alerts:
+            alert = twitch_alerts[0]
+            platform = "Twitch"
+        else:
+            # Check YT
+            yt_alerts = social_config.get('youtube', {}).get('alerts', [])
+            if yt_alerts:
+                alert = yt_alerts[0]
+                platform = "YouTube"
+        
+        if not alert: return False
+        
+        target_ch_id = alert.get('target_discord_ch')
+        channel_name = alert.get('channel_id')
+        
+        if not target_ch_id: return False
+        
+        # Trigger it with Test Data
+        test_data = {
+            'title': '✨ นี่คือการทดสอบระบบแจ้งเตือนค๊าา! (Test Alert)',
+            'url': 'https://ananbot.xyz',
+            'thumbnail': 'https://ananbot.xyz/assets/mascot/ANAN1.png',
+            'game': 'Development & Testing',
+            'custom_message': f"🔔 **TEST ALERT** for **{channel_name}**! ระบบพร้อมใช้งานแล้วนะค๊าา! 🌸"
+        }
+        
+        await self.trigger_alert(guild, target_ch_id, platform, channel_name, test_data)
+        return True
+
     # Note: Papa will need to provide:
     # TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET
     # YOUTUBE_API_KEY
